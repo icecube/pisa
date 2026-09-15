@@ -36,14 +36,6 @@ pisa.stages.data.grid module
    :show-inheritance:
    :undoc-members:
 
-pisa.stages.data.licloader\_weighter module
--------------------------------------------
-
-.. automodule:: pisa.stages.data.licloader_weighter
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 pisa.stages.data.meows\_loader module
 -------------------------------------
 

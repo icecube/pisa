@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.utils.adhoc_sys - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.utils.adhoc_sys - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,11 +281,11 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.utils.adhoc_sys</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Stage to implement an ad-hoc systematic that corrects the discrepancy between data and</span>
 <span class="sd">MC in one particular variable. This can be used to check how large the impact of such a</span>
 <span class="sd">hypothetical systematic would be on the physics parameters of an analysis.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
@@ -298,13 +298,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.jsons</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDimBinning</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;adhoc_sys&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'adhoc_sys'</span><span class="p">,</span> <span class="s1">'init_test'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="adhoc_sys">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.adhoc_sys">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">adhoc_sys</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stage to re-weight events according to factors derived from post-fit data/MC</span>
 <span class="sd">    comparisons. The comparisons are produced somewhere externally and stored as a JSON</span>
 <span class="sd">    which encodes the binning that was used to make the comparison and the resulting</span>
@@ -326,8 +326,8 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;weights&quot;, `variable_name`</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "weights", `variable_name`</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -340,11 +340,11 @@
 
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">()</span>
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">variable_name</span>
+            <span class="s1">'weights'</span><span class="p">,</span> <span class="n">variable_name</span>
         <span class="p">]</span>
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;events&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;events&#39;</span>
+            <span class="s1">'calc_mode'</span><span class="p">:</span> <span class="s1">'events'</span><span class="p">,</span>
+            <span class="s1">'apply_mode'</span><span class="p">:</span> <span class="s1">'events'</span>
         <span class="p">}</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -354,8 +354,8 @@
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">"events"</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">==</span> <span class="s2">"events"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">scale_file</span> <span class="o">=</span> <span class="n">scale_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variable</span> <span class="o">=</span> <span class="n">variable_name</span>
@@ -364,24 +364,24 @@
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.adhoc_sys.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">scale_file</span> <span class="o">=</span> <span class="n">find_resource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale_file</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading scaling factors from : </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">scale_file</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Loading scaling factors from : </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">scale_file</span><span class="p">)</span>
 
         <span class="n">scaling_dict</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">scale_file</span><span class="p">)</span>
-        <span class="n">scale_binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="o">**</span><span class="n">scaling_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">variable</span><span class="p">][</span><span class="s2">&quot;binning&quot;</span><span class="p">])</span>
+        <span class="n">scale_binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="o">**</span><span class="n">scaling_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">variable</span><span class="p">][</span><span class="s2">"binning"</span><span class="p">])</span>
 
-        <span class="n">scale_factors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">scaling_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">variable</span><span class="p">][</span><span class="s2">&quot;scales&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Binning for ad-hoc systematic: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">scale_binning</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;scaling factors of ad-hoc systematic:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">scale_factors</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">scale_factors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">scaling_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">variable</span><span class="p">][</span><span class="s2">"scales"</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Binning for ad-hoc systematic: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">scale_binning</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"scaling factors of ad-hoc systematic:</span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">scale_factors</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="n">scale_binning</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;adhoc_scale_factors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_factors</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"adhoc_scale_factors"</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_factors</span></div>
 
 
 <div class="viewcode-block" id="adhoc_sys.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.adhoc_sys.apply_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;adhoc_scale_factors&quot;</span><span class="p">]</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"adhoc_scale_factors"</span><span class="p">]</span></div>
 </div>
 
 
@@ -389,7 +389,7 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.adhoc_sys.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">CACHE_DIR</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.binning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OneDimBinning</span>
@@ -397,20 +397,20 @@
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.random_numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_random_state</span>
 
     <span class="c1"># create temporary scale file on the fly</span>
-    <span class="n">var</span> <span class="o">=</span> <span class="s1">&#39;reco_length&#39;</span>
+    <span class="n">var</span> <span class="o">=</span> <span class="s1">'reco_length'</span>
     <span class="n">bin_edges</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
     <span class="n">var_binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;adhoc_sys_test_binning&#39;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">'adhoc_sys_test_binning'</span><span class="p">,</span>
         <span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">var</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
     <span class="p">)</span>
     <span class="n">scales</span> <span class="o">=</span> <span class="n">get_random_state</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-    <span class="n">scaling_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;binning&#39;</span><span class="p">:</span>  <span class="n">var_binning</span><span class="p">,</span> <span class="s1">&#39;scales&#39;</span><span class="p">:</span> <span class="n">scales</span><span class="p">}}</span>
-    <span class="n">scale_fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">&#39;test_scale_file.json&#39;</span><span class="p">)</span>
+    <span class="n">scaling_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="p">{</span><span class="s1">'binning'</span><span class="p">:</span>  <span class="n">var_binning</span><span class="p">,</span> <span class="s1">'scales'</span><span class="p">:</span> <span class="n">scales</span><span class="p">}}</span>
+    <span class="n">scale_fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">'test_scale_file.json'</span><span class="p">)</span>
     <span class="n">to_file</span><span class="p">(</span><span class="n">scaling_dict</span><span class="p">,</span> <span class="n">scale_fpath</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">adhoc_sys</span><span class="p">(</span>
         <span class="n">variable_name</span><span class="o">=</span><span class="n">var</span><span class="p">,</span> <span class="n">scale_file</span><span class="o">=</span><span class="n">scale_fpath</span><span class="p">,</span>
-        <span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span>
+        <span class="n">calc_mode</span><span class="o">=</span><span class="s1">'events'</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="s1">'events'</span>
     <span class="p">)</span></div>
 
 </pre></div>
@@ -452,7 +452,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

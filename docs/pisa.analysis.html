@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.analysis package - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.analysis package - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -355,15 +355,15 @@ dictionaries.</p>
 runs a <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/optimize.html#module-scipy.optimize" title="(in SciPy v1.18.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">scipy</span> <span class="pre">minimizer</span></code></a> to optimize
 locally in each octant. The arguments that would produce that result when passed to
 <cite>fit_recursively</cite> are:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;octants&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="s2">"octants"</span>
 <span class="n">method_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="s2">&quot;theta23&quot;</span>
-    <span class="s2">&quot;inflection_point&quot;</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span>
+    <span class="s2">"angle"</span><span class="p">:</span> <span class="s2">"theta23"</span>
+    <span class="s2">"inflection_point"</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span>
 <span class="p">}</span>
 <span class="n">local_fit_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;scipy&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="n">minimizer_settings</span><span class="p">,</span>
-    <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"scipy"</span><span class="p">,</span>
+    <span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="n">minimizer_settings</span><span class="p">,</span>
+    <span class="s2">"local_fit_kwargs"</span><span class="p">:</span> <span class="kc">None</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -371,21 +371,21 @@ locally in each octant. The arguments that would produce that result when passed
 separately per quadrant split at 90 degrees. We want this done within each
 quadrant fit for <cite>theta23</cite>, making 4 fits in total. Then we would nest the
 quadrant fit for <cite>deltacp24</cite> inside the octant fit like so:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;octants&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="s2">"octants"</span>
 <span class="n">method_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="s2">&quot;theta23&quot;</span>
-    <span class="s2">&quot;inflection_point&quot;</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span>
+    <span class="s2">"angle"</span><span class="p">:</span> <span class="s2">"theta23"</span>
+    <span class="s2">"inflection_point"</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span>
 <span class="p">}</span>
 <span class="n">local_fit_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;octants&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="s2">&quot;deltacp24&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;inflection_point&quot;</span><span class="p">:</span> <span class="mi">90</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+    <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"octants"</span><span class="p">,</span>
+    <span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"angle"</span><span class="p">:</span> <span class="s2">"deltacp24"</span><span class="p">,</span>
+        <span class="s2">"inflection_point"</span><span class="p">:</span> <span class="mi">90</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;scipy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="n">minimizer_settings</span><span class="p">,</span>
-        <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="s2">"local_fit_kwargs"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"scipy"</span><span class="p">,</span>
+        <span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="n">minimizer_settings</span><span class="p">,</span>
+        <span class="s2">"local_fit_kwargs"</span><span class="p">:</span> <span class="kc">None</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -394,24 +394,24 @@ quadrant fit for <cite>deltacp24</cite> inside the octant fit like so:</p>
 parameters <cite>theta24</cite> and <cite>deltam41</cite>, but we want to marginalize over all other
 parameters with a usual 3-flavor fit configuration. That could be achieved as
 follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;grid_scan&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">method</span> <span class="o">=</span> <span class="s2">"grid_scan"</span>
 <span class="n">method_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;grid&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;theta24&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
-        <span class="s2">&quot;deltam41&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;eV^2&quot;</span><span class="p">],</span>
+    <span class="s2">"grid"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"theta24"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+        <span class="s2">"deltam41"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">geomspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">"eV^2"</span><span class="p">],</span>
     <span class="p">},</span>
-    <span class="s2">&quot;fix_grid_params&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">"fix_grid_params"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">}</span>
 <span class="n">local_fit_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;octants&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="s2">&quot;theta23&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;inflection_point&quot;</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
+    <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"octants"</span><span class="p">,</span>
+    <span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"angle"</span><span class="p">:</span> <span class="s2">"theta23"</span><span class="p">,</span>
+        <span class="s2">"inflection_point"</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span>
     <span class="p">}</span>
-    <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;scipy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="n">minimizer_settings</span><span class="p">,</span>
-        <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="s2">"local_fit_kwargs"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"scipy"</span><span class="p">,</span>
+        <span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="n">minimizer_settings</span><span class="p">,</span>
+        <span class="s2">"local_fit_kwargs"</span><span class="p">:</span> <span class="kc">None</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -429,17 +429,17 @@ local
 algorithms. Algorithms requiring gradients such as BFGS are not supported. To use
 the Nelder-Mead algorithm, for example, the following settings could be used:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nlopt_settings</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;nlopt&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_LN_NELDERMEAD&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;ftol_abs&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
-        <span class="s2">&quot;ftol_rel&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+    <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"nlopt"</span><span class="p">,</span>
+    <span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"NLOPT_LN_NELDERMEAD"</span><span class="p">,</span>
+        <span class="s2">"ftol_abs"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+        <span class="s2">"ftol_rel"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
         <span class="c1"># other options that can be set here:</span>
         <span class="c1"># xtol_abs, xtol_rel, stopval, maxeval, maxtime</span>
         <span class="c1"># after maxtime seconds, stop and return best result so far</span>
-        <span class="s2">&quot;maxtime&quot;</span><span class="p">:</span> <span class="mi">60</span>
+        <span class="s2">"maxtime"</span><span class="p">:</span> <span class="mi">60</span>
     <span class="p">},</span>
-    <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="kc">None</span>  <span class="c1"># no further nesting available</span>
+    <span class="s2">"local_fit_kwargs"</span><span class="p">:</span> <span class="kc">None</span>  <span class="c1"># no further nesting available</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -447,7 +447,7 @@ the Nelder-Mead algorithm, for example, the following settings could be used:</p
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">best_fit_info</span> <span class="o">=</span> <span class="n">ana</span><span class="o">.</span><span class="n">fit_recursively</span><span class="p">(</span>
     <span class="n">data_dist</span><span class="p">,</span>
     <span class="n">dm</span><span class="p">,</span>
-    <span class="s2">&quot;chi2&quot;</span><span class="p">,</span>
+    <span class="s2">"chi2"</span><span class="p">,</span>
     <span class="kc">None</span><span class="p">,</span>
     <span class="n">store_fit_history</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">include_metric_maps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -463,16 +463,16 @@ Of course, you can also nest the <cite>nlopt_settings</cite> dictionary in any o
 lambda function in a string that expects to get the current parameters as a
 <a class="reference internal" href="pisa.core.html#pisa.core.param.ParamSet" title="pisa.core.param.ParamSet"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParamSet</span></code></a> and returns a float. The result will ensure
 that the passed function stays <em>positive</em> (to be consistent with SciPy, cf. below).
-The string will be passed to <a class="reference external" href="https://docs.python.org/3/library/functions.html#eval" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">eval()</span></code></a> to build the callable function.
+The string will be passed to <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#eval" title="(in Python v3.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">eval()</span></code></a> to build the callable function.
 For example, a silly way to bound <cite>delta_index</cite> &gt; 0.1 would be:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_LN_COBYLA&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ftol_abs&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
-    <span class="s2">&quot;ftol_rel&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
-    <span class="s2">&quot;maxtime&quot;</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
-    <span class="s2">&quot;ineq_constraints&quot;</span><span class="p">:</span> <span class="p">[</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"NLOPT_LN_COBYLA"</span><span class="p">,</span>
+    <span class="s2">"ftol_abs"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+    <span class="s2">"ftol_rel"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+    <span class="s2">"maxtime"</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+    <span class="s2">"ineq_constraints"</span><span class="p">:</span> <span class="p">[</span>
         <span class="c1"># be sure to convert parameters to their magnitude</span>
-        <span class="s2">&quot;lambda params: params.delta_index.m - 0.1&quot;</span>
+        <span class="s2">"lambda params: params.delta_index.m - 0.1"</span>
     <span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
@@ -489,16 +489,16 @@ theta23</p>
 either nesting the local fit in the <cite>constrained_fit</cite> method or to use NLOPT’s
 AUGLAG method that adds a penalty for constraint violations internally. For example,
 we could do this to fulfill the same constraint with the PRAXIS algorithm:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_AUGLAG&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ineq_constraints&quot;</span><span class="p">:[</span>
-        <span class="s2">&quot;lambda params: params.delta_index.m - 0.1&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"NLOPT_AUGLAG"</span><span class="p">,</span>
+    <span class="s2">"ineq_constraints"</span><span class="p">:[</span>
+        <span class="s2">"lambda params: params.delta_index.m - 0.1"</span>
     <span class="p">],</span>
-    <span class="s2">&quot;local_optimizer&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">"local_optimizer"</span><span class="p">:</span> <span class="p">{</span>
         <span class="c1"># supports all the same options as above</span>
-        <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_LN_PRAXIS&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;ftol_abs&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
-        <span class="s2">&quot;ftol_rel&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+        <span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"NLOPT_LN_PRAXIS"</span><span class="p">,</span>
+        <span class="s2">"ftol_abs"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+        <span class="s2">"ftol_rel"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -509,21 +509,21 @@ These can be defined just as above by passing a dictionary with the settings to 
 <cite>local_optimizer</cite> keyword. Note that, again, only gradient-free methods are
 supported. Here is an example for the “Multi-Level single linkage” (MLSL) algorithm,
 using PRAXIS as the local optimizer:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_G_MLSL_LDS&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;local_optimizer&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_LN_PRAXIS&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;ftol_abs&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
-        <span class="s2">&quot;ftol_rel&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"NLOPT_G_MLSL_LDS"</span><span class="p">,</span>
+    <span class="s2">"local_optimizer"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"NLOPT_LN_PRAXIS"</span><span class="p">,</span>
+        <span class="s2">"ftol_abs"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+        <span class="s2">"ftol_rel"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
 <p>For some evolutionary strategies such as ISRES, the <cite>population</cite> option  can also
 be set.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;NLOPT_GN_ISRES&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;population&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">"algorithm"</span><span class="p">:</span> <span class="s2">"NLOPT_GN_ISRES"</span><span class="p">,</span>
+    <span class="s2">"population"</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -540,12 +540,12 @@ with <a class="reference external" href="https://docs.scipy.org/doc/scipy/refere
 with both equality and inequality constraints for some fit parameters.
 First, set up the “global” algorithm only:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">scipy_settings</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;scipy&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;global_method&quot;</span><span class="p">:</span> <span class="s2">&quot;dual_annealing&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
-            <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"scipy"</span><span class="p">,</span>
+    <span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"global_method"</span><span class="p">:</span> <span class="s2">"dual_annealing"</span><span class="p">,</span>
+        <span class="s2">"options"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"maxiter"</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s2">"seed"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
             <span class="c1"># other options that can be set here:</span>
             <span class="c1"># initial_temp, restart_temp_ratio, visit, accept, maxfun, no_local_search, rng</span>
         <span class="p">},</span>
@@ -554,7 +554,7 @@ First, set up the “global” algorithm only:</p>
 </pre></div>
 </div>
 <p>Second, load an SLSQP configuration from a file (included in PISA):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">local_settings</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;settings/minimizer/slsqp_ftol1e-6_eps1e-4_maxiter1000.json&quot;</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">local_settings</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s2">"settings/minimizer/slsqp_ftol1e-6_eps1e-4_maxiter1000.json"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Third, require <cite>theta23</cite> to remain &gt; 42 degrees via an inequality constraint and
@@ -562,23 +562,23 @@ First, set up the “global” algorithm only:</p>
 list of constraint dicts into the SLSQP settings:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># constraint function can be callable or string</span>
 <span class="n">constrs_list</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;eq&#39;</span><span class="p">,</span>
-     <span class="s1">&#39;fun&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;lambda params: params.delta_index.m_as(&quot;dimensionless&quot;) + 0.1&#39;</span><span class="p">},</span>
-    <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ineq&#39;</span><span class="p">,</span>
-     <span class="s1">&#39;fun&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">params</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;degree&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">42</span><span class="p">}</span>
+    <span class="p">{</span><span class="s1">'type'</span><span class="p">:</span> <span class="s1">'eq'</span><span class="p">,</span>
+     <span class="s1">'fun'</span><span class="p">:</span> <span class="sa">f</span><span class="s1">'lambda params: params.delta_index.m_as("dimensionless") + 0.1'</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">'type'</span><span class="p">:</span> <span class="s1">'ineq'</span><span class="p">,</span>
+     <span class="s1">'fun'</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">params</span><span class="p">:</span> <span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">"degree"</span><span class="p">)</span> <span class="o">-</span> <span class="mi">42</span><span class="p">}</span>
 <span class="p">]</span>
-<span class="n">local_settings</span><span class="p">[</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">][</span><span class="s2">&quot;constraints&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrs_list</span>
+<span class="n">local_settings</span><span class="p">[</span><span class="s2">"options"</span><span class="p">][</span><span class="s2">"value"</span><span class="p">][</span><span class="s2">"constraints"</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrs_list</span>
 </pre></div>
 </div>
 <p>Fourth, insert the SLSQP configuration with constraints into the global settings:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">scipy_settings</span><span class="p">[</span><span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">local_settings</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">scipy_settings</span><span class="p">[</span><span class="s2">"local_fit_kwargs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">local_settings</span>
 </pre></div>
 </div>
 <p>Finally, run a <a class="reference internal" href="pisa.utils.html#pisa.utils.stats.chi2" title="pisa.utils.stats.chi2"><code class="xref py py-func docutils literal notranslate"><span class="pre">&quot;chi2&quot;</span></code></a> fit with</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">best_fit_info</span> <span class="o">=</span> <span class="n">ana</span><span class="o">.</span><span class="n">fit_recursively</span><span class="p">(</span>
     <span class="n">data_dist</span><span class="p">,</span>
     <span class="n">dm</span><span class="p">,</span>
-    <span class="s2">&quot;chi2&quot;</span><span class="p">,</span>
+    <span class="s2">"chi2"</span><span class="p">,</span>
     <span class="kc">None</span><span class="p">,</span>
     <span class="n">store_fit_history</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">include_metric_maps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -618,16 +618,16 @@ always sets 42 degrees as the starting value for theta23:</p>
         <span class="n">external_priors_penalty</span><span class="p">,</span> <span class="n">method_kwargs</span><span class="p">,</span> <span class="n">local_fit_kwargs</span><span class="p">,</span>
         <span class="n">store_fit_history</span><span class="p">,</span> <span class="n">include_metric_maps</span>
     <span class="p">):</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting nonsense fit (setting theta23 to 42 deg)...&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Starting nonsense fit (setting theta23 to 42 deg)..."</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">pipeline</span> <span class="ow">in</span> <span class="n">hypo_maker</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">&quot;theta23&quot;</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
-                <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">42</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;deg&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s2">"theta23"</span> <span class="ow">in</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                <span class="n">pipeline</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">42</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">[</span><span class="s2">"deg"</span><span class="p">]</span>
 
         <span class="n">best_fit_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_recursively</span><span class="p">(</span>
             <span class="n">data_dist</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="p">,</span> <span class="n">metric</span><span class="p">,</span> <span class="n">external_priors_penalty</span><span class="p">,</span>
-            <span class="n">local_fit_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">],</span> <span class="n">local_fit_kwargs</span><span class="p">[</span><span class="s2">&quot;method_kwargs&quot;</span><span class="p">],</span>
-            <span class="n">local_fit_kwargs</span><span class="p">[</span><span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">],</span>
+            <span class="n">local_fit_kwargs</span><span class="p">[</span><span class="s2">"method"</span><span class="p">],</span> <span class="n">local_fit_kwargs</span><span class="p">[</span><span class="s2">"method_kwargs"</span><span class="p">],</span>
+            <span class="n">local_fit_kwargs</span><span class="p">[</span><span class="s2">"local_fit_kwargs"</span><span class="p">],</span>
             <span class="n">store_fit_history</span><span class="o">=</span><span class="n">store_fit_history</span><span class="p">,</span>
             <span class="n">include_metric_maps</span><span class="o">=</span><span class="n">include_metric_maps</span>
         <span class="p">)</span>
@@ -639,15 +639,15 @@ always sets 42 degrees as the starting value for theta23:</p>
 like so:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ana</span> <span class="o">=</span> <span class="n">SubclassedAnalysis</span><span class="p">()</span>
 <span class="n">local_minuit</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
-    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;iminuit&quot;</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">"iminuit"</span><span class="p">,</span>
     <span class="n">method_kwargs</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;tol&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="s2">"tol"</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
     <span class="p">},</span>
     <span class="n">local_fit_kwargs</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
 
 <span class="n">local_nonsense_minuit</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
-    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;nonsense&quot;</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">"nonsense"</span><span class="p">,</span>
     <span class="n">method_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">local_fit_kwargs</span><span class="o">=</span><span class="n">local_minuit</span>
 <span class="p">)</span>
@@ -655,7 +655,7 @@ like so:</p>
 <span class="n">fit_result</span> <span class="o">=</span> <span class="n">ana</span><span class="o">.</span><span class="n">fit_recursively</span><span class="p">(</span>
     <span class="n">data_dist</span><span class="p">,</span>
     <span class="n">distribution_maker</span><span class="p">,</span>
-    <span class="s2">&quot;chi2&quot;</span><span class="p">,</span>
+    <span class="s2">"chi2"</span><span class="p">,</span>
     <span class="kc">None</span><span class="p">,</span>
     <span class="n">store_fit_history</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">include_metric_maps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -1156,7 +1156,7 @@ the DistributionMaker are pointing.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=3344f118"></script>
+</div><script src="_static/documentation_options.js?v=82f492cd"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

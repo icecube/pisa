@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.utils.set_variance - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.utils.set_variance - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.utils.set_variance</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Override errors and replace with manually chosen error fraction.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">guvectorize</span>
@@ -296,17 +296,17 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa_tests.test_services</span><span class="w"> </span><span class="kn">import</span> <span class="n">TEST_BINNING</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;set_variance&quot;</span><span class="p">,</span> <span class="s2">&quot;apply_floor&quot;</span><span class="p">,</span> <span class="s2">&quot;apply_floor_gufunc&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;set_constant&quot;</span><span class="p">,</span> <span class="s2">&quot;set_constant_gufunc&quot;</span><span class="p">,</span> <span class="s2">&quot;init_test&quot;</span>
+    <span class="s2">"set_variance"</span><span class="p">,</span> <span class="s2">"apply_floor"</span><span class="p">,</span> <span class="s2">"apply_floor_gufunc"</span><span class="p">,</span>
+    <span class="s2">"set_constant"</span><span class="p">,</span> <span class="s2">"set_constant_gufunc"</span><span class="p">,</span> <span class="s2">"init_test"</span>
 <span class="p">]</span>
 
 
 <div class="viewcode-block" id="set_variance">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">set_variance</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Override errors and replace with manually chosen variance.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -318,8 +318,8 @@
     <span class="p">):</span>
 
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="n">MultiDimBinning</span><span class="p">,</span>
-            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="n">MultiDimBinning</span>
+            <span class="s1">'calc_mode'</span><span class="p">:</span> <span class="n">MultiDimBinning</span><span class="p">,</span>
+            <span class="s1">'apply_mode'</span><span class="p">:</span> <span class="n">MultiDimBinning</span>
         <span class="p">}</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -344,46 +344,46 @@
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">divide_n</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">"events"</span>
             <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">total_mc</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">size</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> mc events in container </span><span class="si">{</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> mc events in container </span><span class="si">{</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;manual_variance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s2">&quot;errors&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"manual_variance"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">"errors"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"errors"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="set_variance.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance.apply_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">vectorizer</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;manual_variance&quot;</span><span class="p">],</span> <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">])</span></div>
+            <span class="n">vectorizer</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"manual_variance"</span><span class="p">],</span> <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"errors"</span><span class="p">])</span></div>
 
 
 <div class="viewcode-block" id="set_variance.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.set_variance.compute_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">vectorizer</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">],</span> <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;manual_variance&quot;</span><span class="p">])</span>
+            <span class="n">vectorizer</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">],</span> <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"manual_variance"</span><span class="p">])</span>
             <span class="n">vectorizer</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span>
-                <span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;manual_variance&quot;</span><span class="p">],</span>
+                <span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"manual_variance"</span><span class="p">],</span>
                 <span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">variance_scale</span><span class="p">,</span>
-                <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;manual_variance&quot;</span><span class="p">],</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"manual_variance"</span><span class="p">],</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">divide_n</span><span class="p">:</span>
                 <span class="n">vectorizer</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span>
-                    <span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;manual_variance&quot;</span><span class="p">],</span>
+                    <span class="n">vals</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"manual_variance"</span><span class="p">],</span>
                     <span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_total_mc</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">total_mc</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">],</span>
-                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;manual_variance&quot;</span><span class="p">],</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"manual_variance"</span><span class="p">],</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance_floor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">apply_floor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variance_floor</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;manual_variance&quot;</span><span class="p">])</span></div>
+                <span class="n">apply_floor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variance_floor</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"manual_variance"</span><span class="p">])</span></div>
 </div>
 
 
-<span class="n">FX</span> <span class="o">=</span> <span class="s2">&quot;f4&quot;</span> <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span> <span class="k">else</span> <span class="s2">&quot;f8&quot;</span>
+<span class="n">FX</span> <span class="o">=</span> <span class="s2">"f4"</span> <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span> <span class="k">else</span> <span class="s2">"f8"</span>
 
 <div class="viewcode-block" id="apply_floor">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.apply_floor">[docs]</a>
@@ -391,7 +391,7 @@
     <span class="n">apply_floor_gufunc</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span></div>
 
 
-<span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:])&quot;</span><span class="p">],</span> <span class="s2">&quot;() -&gt; ()&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
+<span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:])"</span><span class="p">],</span> <span class="s2">"() -&gt; ()"</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">apply_floor_gufunc</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span> <span class="k">if</span> <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">val</span> <span class="k">else</span> <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -401,7 +401,7 @@
     <span class="n">set_constant_gufunc</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span></div>
 
 
-<span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:])&quot;</span><span class="p">],</span> <span class="s2">&quot;() -&gt; ()&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
+<span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:])"</span><span class="p">],</span> <span class="s2">"() -&gt; ()"</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_constant_gufunc</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
 
@@ -409,7 +409,7 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.set_variance.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="k">return</span> <span class="n">set_variance</span><span class="p">(</span><span class="n">expected_total_mc</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">calc_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span></div>
 
 </pre></div>
@@ -451,7 +451,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

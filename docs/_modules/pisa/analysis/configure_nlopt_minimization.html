@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.analysis.configure_nlopt_minimization - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.analysis.configure_nlopt_minimization - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.analysis.configure_nlopt_minimization</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Utilities for validating and configuring nlopt minimization.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
 
@@ -291,44 +291,44 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">EVAL_MSG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;get_nlopt_inequality_constraint_funcs&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'get_nlopt_inequality_constraint_funcs'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="get_nlopt_inequality_constraint_funcs">
 <a class="viewcode-back" href="../../../pisa.analysis.html#pisa.analysis.configure_nlopt_minimization.get_nlopt_inequality_constraint_funcs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_nlopt_inequality_constraint_funcs</span><span class="p">(</span><span class="n">method_kwargs</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert constraints expressions in terms of ParamSets</span>
+<span class="w">    </span><span class="sd">"""Convert constraints expressions in terms of ParamSets</span>
 <span class="sd">    into callables for nlopt. Evals expression(s) from `method_kwargs`</span>
 <span class="sd">    and returns list of callables.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ineq_func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">ineq_func_params</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">grad</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;gradients not supported&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"gradients not supported"</span><span class="p">)</span>
         <span class="n">hypo_maker</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="c1"># pylint: disable=protected-access</span>
-        <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"Detectors"</span><span class="p">:</span>
             <span class="c1"># updates values for ALL detectors</span>
             <span class="n">update_param_values_detector</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)</span>
         <span class="c1"># In NLOPT, the inequality function must stay negative, while in</span>
         <span class="c1"># scipy, the inequality function must stay positive. We keep with</span>
         <span class="c1"># the scipy convention by flipping the sign.</span>
         <span class="k">return</span> <span class="o">-</span><span class="n">ineq_func_params</span><span class="p">(</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="s2">&quot;ineq_constraints&quot;</span> <span class="ow">in</span> <span class="n">method_kwargs</span>
+    <span class="k">assert</span> <span class="s2">"ineq_constraints"</span> <span class="ow">in</span> <span class="n">method_kwargs</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">EVAL_MSG</span><span class="p">)</span>
-    <span class="n">constr_list</span> <span class="o">=</span> <span class="n">method_kwargs</span><span class="p">[</span><span class="s2">&quot;ineq_constraints&quot;</span><span class="p">]</span>
+    <span class="n">constr_list</span> <span class="o">=</span> <span class="n">method_kwargs</span><span class="p">[</span><span class="s2">"ineq_constraints"</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constr_list</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">constr_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">constr_list</span><span class="p">]</span>
     <span class="n">ineq_funcs</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">constr</span> <span class="ow">in</span> <span class="n">constr_list</span><span class="p">:</span>
         <span class="c1"># the inequality function is specified as a function that takes a</span>
         <span class="c1"># ParamSet as its input</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;adding nlopt constraint (must stay positive): </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">constr</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"adding nlopt constraint (must stay positive): </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">constr</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">constr</span><span class="p">):</span>
             <span class="n">ineq_func_params</span> <span class="o">=</span> <span class="n">constr</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">ineq_func_params</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">constr</span><span class="p">)</span>
             <span class="n">t</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">ineq_func_params</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">ineq_func_params</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Evaluated object not a callable, but </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Evaluated object not a callable, but </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="n">ineq_funcs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="n">ineq_func</span><span class="p">,</span> <span class="n">ineq_func_params</span><span class="o">=</span><span class="n">ineq_func_params</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">ineq_funcs</span></div>
 
@@ -371,7 +371,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

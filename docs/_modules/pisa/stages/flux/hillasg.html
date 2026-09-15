@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.flux.hillasg - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.flux.hillasg - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,10 +281,10 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.flux.hillasg</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Stage to evaluate the Hillas-Gaisser expectations from precalculated fluxes</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -295,13 +295,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.flux_weights</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_2d_table</span><span class="p">,</span> <span class="n">calculate_2d_flux_weights</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hillasg&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'hillasg'</span><span class="p">,</span> <span class="s1">'init_test'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="hillasg">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.hillasg.hillasg">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">hillasg</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    stage to generate nominal flux</span>
 
 <span class="sd">    Parameters</span>
@@ -317,17 +317,17 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;true_energy&quot;, &quot;true_coszen&quot;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "true_energy", "true_coszen"</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">std_kwargs</span><span class="p">):</span>
 
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;flux_table&quot;</span><span class="p">,</span>
+            <span class="s2">"flux_table"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+            <span class="s1">'true_energy'</span><span class="p">,</span>
+            <span class="s1">'true_coszen'</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -344,30 +344,30 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
             <span class="c1"># speed up calculation by adding links</span>
-            <span class="c1"># as nominal flux doesn&#39;t depend on the (outgoing) flavour</span>
+            <span class="c1"># as nominal flux doesn't depend on the (outgoing) flavour</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span>
-                <span class="s2">&quot;nu&quot;</span><span class="p">,</span>
+                <span class="s2">"nu"</span><span class="p">,</span>
                 <span class="p">[</span>
-                    <span class="s2">&quot;nue_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;numu_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nutau_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nue_nc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;numu_nc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nutau_nc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nuebar_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;numubar_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nutaubar_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nuebar_nc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;numubar_nc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nutaubar_nc&quot;</span><span class="p">,</span>
+                    <span class="s2">"nue_cc"</span><span class="p">,</span>
+                    <span class="s2">"numu_cc"</span><span class="p">,</span>
+                    <span class="s2">"nutau_cc"</span><span class="p">,</span>
+                    <span class="s2">"nue_nc"</span><span class="p">,</span>
+                    <span class="s2">"numu_nc"</span><span class="p">,</span>
+                    <span class="s2">"nutau_nc"</span><span class="p">,</span>
+                    <span class="s2">"nuebar_cc"</span><span class="p">,</span>
+                    <span class="s2">"numubar_cc"</span><span class="p">,</span>
+                    <span class="s2">"nutaubar_cc"</span><span class="p">,</span>
+                    <span class="s2">"nuebar_nc"</span><span class="p">,</span>
+                    <span class="s2">"numubar_nc"</span><span class="p">,</span>
+                    <span class="s2">"nutaubar_nc"</span><span class="p">,</span>
                 <span class="p">],</span>
             <span class="p">)</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nubar_flux_nominal&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="c1"># container[&#39;nu_flux&#39;] = np.empty((container.size, 2), dtype=FTYPE)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"nu_flux_nominal"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"nubar_flux_nominal"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="c1"># container['nu_flux'] = np.empty((container.size, 2), dtype=FTYPE)</span>
 
-        <span class="c1"># don&#39;t forget to un-link everything again</span>
+        <span class="c1"># don't forget to un-link everything again</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
 
 
@@ -378,44 +378,44 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
             <span class="c1"># speed up calculation by adding links</span>
-            <span class="c1"># as nominal flux doesn&#39;t depend on the (outgoing) flavour</span>
+            <span class="c1"># as nominal flux doesn't depend on the (outgoing) flavour</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span>
-                <span class="s2">&quot;nu&quot;</span><span class="p">,</span>
+                <span class="s2">"nu"</span><span class="p">,</span>
                 <span class="p">[</span>
-                    <span class="s2">&quot;nue_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;numu_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nutau_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nue_nc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;numu_nc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nutau_nc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nuebar_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;numubar_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nutaubar_cc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nuebar_nc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;numubar_nc&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;nutaubar_nc&quot;</span><span class="p">,</span>
+                    <span class="s2">"nue_cc"</span><span class="p">,</span>
+                    <span class="s2">"numu_cc"</span><span class="p">,</span>
+                    <span class="s2">"nutau_cc"</span><span class="p">,</span>
+                    <span class="s2">"nue_nc"</span><span class="p">,</span>
+                    <span class="s2">"numu_nc"</span><span class="p">,</span>
+                    <span class="s2">"nutau_nc"</span><span class="p">,</span>
+                    <span class="s2">"nuebar_cc"</span><span class="p">,</span>
+                    <span class="s2">"numubar_cc"</span><span class="p">,</span>
+                    <span class="s2">"nutaubar_cc"</span><span class="p">,</span>
+                    <span class="s2">"nuebar_nc"</span><span class="p">,</span>
+                    <span class="s2">"numubar_nc"</span><span class="p">,</span>
+                    <span class="s2">"nutaubar_nc"</span><span class="p">,</span>
                 <span class="p">],</span>
             <span class="p">)</span>
 
         <span class="c1"># create lists for iteration</span>
-        <span class="n">out_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;nubar_flux_nominal&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span>
+        <span class="n">out_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"nu_flux_nominal"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"nubar_flux_nominal"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span>
         <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
-        <span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;nue&quot;</span><span class="p">,</span> <span class="s2">&quot;numu&quot;</span><span class="p">,</span> <span class="s2">&quot;nutau&quot;</span><span class="p">,</span> <span class="s2">&quot;nuebar&quot;</span><span class="p">,</span> <span class="s2">&quot;numubar&quot;</span><span class="p">,</span> <span class="s2">&quot;nutaubar&quot;</span><span class="p">]</span>
+        <span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"nue"</span><span class="p">,</span> <span class="s2">"numu"</span><span class="p">,</span> <span class="s2">"nutau"</span><span class="p">,</span> <span class="s2">"nuebar"</span><span class="p">,</span> <span class="s2">"numubar"</span><span class="p">,</span> <span class="s2">"nutaubar"</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">out_name</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">table</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">out_names</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">tables</span><span class="p">):</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="s2">&quot;Calculating nominal </span><span class="si">%s</span><span class="s2"> flux for </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span>
+                    <span class="s2">"Calculating nominal </span><span class="si">%s</span><span class="s2"> flux for </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span>
                 <span class="p">)</span>
                 <span class="n">calculate_2d_flux_weights</span><span class="p">(</span>
-                    <span class="n">true_energies</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">],</span>
-                    <span class="n">true_coszens</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_coszen&quot;</span><span class="p">],</span>
+                    <span class="n">true_energies</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"true_energy"</span><span class="p">],</span>
+                    <span class="n">true_coszens</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"true_coszen"</span><span class="p">],</span>
                     <span class="n">en_splines</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">flux_table</span><span class="p">[</span><span class="n">table</span><span class="p">],</span>
                     <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="n">out_name</span><span class="p">][:,</span> <span class="n">index</span><span class="p">],</span>
                 <span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;nubar_flux_nominal&quot;</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">"nu_flux_nominal"</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">"nubar_flux_nominal"</span><span class="p">)</span>
 
-        <span class="c1"># don&#39;t forget to un-link everything again</span>
+        <span class="c1"># don't forget to un-link everything again</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
 </div>
 
@@ -424,14 +424,14 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.hillasg.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">CACHE_DIR</span>
     
-    <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">&#39;dummy_hillas_test_flux-aa.d&#39;</span><span class="p">)</span>
+    <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">'dummy_hillas_test_flux-aa.d'</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">form</span><span class="p">(</span><span class="n">val</span><span class="p">:</span><span class="nb">float</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s1">&#39;</span><span class="si">%1.4E</span><span class="s1">&#39;</span><span class="o">%</span><span class="nb">abs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s1">'</span><span class="si">%1.4E</span><span class="s1">'</span><span class="o">%</span><span class="nb">abs</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
 
         <span class="n">costh_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">20</span><span class="p">)</span>
         <span class="n">energy_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.05</span><span class="p">,</span> <span class="mf">10.95</span><span class="p">,</span> <span class="mi">121</span><span class="p">)</span>
@@ -439,30 +439,30 @@
         <span class="n">hundred_e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">energy_nodes</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">energy_nodes</span><span class="p">)),</span> <span class="mi">100</span><span class="p">)</span>
         <span class="n">hundred_ct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">101</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-        <span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;wt&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">buffering</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">'wt'</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">'utf-8'</span><span class="p">,</span> <span class="n">buffering</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">_i_theta</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hundred_ct</span><span class="p">)):</span>
             <span class="n">i_theta</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hundred_ct</span><span class="p">)</span> <span class="o">-</span> <span class="n">_i_theta</span> <span class="o">-</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="n">i_theta</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
                 <span class="k">continue</span>
 
-            <span class="n">sp1</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span> <span class="k">if</span> <span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="p">]</span><span class="o">&gt;=</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-            <span class="n">sp2</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span> <span class="k">if</span> <span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">&gt;=</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;average flux in [cosZ =</span><span class="si">{}{:.2f}</span><span class="s2"> -- </span><span class="si">{}{:.2f}</span><span class="s2">, phi_Az =   0 -- 360]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sp1</span><span class="p">,</span><span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="p">],</span> <span class="n">sp2</span><span class="p">,</span><span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
-            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; Enu(GeV)   NuMu       NuMubar    NuE        NuEbar     NuTau      NuTauBar   (m^2 sec sr GeV)^-1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">sp1</span> <span class="o">=</span> <span class="s2">" "</span> <span class="k">if</span> <span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="p">]</span><span class="o">&gt;=</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">""</span>
+            <span class="n">sp2</span> <span class="o">=</span> <span class="s2">" "</span> <span class="k">if</span> <span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">&gt;=</span><span class="mi">0</span> <span class="k">else</span> <span class="s2">""</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"average flux in [cosZ =</span><span class="si">{}{:.2f}</span><span class="s2"> -- </span><span class="si">{}{:.2f}</span><span class="s2">, phi_Az =   0 -- 360]</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sp1</span><span class="p">,</span><span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="p">],</span> <span class="n">sp2</span><span class="p">,</span><span class="n">hundred_ct</span><span class="p">[</span><span class="n">i_theta</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">" Enu(GeV)   NuMu       NuMubar    NuE        NuEbar     NuTau      NuTauBar   (m^2 sec sr GeV)^-1</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">i_e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hundred_e</span><span class="p">)):</span>
-                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="n">hundred_e</span><span class="p">[</span><span class="n">i_e</span><span class="p">]))</span>
-                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
-                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
-                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
-                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
-                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
-                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
-                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">" "</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="mi">10</span><span class="o">**</span><span class="n">hundred_e</span><span class="p">[</span><span class="n">i_e</span><span class="p">]))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">" "</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">" "</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">" "</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">" "</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">" "</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">" "</span><span class="o">+</span><span class="n">form</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()))</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">outfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;flux_table&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'flux_table'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
     <span class="p">])</span>
     <span class="k">return</span> <span class="n">hillasg</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
 
@@ -505,7 +505,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

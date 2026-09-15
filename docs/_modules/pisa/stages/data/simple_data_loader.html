@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.data.simple_data_loader - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.data.simple_data_loader - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,11 +281,11 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.data.simple_data_loader</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">A Stage to load data from a PISA style hdf5 file into a ContainerSet</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
-<span class="c1">#TODO This class has become decreasingly &quot;simple&quot;! Make it into a more specific stage for our purposes and recreate a much more simple HDF5 file loader that is generic for any PISA task</span>
+<span class="c1">#TODO This class has become decreasingly "simple"! Make it into a more specific stage for our purposes and recreate a much more simple HDF5 file loader that is generic for any PISA task</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
@@ -297,13 +297,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.events_pi</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventsPi</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">split</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;simple_data_loader&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'simple_data_loader'</span><span class="p">,</span> <span class="s1">'init_test'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="simple_data_loader">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">simple_data_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    HDF5 file loader class</span>
 
 <span class="sd">    Parameters</span>
@@ -313,7 +313,7 @@
 <span class="sd">        and Genie systematics coefficients</span>
 
 <span class="sd">    mc_cuts : cut expr</span>
-<span class="sd">        e.g. &#39;(true_coszen &lt;= 0.5) &amp; (true_energy &lt;= 70)&#39;</span>
+<span class="sd">        e.g. '(true_coszen &lt;= 0.5) &amp; (true_energy &lt;= 70)'</span>
 
 <span class="sd">    data_dict : str of a dict</span>
 <span class="sd">        Dictionary to specify what keys from the hdf5 files to be loaded</span>
@@ -352,7 +352,7 @@
 <span class="sd">    as nominal weights for all events included.</span>
 <span class="sd">    No fields named `weights` may already be present.</span>
 <span class="sd">    Setting of `calc_mode` is not accepted.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">events_file</span><span class="p">,</span>
@@ -390,11 +390,11 @@
 
         <span class="c1"># Even though service implements setup_function (recording event</span>
         <span class="c1"># properties), representations of new containers in there are explicitly</span>
-        <span class="c1"># set to &quot;events&quot; (naturally). Hence, choice of calc_mode has no impact.</span>
+        <span class="c1"># set to "events" (naturally). Hence, choice of calc_mode has no impact.</span>
         <span class="c1"># Make decision not to accept setting calc_mode.</span>
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span>
+            <span class="s1">'calc_mode'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">'apply_mode'</span><span class="p">:</span> <span class="s2">"events"</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># init base class</span>
@@ -408,8 +408,8 @@
         <span class="c1"># check output names</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Found duplicates in `output_names`, but each name must be&#39;</span>
-                <span class="s1">&#39; unique.&#39;</span>
+                <span class="s1">'Found duplicates in `output_names`, but each name must be'</span>
+                <span class="s1">' unique.'</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">load_events</span><span class="p">()</span>
@@ -418,11 +418,11 @@
 <div class="viewcode-block" id="simple_data_loader.load_events">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.load_events">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;Loads events from events file&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">'''Loads events from events file'''</span>
 
         <span class="c1"># Create the events structure</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">evts</span> <span class="o">=</span> <span class="n">EventsPi</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Events&#39;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">'Events'</span><span class="p">,</span>
             <span class="n">neutrinos</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span><span class="p">,</span>
             <span class="n">fraction_events_to_keep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span><span class="p">,</span>
             <span class="n">events_subsample_index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">events_subsample_index</span><span class="p">,</span>
@@ -441,7 +441,7 @@
             <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="p">,</span> <span class="s2">&quot;metadata&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="p">,</span> <span class="s2">"metadata"</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="o">.</span><span class="n">metadata</span></div>
 
 
@@ -451,7 +451,7 @@
 <div class="viewcode-block" id="simple_data_loader.apply_cuts_to_events">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.apply_cuts_to_events">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_cuts_to_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;Just apply any cuts that the user defined&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">'''Just apply any cuts that the user defined'''</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mc_cuts</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">evts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="o">.</span><span class="n">apply_cut</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mc_cuts</span><span class="p">)</span></div>
 
@@ -459,10 +459,10 @@
 <div class="viewcode-block" id="simple_data_loader.record_event_properties">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.record_event_properties">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">record_event_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;Adds fields present in events file and selected in `self.data_dict`</span>
+<span class="w">        </span><span class="sd">'''Adds fields present in events file and selected in `self.data_dict`</span>
 <span class="sd">        into containers for the specified output names. Also ensures the</span>
 <span class="sd">        presence of a set of nominal weights.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        '''</span>
 
         <span class="c1"># define which  categories to include in the data</span>
         <span class="c1"># user can manually specify what they want using `output_names`, or else just use everything</span>
@@ -473,11 +473,11 @@
 
             <span class="c1"># make container</span>
             <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">'events'</span>
             <span class="n">event_groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evts</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">event_groups</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s1">&#39;Output name &quot;</span><span class="si">%s</span><span class="s1">&quot; not found in events. Only found </span><span class="si">%s</span><span class="s1">.&#39;</span>
+                    <span class="s1">'Output name "</span><span class="si">%s</span><span class="s1">" not found in events. Only found </span><span class="si">%s</span><span class="s1">.'</span>
                     <span class="o">%</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">event_groups</span><span class="p">)</span>
                 <span class="p">)</span>
 
@@ -491,47 +491,47 @@
             <span class="c1">#   and modified by the stages</span>
             <span class="c1"># * user can also provide `initial_weights` in input file</span>
             <span class="c1">#TODO Maybe add this directly into EventsPi</span>
-            <span class="k">if</span> <span class="s1">&#39;weights&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">'weights'</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
                 <span class="c1"># raise manually to give user some helpful feedback</span>
                 <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-                    <span class="s1">&#39;Found an existing `weights` array in &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
-                    <span class="s1">&#39; which would be overwritten. Consider renaming it&#39;</span>
-                    <span class="s1">&#39; to `initial_weights`.&#39;</span> <span class="o">%</span> <span class="n">name</span>
+                    <span class="s1">'Found an existing `weights` array in "</span><span class="si">%s</span><span class="s1">"'</span>
+                    <span class="s1">' which would be overwritten. Consider renaming it'</span>
+                    <span class="s1">' to `initial_weights`.'</span> <span class="o">%</span> <span class="n">name</span>
                 <span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="s1">&#39;initial_weights&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">'initial_weights'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s1">'initial_weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
                 <span class="k">else</span> <span class="p">:</span>
-                    <span class="k">if</span> <span class="s1">&#39;nu&#39;</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">or</span> <span class="s1">&#39;mu&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s1">'nu'</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">or</span> <span class="s1">'mu'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
                         <span class="c1"># Need to scale weights if using down-sampling</span>
-                        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+                        <span class="n">container</span><span class="p">[</span><span class="s1">'initial_weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fraction_events_to_keep</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+                        <span class="n">container</span><span class="p">[</span><span class="s1">'initial_weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
             <span class="c1"># add neutrino flavor information for neutrino events</span>
             <span class="c1">#TODO Maybe add this directly into EventsPi</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span><span class="p">:</span>
                 <span class="c1"># this determination of flavour is the worst possible coding, ToDo</span>
-                <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s1">&#39;bar&#39;</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
-                <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;nutau&#39;</span><span class="p">):</span>
+                <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s1">'bar'</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'nutau'</span><span class="p">):</span>
                     <span class="n">flav</span> <span class="o">=</span> <span class="mi">2</span>
-                <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;numu&#39;</span><span class="p">):</span>
+                <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'numu'</span><span class="p">):</span>
                     <span class="n">flav</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;nue&#39;</span><span class="p">):</span>
+                <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'nue'</span><span class="p">):</span>
                     <span class="n">flav</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot determine flavour of </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">name</span><span class="p">)</span>
-                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;nubar&#39;</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
-                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;flav&#39;</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Cannot determine flavour of </span><span class="si">%s</span><span class="s1">'</span><span class="o">%</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">'nubar'</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">'flav'</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
 
         <span class="c1"># check created at least one container</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;No containers created during data loading for some reason.&#39;</span>
+                <span class="s1">'No containers created during data loading for some reason.'</span>
             <span class="p">)</span></div>
 
 
@@ -539,9 +539,9 @@
 <div class="viewcode-block" id="simple_data_loader.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.simple_data_loader.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;Store event properties from events file at</span>
+<span class="w">        </span><span class="sd">'''Store event properties from events file at</span>
 <span class="sd">        service initialisation. Cf. `Stage` docs.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        '''</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">record_event_properties</span><span class="p">()</span></div>
 
 
@@ -551,7 +551,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># reset weights to initial weights prior to downstream stages running</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'initial_weights'</span><span class="p">])</span></div>
 </div>
 
 
@@ -559,22 +559,22 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.simple_data_loader.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Initialisation example"""</span>
     <span class="k">return</span> <span class="n">simple_data_loader</span><span class="p">(</span>
-        <span class="n">events_file</span><span class="o">=</span><span class="s1">&#39;events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e2evts_set0__unjoined__with_fluxes_honda-2015-spl-solmin-aa.hdf5&#39;</span><span class="p">,</span>
-        <span class="n">mc_cuts</span> <span class="o">=</span> <span class="s1">&#39;(true_coszen &lt;= 0.5) &amp; (true_energy &lt;= 70)&#39;</span><span class="p">,</span>
+        <span class="n">events_file</span><span class="o">=</span><span class="s1">'events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e2evts_set0__unjoined__with_fluxes_honda-2015-spl-solmin-aa.hdf5'</span><span class="p">,</span>
+        <span class="n">mc_cuts</span> <span class="o">=</span> <span class="s1">'(true_coszen &lt;= 0.5) &amp; (true_energy &lt;= 70)'</span><span class="p">,</span>
         <span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;true_energy&#39;</span><span class="p">:</span> <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;true_coszen&#39;</span><span class="p">:</span> <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;reco_energy&#39;</span><span class="p">:</span> <span class="s1">&#39;reco_energy&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;reco_coszen&#39;</span><span class="p">:</span> <span class="s1">&#39;reco_coszen&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;pid&#39;</span><span class="p">:</span> <span class="s1">&#39;pid&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;weighted_aeff&#39;</span><span class="p">:</span> <span class="s1">&#39;weighted_aeff&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;nu_flux_nominal&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;nominal_nue_flux&#39;</span><span class="p">,</span> <span class="s1">&#39;nominal_numu_flux&#39;</span><span class="p">],</span>
-            <span class="s1">&#39;nubar_flux_nominal&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;nominal_nuebar_flux&#39;</span><span class="p">,</span> <span class="s1">&#39;nominal_numubar_flux&#39;</span><span class="p">]</span>
+            <span class="s1">'true_energy'</span><span class="p">:</span> <span class="s1">'true_energy'</span><span class="p">,</span>
+            <span class="s1">'true_coszen'</span><span class="p">:</span> <span class="s1">'true_coszen'</span><span class="p">,</span>
+            <span class="s1">'reco_energy'</span><span class="p">:</span> <span class="s1">'reco_energy'</span><span class="p">,</span>
+            <span class="s1">'reco_coszen'</span><span class="p">:</span> <span class="s1">'reco_coszen'</span><span class="p">,</span>
+            <span class="s1">'pid'</span><span class="p">:</span> <span class="s1">'pid'</span><span class="p">,</span>
+            <span class="s1">'weighted_aeff'</span><span class="p">:</span> <span class="s1">'weighted_aeff'</span><span class="p">,</span>
+            <span class="s1">'nu_flux_nominal'</span><span class="p">:</span> <span class="p">[</span><span class="s1">'nominal_nue_flux'</span><span class="p">,</span> <span class="s1">'nominal_numu_flux'</span><span class="p">],</span>
+            <span class="s1">'nubar_flux_nominal'</span><span class="p">:</span> <span class="p">[</span><span class="s1">'nominal_nuebar_flux'</span><span class="p">,</span> <span class="s1">'nominal_numubar_flux'</span><span class="p">]</span>
         <span class="p">},</span>
-        <span class="n">output_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span>
-                        <span class="s1">&#39;nue_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">]</span>
+        <span class="n">output_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'nue_cc'</span><span class="p">,</span> <span class="s1">'numu_cc'</span><span class="p">,</span> <span class="s1">'nutau_cc'</span><span class="p">,</span> <span class="s1">'nuebar_cc'</span><span class="p">,</span> <span class="s1">'numubar_cc'</span><span class="p">,</span> <span class="s1">'nutaubar_cc'</span><span class="p">,</span>
+                        <span class="s1">'nue_nc'</span><span class="p">,</span> <span class="s1">'numu_nc'</span><span class="p">,</span> <span class="s1">'nutau_nc'</span><span class="p">,</span> <span class="s1">'nuebar_nc'</span><span class="p">,</span> <span class="s1">'numubar_nc'</span><span class="p">,</span> <span class="s1">'nutaubar_nc'</span><span class="p">]</span>
     <span class="p">)</span></div>
 
 </pre></div>
@@ -616,7 +616,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

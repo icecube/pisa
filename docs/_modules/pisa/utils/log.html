@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.log - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.utils.log - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,8 +281,8 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.utils.log</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This module sets up the logging system by looking for a &quot;logging.json&quot;</span>
+<span></span><span class="sd">"""</span>
+<span class="sd">This module sets up the logging system by looking for a "logging.json"</span>
 <span class="sd">configuration file. It will search (in this order) the local directory, $PISA</span>
 <span class="sd">and finally the package resources. The loggers found in there will be lifted</span>
 <span class="sd">to the module namespace.</span>
@@ -294,7 +294,7 @@
 <span class="sd">  (`have x many events`, `the flux is ...`)</span>
 <span class="sd">* tprofile: for how much time it takes to run some step (in the format of</span>
 <span class="sd">  `time : start bla`, `time : stop bla`)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span>
@@ -308,48 +308,48 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pkg_resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">resource_stream</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Levels&#39;</span><span class="p">,</span> <span class="s1">&#39;logging&#39;</span><span class="p">,</span> <span class="s1">&#39;physics&#39;</span><span class="p">,</span> <span class="s1">&#39;tprofile&#39;</span><span class="p">,</span> <span class="s1">&#39;set_verbosity&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'Levels'</span><span class="p">,</span> <span class="s1">'logging'</span><span class="p">,</span> <span class="s1">'physics'</span><span class="p">,</span> <span class="s1">'tprofile'</span><span class="p">,</span> <span class="s1">'set_verbosity'</span><span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;S. Boeser&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'S. Boeser'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2017, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
 <div class="viewcode-block" id="Levels">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.log.Levels">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Levels</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntEnum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Logging levels / int values we use in PISA in `set_verbosity` (and</span>
 <span class="sd">    typically from the command line, where -v/-vv/-vvv/etc. are used)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">FATAL</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
     <span class="n">ERROR</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-    <span class="n">WARN</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># default if NO &quot;-v(vvv...)&quot; are passed at command line</span>
-    <span class="n">INFO</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># pass &quot;-v&quot; at command line</span>
-    <span class="n">DEBUG</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># pass &quot;-vv&quot; at command line</span>
-    <span class="n">TRACE</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># pass &quot;-vvv&quot; at command line</span></div>
+    <span class="n">WARN</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># default if NO "-v(vvv...)" are passed at command line</span>
+    <span class="n">INFO</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># pass "-v" at command line</span>
+    <span class="n">DEBUG</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># pass "-vv" at command line</span>
+    <span class="n">TRACE</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># pass "-vvv" at command line</span></div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">initialize_logging</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Intializing PISA logging&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Intializing PISA logging"""</span>
     <span class="c1"># Add a trace level</span>
     <span class="n">logging_module</span><span class="o">.</span><span class="n">TRACE</span> <span class="o">=</span> <span class="mi">5</span>
-    <span class="n">logging_module</span><span class="o">.</span><span class="n">addLevelName</span><span class="p">(</span><span class="n">logging_module</span><span class="o">.</span><span class="n">TRACE</span><span class="p">,</span> <span class="s1">&#39;TRACE&#39;</span><span class="p">)</span>
+    <span class="n">logging_module</span><span class="o">.</span><span class="n">addLevelName</span><span class="p">(</span><span class="n">logging_module</span><span class="o">.</span><span class="n">TRACE</span><span class="p">,</span> <span class="s1">'TRACE'</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">trace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trace-level logging&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Trace-level logging"""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging_module</span><span class="o">.</span><span class="n">TRACE</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kws</span><span class="p">)</span>
     <span class="n">logging_module</span><span class="o">.</span><span class="n">Logger</span><span class="o">.</span><span class="n">trace</span> <span class="o">=</span> <span class="n">trace</span>
     <span class="n">logging_module</span><span class="o">.</span><span class="n">RootLogger</span><span class="o">.</span><span class="n">trace</span> <span class="o">=</span> <span class="n">trace</span>
@@ -358,22 +358,22 @@
     <span class="c1"># Get the logging configuration</span>
     <span class="n">logf</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s1">&#39;PISA_RESOURCES&#39;</span> <span class="ow">in</span> <span class="n">environ</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PISA_RESOURCES&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">'PISA_RESOURCES'</span> <span class="ow">in</span> <span class="n">environ</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">environ</span><span class="p">[</span><span class="s1">'PISA_RESOURCES'</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">':'</span><span class="p">):</span>
                 <span class="n">fpath</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">expanduser</span><span class="p">(</span><span class="n">expandvars</span><span class="p">(</span><span class="n">path</span><span class="p">)),</span>
-                             <span class="s1">&#39;settings/logging/logging.json&#39;</span><span class="p">)</span>
+                             <span class="s1">'settings/logging/logging.json'</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
-                    <span class="n">logf</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+                    <span class="n">logf</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span>
                     <span class="k">break</span>
 
         <span class="k">if</span> <span class="n">logf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">resource_spec</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;pisa_examples&#39;</span><span class="p">,</span>
-                             <span class="s1">&#39;resources/settings/logging/logging.json&#39;</span><span class="p">)</span>
+            <span class="n">resource_spec</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'pisa_examples'</span><span class="p">,</span>
+                             <span class="s1">'resources/settings/logging/logging.json'</span><span class="p">)</span>
             <span class="n">logf</span> <span class="o">=</span> <span class="n">resource_stream</span><span class="p">(</span><span class="o">*</span><span class="n">resource_spec</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">logf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Could not find &quot;logging.json&quot; in PISA_RESOURCES&#39;</span>
-                             <span class="s1">&#39; or in pisa_examples/resources.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Could not find "logging.json" in PISA_RESOURCES'</span>
+                             <span class="s1">' or in pisa_examples/resources.'</span><span class="p">)</span>
         <span class="n">logconfig</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">logf</span><span class="p">)</span>
 
     <span class="k">finally</span><span class="p">:</span>
@@ -385,16 +385,16 @@
 
     <span class="n">thandler</span> <span class="o">=</span> <span class="n">logging_module</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
     <span class="n">tformatter</span> <span class="o">=</span> <span class="n">logging_module</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span>
-        <span class="n">fmt</span><span class="o">=</span><span class="n">logconfig</span><span class="p">[</span><span class="s1">&#39;formatters&#39;</span><span class="p">][</span><span class="s1">&#39;profile&#39;</span><span class="p">][</span><span class="s1">&#39;format&#39;</span><span class="p">]</span>
+        <span class="n">fmt</span><span class="o">=</span><span class="n">logconfig</span><span class="p">[</span><span class="s1">'formatters'</span><span class="p">][</span><span class="s1">'profile'</span><span class="p">][</span><span class="s1">'format'</span><span class="p">]</span>
     <span class="p">)</span>
     <span class="n">thandler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">tformatter</span><span class="p">)</span>
 
     <span class="c1"># Capture warnings</span>
     <span class="n">logging_module</span><span class="o">.</span><span class="n">captureWarnings</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">_logging</span> <span class="o">=</span> <span class="n">logging_module</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pisa&#39;</span><span class="p">)</span>
-    <span class="n">_physics</span> <span class="o">=</span> <span class="n">logging_module</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pisa.physics&#39;</span><span class="p">)</span>
-    <span class="n">_tprofile</span> <span class="o">=</span> <span class="n">logging_module</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pisa.tprofile&#39;</span><span class="p">)</span>
+    <span class="n">_logging</span> <span class="o">=</span> <span class="n">logging_module</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'pisa'</span><span class="p">)</span>
+    <span class="n">_physics</span> <span class="o">=</span> <span class="n">logging_module</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'pisa.physics'</span><span class="p">)</span>
+    <span class="n">_tprofile</span> <span class="o">=</span> <span class="n">logging_module</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'pisa.tprofile'</span><span class="p">)</span>
     <span class="c1"># TODO: removed following line due to duplicate logging messages. Probably</span>
     <span class="c1"># should fix this in a better manner...</span>
     <span class="c1">#_tprofile.handlers = [thandler]</span>
@@ -405,8 +405,8 @@
 <div class="viewcode-block" id="set_verbosity">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.log.set_verbosity">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_verbosity</span><span class="p">(</span><span class="n">verbosity</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the verbosity level for the root logger Verbosity should be an</span>
-<span class="sd">    integer with the levels defined by `pisa.utils.log.Levels` enum.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Set the verbosity level for the root logger Verbosity should be an</span>
+<span class="sd">    integer with the levels defined by `pisa.utils.log.Levels` enum."""</span>
     <span class="c1"># Ignore if no verbosity is given</span>
     <span class="k">if</span> <span class="n">verbosity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span>
@@ -418,7 +418,7 @@
 
     <span class="k">if</span> <span class="n">verbosity</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">levels_mapping</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s1">&#39;`verbosity` specified is </span><span class="si">%s</span><span class="s1"> but must be one of </span><span class="si">%s</span><span class="s1">.&#39;</span>
+            <span class="s1">'`verbosity` specified is </span><span class="si">%s</span><span class="s1"> but must be one of </span><span class="si">%s</span><span class="s1">.'</span>
             <span class="o">%</span><span class="p">(</span><span class="n">verbosity</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">levels_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
         <span class="p">)</span>
 
@@ -469,7 +469,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

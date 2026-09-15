@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.resources - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.utils.resources - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,10 +281,10 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.utils.resources</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Tools to obtain resource files needed for PISA, whether the resource is located</span>
 <span class="sd">in the filesystem or with the installed PISA package.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span>
@@ -296,32 +296,32 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pkg_resources</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;RESOURCES_SUBDIRS&#39;</span><span class="p">,</span> <span class="s1">&#39;find_resource&#39;</span><span class="p">,</span> <span class="s1">&#39;open_resource&#39;</span><span class="p">,</span> <span class="s1">&#39;find_path&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'RESOURCES_SUBDIRS'</span><span class="p">,</span> <span class="s1">'find_resource'</span><span class="p">,</span> <span class="s1">'open_resource'</span><span class="p">,</span> <span class="s1">'find_path'</span><span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;S. Boeser, J.L. Lanfranchi&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'S. Boeser, J.L. Lanfranchi'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2017, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
-<span class="n">RESOURCES_SUBDIRS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;scripts&#39;</span><span class="p">,</span> <span class="s1">&#39;settings&#39;</span><span class="p">]</span>
+<span class="n">RESOURCES_SUBDIRS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'data'</span><span class="p">,</span> <span class="s1">'scripts'</span><span class="p">,</span> <span class="s1">'settings'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="find_resource">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.resources.find_resource">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_resource</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">fail</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to find a resource (file or directory).</span>
+<span class="w">    </span><span class="sd">"""Try to find a resource (file or directory).</span>
 
 <span class="sd">    First check if `resource` is an absolute path, then check relative to</span>
 <span class="sd">    the paths specified by the PISA_RESOURCES environment variable (if it is</span>
@@ -345,8 +345,8 @@
 <span class="sd">        PISA_RESOURCES environment variable (if defined), or a package resource</span>
 <span class="sd">        location relative to the `pisa_examples/resources` sub-directory. Within</span>
 <span class="sd">        each path specified in PISA_RESOURCES and within the</span>
-<span class="sd">        `pisa_examples/resources` dir, the sub-directories &#39;data&#39;, &#39;scripts&#39;,</span>
-<span class="sd">        and &#39;settings&#39; are checked for `resource` _before_ the base directories</span>
+<span class="sd">        `pisa_examples/resources` dir, the sub-directories 'data', 'scripts',</span>
+<span class="sd">        and 'settings' are checked for `resource` _before_ the base directories</span>
 <span class="sd">        are checked. Note that the **first** result found is returned.</span>
 
 <span class="sd">    fail : bool</span>
@@ -364,12 +364,12 @@
 <span class="sd">    ------</span>
 <span class="sd">    IOError if `resource` is not found and `fail` is True.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># NOTE: this import needs to be here -- and not at top -- to avoid circular</span>
     <span class="c1"># imports</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">log</span>
 
-    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Attempting to find resource &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Attempting to find resource "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
 
     <span class="c1"># 1) Check for file in filesystem at absolute path or relative to</span>
     <span class="c1">#    PISA_RESOURCES environment var</span>
@@ -381,11 +381,11 @@
     <span class="c1"># with egg distributions</span>
 
     <span class="c1"># 2) Look inside the installed pisa package</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Searching package resources...&#39;</span><span class="p">)</span>
-    <span class="n">resource_spec</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;pisa_examples&#39;</span><span class="p">,</span> <span class="s1">&#39;resources/&#39;</span> <span class="o">+</span> <span class="n">resource</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Searching package resources...'</span><span class="p">)</span>
+    <span class="n">resource_spec</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'pisa_examples'</span><span class="p">,</span> <span class="s1">'resources/'</span> <span class="o">+</span> <span class="n">resource</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_exists</span><span class="p">(</span><span class="o">*</span><span class="n">resource_spec</span><span class="p">):</span>
         <span class="n">resource_path</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="o">*</span><span class="n">resource_spec</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Found resource &quot;</span><span class="si">%s</span><span class="s1">&quot; in PISA package at &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Found resource "</span><span class="si">%s</span><span class="s1">" in PISA package at "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span>
                           <span class="n">resource</span><span class="p">,</span> <span class="n">resource_path</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">resource_path</span>
 
@@ -393,17 +393,17 @@
         <span class="k">if</span> <span class="n">subdir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">augmented_path</span> <span class="o">=</span> <span class="n">resource</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">augmented_path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">subdir</span><span class="p">,</span> <span class="n">resource</span><span class="p">])</span>
+            <span class="n">augmented_path</span> <span class="o">=</span> <span class="s1">'/'</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">subdir</span><span class="p">,</span> <span class="n">resource</span><span class="p">])</span>
 
-        <span class="n">resource_spec</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;pisa_examples&#39;</span><span class="p">,</span> <span class="s1">&#39;resources/&#39;</span> <span class="o">+</span> <span class="n">augmented_path</span><span class="p">)</span>
+        <span class="n">resource_spec</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'pisa_examples'</span><span class="p">,</span> <span class="s1">'resources/'</span> <span class="o">+</span> <span class="n">augmented_path</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_exists</span><span class="p">(</span><span class="o">*</span><span class="n">resource_spec</span><span class="p">):</span>
             <span class="n">resource_path</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_filename</span><span class="p">(</span><span class="o">*</span><span class="n">resource_spec</span><span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Found resource &quot;</span><span class="si">%s</span><span class="s1">&quot; in PISA package at &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Found resource "</span><span class="si">%s</span><span class="s1">" in PISA package at "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span>
                               <span class="n">resource</span><span class="p">,</span> <span class="n">resource_path</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">resource_path</span>
 
     <span class="c1"># 3) If you get here, the resource is nowhere to be found</span>
-    <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Could not find resource &quot;</span><span class="si">%s</span><span class="s1">&quot; in filesystem OR in PISA package.&#39;</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'Could not find resource "</span><span class="si">%s</span><span class="s1">" in filesystem OR in PISA package.'</span>
            <span class="o">%</span> <span class="n">resource</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">fail</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
@@ -413,8 +413,8 @@
 
 <div class="viewcode-block" id="open_resource">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.resources.open_resource">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">open_resource</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find the resource file (see find_resource), open it, and return a file</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">open_resource</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">'r'</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Find the resource file (see find_resource), open it, and return a file</span>
 <span class="sd">    handle.</span>
 
 
@@ -423,14 +423,14 @@
 <span class="sd">    resource : str</span>
 <span class="sd">        Resource path; can be path relative to CWD, path relative to</span>
 <span class="sd">        PISA_RESOURCES environment variable (if defined), or a package resource</span>
-<span class="sd">        location relative to PISA&#39;s `pisa_examples/resources` sub-directory.</span>
+<span class="sd">        location relative to PISA's `pisa_examples/resources` sub-directory.</span>
 <span class="sd">        Within each path specified in PISA_RESOURCES and within the</span>
-<span class="sd">        `pisa_examples/resources` dir, the sub-directories &#39;data&#39;, &#39;scripts&#39;,</span>
-<span class="sd">        and &#39;settings&#39; are checked for `resource` _before_ the base directories</span>
+<span class="sd">        `pisa_examples/resources` dir, the sub-directories 'data', 'scripts',</span>
+<span class="sd">        and 'settings' are checked for `resource` _before_ the base directories</span>
 <span class="sd">        are checked. Note that the **first** result found is returned.</span>
 
 <span class="sd">    mode : str</span>
-<span class="sd">        &#39;r&#39;, &#39;w&#39;, or &#39;rw&#39;; only &#39;r&#39; is valid for package resources (as these</span>
+<span class="sd">        'r', 'w', or 'rw'; only 'r' is valid for package resources (as these</span>
 <span class="sd">        cannot be written)</span>
 
 
@@ -455,12 +455,12 @@
 <span class="sd">    See help for pkg_resources module / resource_stream method for more details</span>
 <span class="sd">    on handling of package resources.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># NOTE: this import needs to be here -- and not at top -- to avoid circular</span>
     <span class="c1"># imports</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">log</span>
 
-    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Attempting to open resource &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Attempting to open resource "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span> <span class="n">resource</span><span class="p">)</span>
 
     <span class="c1"># 1) Check for file in filesystem at absolute path or relative to</span>
     <span class="c1">#    PISA_RESOURCES environment var</span>
@@ -470,41 +470,41 @@
     <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
         <span class="n">fs_exc_info</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Opening resource &quot;</span><span class="si">%s</span><span class="s1">&quot; from filesystem at &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Opening resource "</span><span class="si">%s</span><span class="s1">" from filesystem at "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span>
                           <span class="n">resource</span><span class="p">,</span> <span class="n">resource_path</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">open</span><span class="p">(</span><span class="n">resource_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
 
     <span class="c1"># 2) Look inside the installed pisa package; this should error out if not</span>
     <span class="c1">#    found</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Searching package resources...&#39;</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Searching package resources...'</span><span class="p">)</span>
     <span class="n">pkg_exc_info</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">for</span> <span class="n">subdir</span> <span class="ow">in</span> <span class="n">RESOURCES_SUBDIRS</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">subdir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">augmented_path</span> <span class="o">=</span> <span class="n">resource</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">augmented_path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">subdir</span><span class="p">,</span> <span class="n">resource</span><span class="p">])</span>
+            <span class="n">augmented_path</span> <span class="o">=</span> <span class="s1">'/'</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">subdir</span><span class="p">,</span> <span class="n">resource</span><span class="p">])</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">resource_spec</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;pisa_examples&#39;</span><span class="p">,</span> <span class="s1">&#39;resources/&#39;</span> <span class="o">+</span> <span class="n">augmented_path</span><span class="p">)</span>
+            <span class="n">resource_spec</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'pisa_examples'</span><span class="p">,</span> <span class="s1">'resources/'</span> <span class="o">+</span> <span class="n">augmented_path</span><span class="p">)</span>
             <span class="n">stream</span> <span class="o">=</span> <span class="n">pkg_resources</span><span class="o">.</span><span class="n">resource_stream</span><span class="p">(</span><span class="o">*</span><span class="n">resource_spec</span><span class="p">)</span>
-            <span class="c1"># TODO: better way to check if read mode (i.e. will &#39;r&#39; miss</span>
-            <span class="c1"># anything that can be specified to also mean &quot;read mode&quot;)?</span>
-            <span class="k">if</span> <span class="n">mode</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">&#39;r&#39;</span><span class="p">:</span>
+            <span class="c1"># TODO: better way to check if read mode (i.e. will 'r' miss</span>
+            <span class="c1"># anything that can be specified to also mean "read mode")?</span>
+            <span class="k">if</span> <span class="n">mode</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">'r'</span><span class="p">:</span>
                 <span class="k">del</span> <span class="n">stream</span>
                 <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span>
-                    <span class="s1">&#39;Illegal mode &quot;</span><span class="si">%s</span><span class="s1">&quot; specified. Cannot open a PISA package&#39;</span>
-                    <span class="s1">&#39; resource in anything besides &quot;r&quot; (read-only) mode.&#39;</span> <span class="o">%</span><span class="n">mode</span>
+                    <span class="s1">'Illegal mode "</span><span class="si">%s</span><span class="s1">" specified. Cannot open a PISA package'</span>
+                    <span class="s1">' resource in anything besides "r" (read-only) mode.'</span> <span class="o">%</span><span class="n">mode</span>
                 <span class="p">)</span>
         <span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
             <span class="n">pkg_exc_info</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Opening resource &quot;</span><span class="si">%s</span><span class="s1">&quot; from PISA package.&#39;</span><span class="p">,</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Opening resource "</span><span class="si">%s</span><span class="s1">" from PISA package.'</span><span class="p">,</span>
                               <span class="n">resource</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">stream</span>
 
     <span class="k">if</span> <span class="n">fs_exc_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">pkg_exc_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Could not locate resource &quot;</span><span class="si">%s</span><span class="s1">&quot; in filesystem OR in&#39;</span>
-                   <span class="s1">&#39; installed PISA package.&#39;</span> <span class="o">%</span><span class="n">resource</span><span class="p">)</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'Could not locate resource "</span><span class="si">%s</span><span class="s1">" in filesystem OR in'</span>
+                   <span class="s1">' installed PISA package.'</span> <span class="o">%</span><span class="n">resource</span><span class="p">)</span>
             <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
         <span class="k">raise</span> <span class="n">fs_exc_info</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">fs_exc_info</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">with_traceback</span><span class="p">(</span><span class="n">fs_exc_info</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
     <span class="k">raise</span> <span class="n">pkg_exc_info</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">pkg_exc_info</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">with_traceback</span><span class="p">(</span><span class="n">pkg_exc_info</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span></div>
@@ -514,7 +514,7 @@
 <div class="viewcode-block" id="find_path">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.resources.find_path">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_path</span><span class="p">(</span><span class="n">pathspec</span><span class="p">,</span> <span class="n">fail</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find a file or directory in the filesystem (i.e., something that the</span>
+<span class="w">    </span><span class="sd">"""Find a file or directory in the filesystem (i.e., something that the</span>
 <span class="sd">    operating system can locate, as opposed to Python package resources, which</span>
 <span class="sd">    can be located within a package and therefore hidden from the filesystem).</span>
 
@@ -527,27 +527,27 @@
 <span class="sd">    -------</span>
 <span class="sd">    None (if not found) or string (absolute path to file or dir if found)</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># NOTE: this import needs to be here -- and not at top -- to avoid circular</span>
     <span class="c1"># imports</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">log</span>
 
     <span class="c1"># 1) Check for absolute path or path relative to current working</span>
     <span class="c1">#    directory</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Checking absolute or path relative to cwd...&#39;</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Checking absolute or path relative to cwd...'</span><span class="p">)</span>
     <span class="n">resource_path</span> <span class="o">=</span> <span class="n">expandvars</span><span class="p">(</span><span class="n">expanduser</span><span class="p">(</span><span class="n">pathspec</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">exists</span><span class="p">(</span><span class="n">resource_path</span><span class="p">):</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Found &quot;</span><span class="si">%s</span><span class="s1">&quot; at &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">pathspec</span><span class="p">,</span> <span class="n">resource_path</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Found "</span><span class="si">%s</span><span class="s1">" at "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span> <span class="n">pathspec</span><span class="p">,</span> <span class="n">resource_path</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">resource_path</span>
 
     <span class="c1"># 2) Check if $PISA_RESOURCES is set in environment; if so, look relative</span>
     <span class="c1">#    to that</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Checking environment for $PISA_RESOURCES...&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="s1">&#39;PISA_RESOURCES&#39;</span> <span class="ow">in</span> <span class="n">environ</span><span class="p">:</span>
-        <span class="n">pisa_resources</span> <span class="o">=</span> <span class="n">environ</span><span class="p">[</span><span class="s1">&#39;PISA_RESOURCES&#39;</span><span class="p">]</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Searching resource path PISA_RESOURCES=</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Checking environment for $PISA_RESOURCES...'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">'PISA_RESOURCES'</span> <span class="ow">in</span> <span class="n">environ</span><span class="p">:</span>
+        <span class="n">pisa_resources</span> <span class="o">=</span> <span class="n">environ</span><span class="p">[</span><span class="s1">'PISA_RESOURCES'</span><span class="p">]</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Searching resource path PISA_RESOURCES=</span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span>
                           <span class="n">pisa_resources</span><span class="p">)</span>
-        <span class="n">resource_paths</span> <span class="o">=</span> <span class="n">pisa_resources</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+        <span class="n">resource_paths</span> <span class="o">=</span> <span class="n">pisa_resources</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">':'</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">resource_path</span> <span class="ow">in</span> <span class="n">resource_paths</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">resource_path</span><span class="p">:</span>
                 <span class="k">continue</span>
@@ -560,12 +560,12 @@
 
             <span class="k">for</span> <span class="n">augmented_path</span> <span class="ow">in</span> <span class="n">augmented_paths</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">exists</span><span class="p">(</span><span class="n">augmented_path</span><span class="p">):</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Found path &quot;</span><span class="si">%s</span><span class="s1">&quot; at </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Found path "</span><span class="si">%s</span><span class="s1">" at </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span>
                                       <span class="n">pathspec</span><span class="p">,</span> <span class="n">augmented_path</span><span class="p">)</span>
                     <span class="k">return</span> <span class="n">augmented_path</span>
 
     <span class="c1"># 3) If you get here, the file is nowhere to be found</span>
-    <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;Could not find path &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">pathspec</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="s1">'Could not find path "</span><span class="si">%s</span><span class="s1">"'</span> <span class="o">%</span> <span class="n">pathspec</span>
     <span class="k">if</span> <span class="n">fail</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
     <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
@@ -610,7 +610,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

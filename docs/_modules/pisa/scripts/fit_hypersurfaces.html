@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.scripts.fit_hypersurfaces - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.scripts.fit_hypersurfaces - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -283,7 +283,7 @@
           <h1>Source code for pisa.scripts.fit_hypersurfaces</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Fit a hypersurface to discrete systematics datasets -- as specified by a fit config</span>
 <span class="sd">file -- and produce a fit file usable by, e.g., the `discr_sys.hypersurfaces` service.</span>
 
@@ -300,25 +300,25 @@
 <span class="sd">Config file syntax</span>
 <span class="sd">==================</span>
 
-<span class="sd">&quot;general&quot; section</span>
+<span class="sd">"general" section</span>
 <span class="sd">-----------------</span>
-<span class="sd">You must define a &quot;general&quot; section which must have at least options &quot;sys_list&quot; and </span>
-<span class="sd">&quot;sys_func_list&quot; and can optionally include options &quot;units&quot; and &quot;combine_regex&quot;. You </span>
-<span class="sd">can add more options to the &quot;general&quot; section, but they will be ignored by PISA unless</span>
-<span class="sd">they are explicitly referenced elsewhere in your config file. E.g., a &quot;general&quot; </span>
+<span class="sd">You must define a "general" section which must have at least options "sys_list" and </span>
+<span class="sd">"sys_func_list" and can optionally include options "units" and "combine_regex". You </span>
+<span class="sd">can add more options to the "general" section, but they will be ignored by PISA unless</span>
+<span class="sd">they are explicitly referenced elsewhere in your config file. E.g., a "general" </span>
 <span class="sd">section with all three required and optional options (and no more) ::</span>
 
 <span class="sd">  [general]</span>
 <span class="sd">  sys_list = dom_eff, hole_ice, hole_ice_fwd</span>
 <span class="sd">  sys_func_list = linear, exponential, linear</span>
 <span class="sd">  units = dimensionless, dimensionless, dimensionless</span>
-<span class="sd">  combine_regex = [&quot;nue.*_cc&quot;, &quot;numu.*_cc&quot;, &quot;nutau.*_cc&quot;, &quot;.*_nc&quot;]</span>
+<span class="sd">  combine_regex = ["nue.*_cc", "numu.*_cc", "nutau.*_cc", ".*_nc"]</span>
 
-<span class="sd">If &quot;units&quot; is not specified, units default to &quot;dimensionless&quot; for all systematics. If</span>
+<span class="sd">If "units" is not specified, units default to "dimensionless" for all systematics. If</span>
 <span class="sd">specified, there must be the same number of comma-separated units strings</span>
-<span class="sd">(interpret-able by the Pint module) as there are options in the &quot;sys_list&quot;.</span>
+<span class="sd">(interpret-able by the Pint module) as there are options in the "sys_list".</span>
 
-<span class="sd">Note that &quot;combine_regex&quot; should be Python-evaulatable to a string or a sequence of</span>
+<span class="sd">Note that "combine_regex" should be Python-evaulatable to a string or a sequence of</span>
 <span class="sd">strings. Old versions of this script allowed values like ::</span>
 
 <span class="sd">  combine_regex = nue.*_cc,numu.*_cc,nutau.*_cc,.*_nc</span>
@@ -327,37 +327,37 @@
 <span class="sd">(which themselves can contian commas) is probably impossible, so this syntax is</span>
 <span class="sd">deprecated (a warning is emitted if it is detected) and should be avoided.</span>
 
-<span class="sd">&quot;apply_to_all_sets&quot; section</span>
+<span class="sd">"apply_to_all_sets" section</span>
 <span class="sd">---------------------------</span>
-<span class="sd">You can optionally include an &quot;apply_to_all_sets&quot; section in your config that, true to</span>
+<span class="sd">You can optionally include an "apply_to_all_sets" section in your config that, true to</span>
 <span class="sd">its name, defines options applied to all systematic sets sections in the file. E.g., ::</span>
 
 <span class="sd">  [apply_to_all_sets]</span>
 <span class="sd">  pipeline_cfg = settings/pipeline/nutau_mc_baseline.cfg</span>
 <span class="sd">  remove [discr_sys.hypersurfaces] =</span>
 <span class="sd">  set [data.simple_data_loader] data_dict = {</span>
-<span class="sd">      &#39;true_energy&#39;: &#39;true_energy&#39;,</span>
-<span class="sd">      &#39;true_coszen&#39;: &#39;true_coszen&#39;,</span>
-<span class="sd">      &#39;reco_energy&#39;: &#39;reco_energy&#39;,</span>
-<span class="sd">      &#39;reco_coszen&#39;: &#39;reco_coszen&#39;,</span>
-<span class="sd">      &#39;pid&#39;: &#39;pid&#39;,</span>
-<span class="sd">      &#39;weighted_aeff&#39;: &#39;weighted_aeff&#39;,</span>
-<span class="sd">      &#39;dunkman_L5&#39;: &#39;dunkman_L5&#39;,</span>
+<span class="sd">      'true_energy': 'true_energy',</span>
+<span class="sd">      'true_coszen': 'true_coszen',</span>
+<span class="sd">      'reco_energy': 'reco_energy',</span>
+<span class="sd">      'reco_coszen': 'reco_coszen',</span>
+<span class="sd">      'pid': 'pid',</span>
+<span class="sd">      'weighted_aeff': 'weighted_aeff',</span>
+<span class="sd">      'dunkman_L5': 'dunkman_L5',</span>
 <span class="sd">      }</span>
 
-<span class="sd">The above sets &quot;pipeline_cfg&quot; for all discr sets, removes the &quot;discr_sys.hypersurfaces&quot;</span>
-<span class="sd">service, and redefines the &quot;data_dict&quot; in the &quot;data.simple_data_loader&quot; section. Any</span>
+<span class="sd">The above sets "pipeline_cfg" for all discr sets, removes the "discr_sys.hypersurfaces"</span>
+<span class="sd">service, and redefines the "data_dict" in the "data.simple_data_loader" section. Any</span>
 <span class="sd">options defined in the discrete set sections of the config will start with this as their</span>
 <span class="sd">configuration. Details of the above syntax are described more below.</span>
 
-<span class="sd">&quot;nominal_set&quot; and &quot;sys_set&quot; sections</span>
+<span class="sd">"nominal_set" and "sys_set" sections</span>
 <span class="sd">------------------------------------</span>
 <span class="sd">All other required sections in the config file describe the discrete sets and must</span>
-<span class="sd">define a &quot;pipeline_cfg&quot; for that systematics set (whether explicitly in the section or</span>
-<span class="sd">via the &quot;apply_to_all_sets&quot; section). A systematics set section either starts with</span>
-<span class="sd">&quot;nominal_set&quot; (for one and only one set) or &quot;sys_set&quot; (for all remaining sets), followed</span>
-<span class="sd">by a colon and magnitudes of the values of each systematic specified in &quot;general&quot;</span>
-<span class="sd">section / &quot;sys_list&quot; option (in the same order as defined there). E.g., continuing the</span>
+<span class="sd">define a "pipeline_cfg" for that systematics set (whether explicitly in the section or</span>
+<span class="sd">via the "apply_to_all_sets" section). A systematics set section either starts with</span>
+<span class="sd">"nominal_set" (for one and only one set) or "sys_set" (for all remaining sets), followed</span>
+<span class="sd">by a colon and magnitudes of the values of each systematic specified in "general"</span>
+<span class="sd">section / "sys_list" option (in the same order as defined there). E.g., continuing the</span>
 <span class="sd">example config file defined in the above examples, ::</span>
 
 <span class="sd">  [nominal_set : 1.00 , 25 , 0.0]</span>
@@ -370,32 +370,32 @@
 <span class="sd">  set [data.simple_data_loader] events_file = /path/to/sys_set_2.hdf5</span>
 
 <span class="sd">and so forth. Note that all magnitudes must be specified in the same units specified in</span>
-<span class="sd">&quot;general&quot; section / &quot;units&quot; option, or if that option is not specified, all magnitudes</span>
-<span class="sd">must represent dimensionless quantities. Also note that the &quot;pipeline_cfg&quot; is already</span>
-<span class="sd">defined in the above &quot;apply_to_all_sets&quot; section, so each of these sys set sections</span>
+<span class="sd">"general" section / "units" option, or if that option is not specified, all magnitudes</span>
+<span class="sd">must represent dimensionless quantities. Also note that the "pipeline_cfg" is already</span>
+<span class="sd">defined in the above "apply_to_all_sets" section, so each of these sys set sections</span>
 <span class="sd">simply swap out the events_file in that pipeline config file for the appropriate events</span>
 <span class="sd">file.</span>
 
-<span class="sd">Syntax for modifying the specified &quot;pipeline_cfg&quot;</span>
+<span class="sd">Syntax for modifying the specified "pipeline_cfg"</span>
 <span class="sd">-------------------------------------------------</span>
-<span class="sd">The following syntax is interpreted if specified in &quot;apply_to_all_sets&quot;, &quot;sys_set&quot;,</span>
-<span class="sd">and/or &quot;nominal_set&quot; sections. Note an &quot;apply_to_all_sets&quot; section must specify a</span>
-<span class="sd">&quot;pipeline_cfg&quot; for any of the following syntax to be used.</span>
+<span class="sd">The following syntax is interpreted if specified in "apply_to_all_sets", "sys_set",</span>
+<span class="sd">and/or "nominal_set" sections. Note an "apply_to_all_sets" section must specify a</span>
+<span class="sd">"pipeline_cfg" for any of the following syntax to be used.</span>
 
-<span class="sd">Define or redefine an option via the &quot;set&quot; keyword followed by the section in square</span>
+<span class="sd">Define or redefine an option via the "set" keyword followed by the section in square</span>
 <span class="sd">brackets, the option, either equals (=) or colon (:), and finally the value to set the</span>
-<span class="sd">option to. E.g., &quot;events_file&quot; in config section &quot;data.simple_data_loader&quot; is set to</span>
-<span class="sd">&quot;settings/pipeline/example.cfg&quot; via ::</span>
+<span class="sd">option to. E.g., "events_file" in config section "data.simple_data_loader" is set to</span>
+<span class="sd">"settings/pipeline/example.cfg" via ::</span>
 
 <span class="sd">  set [data.simple_data_loader] events_file = settings/pipeline/example.cfg</span>
 
-<span class="sd">the section is created if it doesn&#39;t exist and the option &quot;events_file&quot; is added to that</span>
-<span class="sd">section if it doesn&#39;t already exist.</span>
+<span class="sd">the section is created if it doesn't exist and the option "events_file" is added to that</span>
+<span class="sd">section if it doesn't already exist.</span>
 
-<span class="sd">You can create a new section (if it doesn&#39;t already exist) via the &quot;set&quot; keyword</span>
+<span class="sd">You can create a new section (if it doesn't already exist) via the "set" keyword</span>
 <span class="sd">followed by the section in square brackets and either equals (=) or colon (:). Anything</span>
-<span class="sd">following the equals/colon is ignored. E.g. to add the &quot;data.simple_data_loader&quot; section</span>
-<span class="sd">(if it doesn&#39;t already exist), ::</span>
+<span class="sd">following the equals/colon is ignored. E.g. to add the "data.simple_data_loader" section</span>
+<span class="sd">(if it doesn't already exist), ::</span>
 
 <span class="sd">  set [data.simple_data_loader] =</span>
 
@@ -412,7 +412,7 @@
 <span class="sd">  sys_list = aa,bb,cc</span>
 <span class="sd">  sys_list = aa , bb , cc</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span>
 
@@ -440,105 +440,105 @@
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="c1"># constants</span>
-    <span class="s2">&quot;GENERAL_SECTION_NAME&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;APPLY_ALL_SECTION_NAME&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;COMBINE_REGEX_OPTION&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;SYS_LIST_OPTION&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;SYS_FUNC_LIST_OPTION&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;UNITS_OPTION&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;UNITS_SPECIFIER&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;SYS_SET_OPTION&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;SET_OPTION_RE&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;REMOVE_OPTION_RE&quot;</span><span class="p">,</span>
+    <span class="s2">"GENERAL_SECTION_NAME"</span><span class="p">,</span>
+    <span class="s2">"APPLY_ALL_SECTION_NAME"</span><span class="p">,</span>
+    <span class="s2">"COMBINE_REGEX_OPTION"</span><span class="p">,</span>
+    <span class="s2">"SYS_LIST_OPTION"</span><span class="p">,</span>
+    <span class="s2">"SYS_FUNC_LIST_OPTION"</span><span class="p">,</span>
+    <span class="s2">"UNITS_OPTION"</span><span class="p">,</span>
+    <span class="s2">"UNITS_SPECIFIER"</span><span class="p">,</span>
+    <span class="s2">"SYS_SET_OPTION"</span><span class="p">,</span>
+    <span class="s2">"SET_OPTION_RE"</span><span class="p">,</span>
+    <span class="s2">"REMOVE_OPTION_RE"</span><span class="p">,</span>
     <span class="c1"># functions</span>
-    <span class="s2">&quot;parse_args&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;parse_fit_config&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;load_and_modify_pipeline_cfg&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;create_hypersurfaces&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;main&quot;</span><span class="p">,</span>
+    <span class="s2">"parse_args"</span><span class="p">,</span>
+    <span class="s2">"parse_fit_config"</span><span class="p">,</span>
+    <span class="s2">"load_and_modify_pipeline_cfg"</span><span class="p">,</span>
+    <span class="s2">"create_hypersurfaces"</span><span class="p">,</span>
+    <span class="s2">"main"</span><span class="p">,</span>
 <span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;P. Eller, T. Stuttard, T. Ehrhardt, J.L. Lanfranchi&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">"P. Eller, T. Stuttard, T. Ehrhardt, J.L. Lanfranchi"</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2018, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">"""Copyright (c) 2014-2018, The IceCube Collaboration</span>
 
-<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s2"> you may not use this file except in compliance with the License.</span>
 <span class="s2"> You may obtain a copy of the License at</span>
 
 <span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s2"> See the License for the specific language governing permissions and</span>
-<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+<span class="s2"> limitations under the License."""</span>
 
 
-<span class="n">GENERAL_SECTION_NAME</span> <span class="o">=</span> <span class="s2">&quot;general&quot;</span>
-<span class="sd">&quot;&quot;&quot;general section name&quot;&quot;&quot;</span>
+<span class="n">GENERAL_SECTION_NAME</span> <span class="o">=</span> <span class="s2">"general"</span>
+<span class="sd">"""general section name"""</span>
 
-<span class="n">APPLY_ALL_SECTION_NAME</span> <span class="o">=</span> <span class="s2">&quot;apply_to_all_sets&quot;</span>
-<span class="sd">&quot;&quot;&quot;section name that defines pipeline config / options for all discr sets&quot;&quot;&quot;</span>
+<span class="n">APPLY_ALL_SECTION_NAME</span> <span class="o">=</span> <span class="s2">"apply_to_all_sets"</span>
+<span class="sd">"""section name that defines pipeline config / options for all discr sets"""</span>
 
-<span class="n">COMBINE_REGEX_OPTION</span> <span class="o">=</span> <span class="s2">&quot;combine_regex&quot;</span>
-<span class="sd">&quot;&quot;&quot;Option in general section to specify map(s) to combine before performing fit&quot;&quot;&quot;</span>
+<span class="n">COMBINE_REGEX_OPTION</span> <span class="o">=</span> <span class="s2">"combine_regex"</span>
+<span class="sd">"""Option in general section to specify map(s) to combine before performing fit"""</span>
 
-<span class="n">SYS_LIST_OPTION</span> <span class="o">=</span> <span class="s2">&quot;sys_list&quot;</span>
-<span class="sd">&quot;&quot;&quot;Option in general section to specify discrete systematics&quot;&quot;&quot;</span>
+<span class="n">SYS_LIST_OPTION</span> <span class="o">=</span> <span class="s2">"sys_list"</span>
+<span class="sd">"""Option in general section to specify discrete systematics"""</span>
 
-<span class="n">SYS_FUNC_LIST_OPTION</span> <span class="o">=</span> <span class="s2">&quot;sys_func_list&quot;</span>
-<span class="sd">&quot;&quot;&quot;Option in general section to specify functional form of the discrete systematics&quot;&quot;&quot;</span>
+<span class="n">SYS_FUNC_LIST_OPTION</span> <span class="o">=</span> <span class="s2">"sys_func_list"</span>
+<span class="sd">"""Option in general section to specify functional form of the discrete systematics"""</span>
 
-<span class="n">UNITS_OPTION</span> <span class="o">=</span> <span class="s2">&quot;units&quot;</span>
-<span class="sd">&quot;&quot;&quot;Option in general section to specify units of discrete systematics&quot;&quot;&quot;</span>
+<span class="n">UNITS_OPTION</span> <span class="o">=</span> <span class="s2">"units"</span>
+<span class="sd">"""Option in general section to specify units of discrete systematics"""</span>
 
-<span class="n">UNITS_SPECIFIER</span> <span class="o">=</span> <span class="s2">&quot;units.&quot;</span>
-<span class="sd">&quot;&quot;&quot;User is allowed to use e.g. &lt;UNITS_SPECIFIER&gt;meter or simply meter in UNITS_OPTION&quot;&quot;&quot;</span>
+<span class="n">UNITS_SPECIFIER</span> <span class="o">=</span> <span class="s2">"units."</span>
+<span class="sd">"""User is allowed to use e.g. &lt;UNITS_SPECIFIER&gt;meter or simply meter in UNITS_OPTION"""</span>
 
-<span class="n">NOMINAL_SET_PFX</span> <span class="o">=</span> <span class="s2">&quot;nominal_set&quot;</span>
-<span class="sd">&quot;&quot;&quot;the section name with this followed by a colon indicates the nominal set&quot;&quot;&quot;</span>
+<span class="n">NOMINAL_SET_PFX</span> <span class="o">=</span> <span class="s2">"nominal_set"</span>
+<span class="sd">"""the section name with this followed by a colon indicates the nominal set"""</span>
 
-<span class="n">SYS_SET_PFX</span> <span class="o">=</span> <span class="s2">&quot;sys_set&quot;</span>
-<span class="sd">&quot;&quot;&quot;section names with this followed by a colon indicate non-nominal systematics sets&quot;&quot;&quot;</span>
+<span class="n">SYS_SET_PFX</span> <span class="o">=</span> <span class="s2">"sys_set"</span>
+<span class="sd">"""section names with this followed by a colon indicate non-nominal systematics sets"""</span>
 
-<span class="n">SYS_SET_OPTION</span> <span class="o">=</span> <span class="s2">&quot;pipeline_cfg&quot;</span>
-<span class="sd">&quot;&quot;&quot;systematics set config file is specified by this option&quot;&quot;&quot;</span>
+<span class="n">SYS_SET_OPTION</span> <span class="o">=</span> <span class="s2">"pipeline_cfg"</span>
+<span class="sd">"""systematics set config file is specified by this option"""</span>
 
-<span class="n">SET_OPTION_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s*set\s*\[(.*)\]\s*(\S*.*)&quot;</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;defining a section and/or an option within a section in a pipeline configs is</span>
-<span class="sd">specified by following this pattern&quot;&quot;&quot;</span>
+<span class="n">SET_OPTION_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s*set\s*\[(.*)\]\s*(\S*.*)"</span><span class="p">)</span>
+<span class="sd">"""defining a section and/or an option within a section in a pipeline configs is</span>
+<span class="sd">specified by following this pattern"""</span>
 
-<span class="n">REMOVE_OPTION_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s*remove\s*\[(.*)\]\s*(\S*.*)&quot;</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;modifications to pipeline configs are specified by options following this pattern&quot;&quot;&quot;</span>
+<span class="n">REMOVE_OPTION_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s*remove\s*\[(.*)\]\s*(\S*.*)"</span><span class="p">)</span>
+<span class="sd">"""modifications to pipeline configs are specified by options following this pattern"""</span>
 
 
 <div class="viewcode-block" id="parse_args">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.fit_hypersurfaces.parse_args">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse arguments from command line.</span>
+<span class="w">    </span><span class="sd">"""Parse arguments from command line.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    args : namespace</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="n">main</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;-f&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;--fit-cfg&quot;</span><span class="p">,</span>
+        <span class="s2">"-f"</span><span class="p">,</span>
+        <span class="s2">"--fit-cfg"</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;configfile&quot;</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s2">"configfile"</span><span class="p">,</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Settings for the hypersurface fit&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Settings for the hypersurface fit"</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--tag&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;deepcore&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Tag for the filename.&quot;</span>
+        <span class="s2">"--tag"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"deepcore"</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Tag for the filename."</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="s2">&quot;--outdir&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set output directory&quot;</span>
+        <span class="s2">"-o"</span><span class="p">,</span> <span class="s2">"--outdir"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Set output directory"</span>
     <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;count&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;set verbosity level&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"-v"</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">"count"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"set verbosity level"</span><span class="p">)</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">args</span></div>
 
@@ -547,7 +547,7 @@
 <div class="viewcode-block" id="parse_fit_config">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.fit_hypersurfaces.parse_fit_config">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_fit_config</span><span class="p">(</span><span class="n">fit_cfg</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform sanity checks on and parse fit configuration file.</span>
+<span class="w">    </span><span class="sd">"""Perform sanity checks on and parse fit configuration file.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -568,37 +568,37 @@
 <span class="sd">        each string is a regular expression for combining pipeline outputs; see</span>
 <span class="sd">        :func:`pisa.core.map.MapSet.combine_regex` for details.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">fit_cfg</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">fit_cfg</span><span class="p">)</span>
     <span class="n">no_ws_section_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">fit_cfg</span><span class="o">.</span><span class="n">sections</span><span class="p">()}</span>
 
     <span class="k">if</span> <span class="n">GENERAL_SECTION_NAME</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">no_ws_section_map</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Fit config is missing the &quot;</span><span class="si">%s</span><span class="s1">&quot; section!&#39;</span> <span class="o">%</span> <span class="n">GENERAL_SECTION_NAME</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">'Fit config is missing the "</span><span class="si">%s</span><span class="s1">" section!'</span> <span class="o">%</span> <span class="n">GENERAL_SECTION_NAME</span><span class="p">)</span>
 
     <span class="n">general_section</span> <span class="o">=</span> <span class="n">fit_cfg</span><span class="p">[</span><span class="n">GENERAL_SECTION_NAME</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">SYS_LIST_OPTION</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">general_section</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-            <span class="s2">&quot;Fit config has to specify systematic parameters as&quot;</span>
-            <span class="s1">&#39; &quot;</span><span class="si">%s</span><span class="s1">&quot; option in &quot;</span><span class="si">%s</span><span class="s1">&quot; section (comma-separated list of names).&#39;</span>
+            <span class="s2">"Fit config has to specify systematic parameters as"</span>
+            <span class="s1">' "</span><span class="si">%s</span><span class="s1">" option in "</span><span class="si">%s</span><span class="s1">" section (comma-separated list of names).'</span>
             <span class="o">%</span> <span class="p">(</span><span class="n">SYS_LIST_OPTION</span><span class="p">,</span> <span class="n">GENERAL_SECTION_NAME</span><span class="p">)</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">SYS_FUNC_LIST_OPTION</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">general_section</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-            <span class="s2">&quot;Fit config has to specify systematic parameter functional forms as&quot;</span>
-            <span class="s1">&#39; &quot;</span><span class="si">%s</span><span class="s1">&quot; option in &quot;</span><span class="si">%s</span><span class="s1">&quot; section (comma-separated list of names).&#39;</span>
+            <span class="s2">"Fit config has to specify systematic parameter functional forms as"</span>
+            <span class="s1">' "</span><span class="si">%s</span><span class="s1">" option in "</span><span class="si">%s</span><span class="s1">" section (comma-separated list of names).'</span>
             <span class="o">%</span> <span class="p">(</span><span class="n">SYS_FUNC_LIST_OPTION</span><span class="p">,</span> <span class="n">GENERAL_SECTION_NAME</span><span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="n">sys_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">general_section</span><span class="p">[</span><span class="n">SYS_LIST_OPTION</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+    <span class="n">sys_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">general_section</span><span class="p">[</span><span class="n">SYS_LIST_OPTION</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)]</span>
 
-    <span class="n">sys_func_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">general_section</span><span class="p">[</span><span class="n">SYS_FUNC_LIST_OPTION</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+    <span class="n">sys_func_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">general_section</span><span class="p">[</span><span class="n">SYS_FUNC_LIST_OPTION</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)]</span>
 
     <span class="k">if</span> <span class="n">UNITS_OPTION</span> <span class="ow">in</span> <span class="n">general_section</span><span class="p">:</span>
         <span class="n">units_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">units_specs</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">general_section</span><span class="p">[</span><span class="n">UNITS_OPTION</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">UNITS_SPECIFIER</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+            <span class="n">general_section</span><span class="p">[</span><span class="n">UNITS_OPTION</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">UNITS_SPECIFIER</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">units_spec</span> <span class="ow">in</span> <span class="n">units_specs</span><span class="p">:</span>
             <span class="c1"># Make sure units are interpret-able by Pint</span>
@@ -606,33 +606,33 @@
                 <span class="n">ureg</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">units_spec</span><span class="p">)</span>
             <span class="k">except</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                    <span class="s1">&#39;Unit &quot;</span><span class="si">%s</span><span class="s1">&quot; specified by &quot;</span><span class="si">%s</span><span class="s1">&quot; option in &quot;general&quot; section is not&#39;</span>
-                    <span class="s2">&quot;interpret-able by Pint&quot;</span><span class="p">,</span>
+                    <span class="s1">'Unit "</span><span class="si">%s</span><span class="s1">" specified by "</span><span class="si">%s</span><span class="s1">" option in "general" section is not'</span>
+                    <span class="s2">"interpret-able by Pint"</span><span class="p">,</span>
                     <span class="n">units_spec</span><span class="p">,</span>
                     <span class="n">UNITS_OPTION</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">raise</span>
             <span class="n">units_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">units_spec</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">units_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;dimensionless&quot;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sys_list</span><span class="p">]</span>
+        <span class="n">units_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"dimensionless"</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sys_list</span><span class="p">]</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;No </span><span class="si">%s</span><span class="s2"> option found in </span><span class="si">%s</span><span class="s2"> section; assuming systematic parameters are&quot;</span>
-            <span class="s2">&quot; dimensionless&quot;</span><span class="p">,</span>
+            <span class="s2">"No </span><span class="si">%s</span><span class="s2"> option found in </span><span class="si">%s</span><span class="s2"> section; assuming systematic parameters are"</span>
+            <span class="s2">" dimensionless"</span><span class="p">,</span>
             <span class="n">UNITS_OPTION</span><span class="p">,</span>
             <span class="n">GENERAL_SECTION_NAME</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">units_list</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_list</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> units specified by &quot;</span><span class="si">{}</span><span class="s1">&quot; option but </span><span class="si">{}</span><span class="s1"> systematics specified by &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span>
-            <span class="s2">&quot;option; must be same number of each.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s1">'</span><span class="si">{}</span><span class="s1"> units specified by "</span><span class="si">{}</span><span class="s1">" option but </span><span class="si">{}</span><span class="s1"> systematics specified by "</span><span class="si">{}</span><span class="s1">"'</span>
+            <span class="s2">"option; must be same number of each."</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="nb">len</span><span class="p">(</span><span class="n">units_list</span><span class="p">),</span> <span class="n">UNITS_OPTION</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_list</span><span class="p">),</span> <span class="n">SYS_LIST_OPTION</span>
             <span class="p">)</span>
         <span class="p">)</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="s2">&quot;Found systematic parameters </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="p">[</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sys_list</span><span class="p">,</span> <span class="n">units_list</span><span class="p">)],</span>
+        <span class="s2">"Found systematic parameters </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">[</span><span class="s2">"</span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sys_list</span><span class="p">,</span> <span class="n">units_list</span><span class="p">)],</span>
     <span class="p">)</span>
 
     <span class="n">combine_regex</span> <span class="o">=</span> <span class="n">general_section</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">COMBINE_REGEX_OPTION</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -641,11 +641,11 @@
             <span class="n">combine_regex</span> <span class="o">=</span> <span class="n">literal_eval</span><span class="p">(</span><span class="n">combine_regex</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">SyntaxError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s1">&#39;Deprecated syntax for &quot;combine_re&quot; (make into a Python-evaluatable&#39;</span>
-                <span class="s2">&quot;sequence of strings instead) :: combine_regex = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s1">'Deprecated syntax for "combine_re" (make into a Python-evaluatable'</span>
+                <span class="s2">"sequence of strings instead) :: combine_regex = </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
                 <span class="n">combine_regex</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">combine_regex</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">combine_regex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+            <span class="n">combine_regex</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">combine_regex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)]</span>
 
     <span class="k">if</span> <span class="n">APPLY_ALL_SECTION_NAME</span> <span class="ow">in</span> <span class="n">no_ws_section_map</span><span class="p">:</span>
         <span class="n">apply_all_section</span> <span class="o">=</span> <span class="n">fit_cfg</span><span class="p">[</span><span class="n">no_ws_section_map</span><span class="p">[</span><span class="n">APPLY_ALL_SECTION_NAME</span><span class="p">]]</span>
@@ -666,7 +666,7 @@
 <div class="viewcode-block" id="load_and_modify_pipeline_cfg">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.fit_hypersurfaces.load_and_modify_pipeline_cfg">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_and_modify_pipeline_cfg</span><span class="p">(</span><span class="n">fit_cfg</span><span class="p">,</span> <span class="n">section</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load and modify the pipeline config file as specified in that section of the fit</span>
+<span class="w">    </span><span class="sd">"""Load and modify the pipeline config file as specified in that section of the fit</span>
 <span class="sd">    config.</span>
 
 <span class="sd">    Parameters</span>
@@ -685,7 +685,7 @@
 <span class="sd">    pipeline_cfg_path : str</span>
 <span class="sd">        path to the pipeline config as it is specified in the fit config</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">pipeline_cfg_path</span> <span class="o">=</span> <span class="n">fit_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">SYS_SET_OPTION</span><span class="p">)</span>
     <span class="n">other_options</span> <span class="o">=</span> <span class="n">fit_cfg</span><span class="o">.</span><span class="n">options</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
     <span class="n">other_options</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">SYS_SET_OPTION</span><span class="p">)</span>
@@ -704,7 +704,7 @@
             <span class="n">set_option</span> <span class="o">=</span> <span class="n">set_option</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">no_ws_section_spec</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">section_map</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="s1">&#39;Adding section [</span><span class="si">%s</span><span class="s1">] to in-memory copy of pipeline config &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+                    <span class="s1">'Adding section [</span><span class="si">%s</span><span class="s1">] to in-memory copy of pipeline config "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span>
                     <span class="n">section_spec</span><span class="p">,</span>
                     <span class="n">pipeline_cfg_path</span><span class="p">,</span>
                 <span class="p">)</span>
@@ -713,8 +713,8 @@
             <span class="k">if</span> <span class="n">set_option</span><span class="p">:</span>
                 <span class="n">set_value</span> <span class="o">=</span> <span class="n">fit_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="n">option</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="s1">&#39;Setting section [</span><span class="si">%s</span><span class="s1">] option &quot;</span><span class="si">%s</span><span class="s1"> = </span><span class="si">%s</span><span class="s1">&quot; in in-memory&#39;</span>
-                    <span class="s1">&#39; copy of pipeline config &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+                    <span class="s1">'Setting section [</span><span class="si">%s</span><span class="s1">] option "</span><span class="si">%s</span><span class="s1"> = </span><span class="si">%s</span><span class="s1">" in in-memory'</span>
+                    <span class="s1">' copy of pipeline config "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span>
                     <span class="n">section_spec</span><span class="p">,</span>
                     <span class="n">set_option</span><span class="p">,</span>
                     <span class="n">set_value</span><span class="p">,</span>
@@ -728,8 +728,8 @@
             <span class="k">if</span> <span class="n">no_ws_section_spec</span> <span class="ow">in</span> <span class="n">section_map</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">remove_option</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="s1">&#39;Removing section [</span><span class="si">%s</span><span class="s1">] option &quot;</span><span class="si">%s</span><span class="s1">&quot; from in-memory copy of&#39;</span>
-                        <span class="s1">&#39; pipeline config &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+                        <span class="s1">'Removing section [</span><span class="si">%s</span><span class="s1">] option "</span><span class="si">%s</span><span class="s1">" from in-memory copy of'</span>
+                        <span class="s1">' pipeline config "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span>
                         <span class="n">section_spec</span><span class="p">,</span>
                         <span class="n">remove_option</span><span class="p">,</span>
                         <span class="n">pipeline_cfg_path</span><span class="p">,</span>
@@ -739,21 +739,21 @@
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                        <span class="s2">&quot;Removing section [</span><span class="si">%s</span><span class="s2">] from in-memory copy of pipeline config&quot;</span>
-                        <span class="s1">&#39; &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+                        <span class="s2">"Removing section [</span><span class="si">%s</span><span class="s2">] from in-memory copy of pipeline config"</span>
+                        <span class="s1">' "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span>
                         <span class="n">section_spec</span><span class="p">,</span>
                         <span class="n">pipeline_cfg_path</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="n">pipeline_cfg</span><span class="o">.</span><span class="n">remove_section</span><span class="p">(</span><span class="n">section_map</span><span class="p">[</span><span class="n">no_ws_section_spec</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s2">&quot;Told to remove section [</span><span class="si">%s</span><span class="s2">] but section does not exist in&quot;</span>
-                    <span class="s1">&#39; pipline config &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
+                    <span class="s2">"Told to remove section [</span><span class="si">%s</span><span class="s2">] but section does not exist in"</span>
+                    <span class="s1">' pipline config "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span>
                     <span class="n">section_spec</span><span class="p">,</span>
                     <span class="n">pipeline_cfg_path</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unhandled option in fit config: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">option</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Unhandled option in fit config: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">option</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">pipeline_cfg</span><span class="p">,</span> <span class="n">pipeline_cfg_path</span></div>
 
@@ -762,7 +762,7 @@
 <div class="viewcode-block" id="create_hypersurfaces">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.fit_hypersurfaces.create_hypersurfaces">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_hypersurfaces</span><span class="p">(</span><span class="n">fit_cfg</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate and store mapsets for different discrete systematics sets</span>
+<span class="w">    </span><span class="sd">"""Generate and store mapsets for different discrete systematics sets</span>
 <span class="sd">    (with a single set characterised by a dedicated pipeline configuration)</span>
 
 <span class="sd">    Parameters</span>
@@ -775,7 +775,7 @@
 <span class="sd">    hypersurfaces : OrderedDict</span>
 <span class="sd">        Container with the fitted hypersurface for each map type</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1">#</span>
     <span class="c1"># Parse fit config file</span>
@@ -811,19 +811,19 @@
 
         <span class="n">no_ws_section</span> <span class="o">=</span> <span class="n">section</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-        <span class="n">section_prefix</span> <span class="o">=</span> <span class="n">no_ws_section</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">section_prefix</span> <span class="o">=</span> <span class="n">no_ws_section</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="n">is_nominal</span> <span class="o">=</span> <span class="n">section_prefix</span> <span class="o">==</span> <span class="n">NOMINAL_SET_PFX</span>
         <span class="n">is_dataset</span> <span class="o">=</span> <span class="n">is_nominal</span> <span class="ow">or</span> <span class="n">section_prefix</span> <span class="o">==</span> <span class="n">SYS_SET_PFX</span>
 
         <span class="k">if</span> <span class="n">is_dataset</span><span class="p">:</span>
 
             <span class="c1"># Parse the list of systematics parameter values from the section name</span>
-            <span class="n">sys_param_point</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">section</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">))</span>
+            <span class="n">sys_param_point</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">section</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_param_point</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_list</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Section heading [</span><span class="si">{}</span><span class="s2">] specifies </span><span class="si">{:d}</span><span class="s2"> systematic&quot;</span>
-                    <span class="s2">&quot; parameter values, but there are </span><span class="si">{:d}</span><span class="s2"> systematics&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="s2">"Section heading [</span><span class="si">{}</span><span class="s2">] specifies </span><span class="si">{:d}</span><span class="s2"> systematic"</span>
+                    <span class="s2">" parameter values, but there are </span><span class="si">{:d}</span><span class="s2"> systematics"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                         <span class="n">section</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_param_point</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_list</span><span class="p">)</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
@@ -835,7 +835,7 @@
 
             <span class="c1"># Store</span>
             <span class="k">if</span> <span class="n">is_nominal</span> <span class="p">:</span>
-                <span class="k">assert</span> <span class="n">nominal_pipeline_cfg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Found multiple nominal dataset definitions&quot;</span>
+                <span class="k">assert</span> <span class="n">nominal_pipeline_cfg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"Found multiple nominal dataset definitions"</span>
                 <span class="n">nominal_pipeline_cfg</span> <span class="o">=</span> <span class="n">parsed_pipeline_cfg</span>
                 <span class="n">nominal_param_values</span> <span class="o">=</span> <span class="n">sys_param_point</span>
             <span class="k">else</span> <span class="p">:</span>
@@ -848,11 +848,11 @@
 
         <span class="c1"># Do not allow any other sections in the config</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid section in fit config file: [</span><span class="si">%s</span><span class="s2">]&quot;</span> <span class="o">%</span> <span class="n">section</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Invalid section in fit config file: [</span><span class="si">%s</span><span class="s2">]"</span> <span class="o">%</span> <span class="n">section</span><span class="p">)</span>
 
     <span class="c1"># Check found stuff</span>
-    <span class="k">assert</span> <span class="n">nominal_pipeline_cfg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;No nominal dataset definition found&quot;</span>
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_pipeline_cfgs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;No systematics dataset definitions found&quot;</span>
+    <span class="k">assert</span> <span class="n">nominal_pipeline_cfg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"No nominal dataset definition found"</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys_pipeline_cfgs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"No systematics dataset definitions found"</span>
 
     <span class="c1"># Re-format params into a dict, including the param names</span>
     <span class="n">nominal_param_values</span> <span class="o">=</span> <span class="p">{</span> <span class="n">name</span><span class="p">:</span><span class="n">val</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sys_list</span><span class="p">,</span><span class="n">nominal_param_values</span><span class="p">)</span> <span class="p">}</span>
@@ -877,7 +877,7 @@
     <span class="c1"># Combine maps according to the provided regex, if one was provided</span>
     <span class="k">if</span> <span class="n">combine_regex</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;Combining maps according to regular expression(s) </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">combine_regex</span>
+            <span class="s2">"Combining maps according to regular expression(s) </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">combine_regex</span>
         <span class="p">)</span>
         <span class="n">nominal_mapset</span> <span class="o">=</span> <span class="n">nominal_mapset</span><span class="o">.</span><span class="n">combine_re</span><span class="p">(</span><span class="n">combine_regex</span><span class="p">)</span>
         <span class="n">sys_mapsets</span> <span class="o">=</span> <span class="p">[</span> <span class="n">s</span><span class="o">.</span><span class="n">combine_re</span><span class="p">(</span><span class="n">combine_regex</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sys_mapsets</span> <span class="p">]</span>
@@ -923,7 +923,7 @@
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.fit_hypersurfaces.main">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform a hypersurface fit to discrete systematics sets.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Perform a hypersurface fit to discrete systematics sets."""</span>
 
     <span class="c1"># Get args</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
@@ -940,7 +940,7 @@
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
         </article>
@@ -981,7 +981,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

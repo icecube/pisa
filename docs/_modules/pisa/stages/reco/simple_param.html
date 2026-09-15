@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.reco.simple_param - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.reco.simple_param - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,10 +281,10 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.reco.simple_param</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Create reconstructed and PID variables based on truth information</span>
 <span class="sd">for MC events using simple parameterisations.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="c1">#TODO In future this could be integrated with param.py (but, that meed updating from cake to pi first)</span>
 
@@ -301,38 +301,38 @@
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;dict_lookup_wildcard&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;logistic_function&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;has_muon&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;visible_energy_correction&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;energy_dependent_sigma&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;simple_param&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;simple_reco_energy_parameterization&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;simple_reco_coszen_parameterization&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;simple_pid_parameterization&quot;</span>
+    <span class="s2">"dict_lookup_wildcard"</span><span class="p">,</span>
+    <span class="s2">"logistic_function"</span><span class="p">,</span>
+    <span class="s2">"has_muon"</span><span class="p">,</span>
+    <span class="s2">"visible_energy_correction"</span><span class="p">,</span>
+    <span class="s2">"energy_dependent_sigma"</span><span class="p">,</span>
+    <span class="s2">"simple_param"</span><span class="p">,</span>
+    <span class="s2">"simple_reco_energy_parameterization"</span><span class="p">,</span>
+    <span class="s2">"simple_reco_coszen_parameterization"</span><span class="p">,</span>
+    <span class="s2">"simple_pid_parameterization"</span>
 <span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;T. Stuttard&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'T. Stuttard'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2017, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
 <div class="viewcode-block" id="dict_lookup_wildcard">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.dict_lookup_wildcard">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">dict_lookup_wildcard</span><span class="p">(</span><span class="n">dict_obj</span><span class="p">,</span><span class="n">key</span><span class="p">)</span> <span class="p">:</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Find the object in a dict specified by a key, where the key may include wildcards</span>
 
 <span class="sd">    Parameters</span>
@@ -348,15 +348,15 @@
 <span class="sd">        The str found in the dict matching the wildcard</span>
 <span class="sd">    value : anything</span>
 <span class="sd">        The value found corresponding to the the requested key</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
 
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dict_obj</span><span class="p">,</span><span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span>
 
     <span class="n">matches</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">([</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">dict_obj</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">k</span><span class="p">)</span> <span class="p">])</span>
 
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;No match for &#39;</span><span class="si">%s</span><span class="s2">&#39; found in dict&quot;</span> <span class="o">%</span> <span class="n">key</span>
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Multiple matches for &#39;</span><span class="si">%s</span><span class="s2">&#39; found in dict : </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">matches</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"No match for '</span><span class="si">%s</span><span class="s2">' found in dict"</span> <span class="o">%</span> <span class="n">key</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"Multiple matches for '</span><span class="si">%s</span><span class="s2">' found in dict : </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">matches</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
     <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">matches</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">(</span><span class="n">matches</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span></div>
 
@@ -365,7 +365,7 @@
 <div class="viewcode-block" id="logistic_function">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.logistic_function">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">logistic_function</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="p">,</span><span class="n">x</span><span class="p">)</span> <span class="p">:</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Logistic function as defined here: https://en.wikipedia.org/wiki/Logistic_function.</span>
 <span class="sd">    Starts off slowly rising, before steeply rising, then plateaus.</span>
 
@@ -384,7 +384,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    f(x) : array</span>
 <span class="sd">        The results of applying the logistic function to x</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
     <span class="k">return</span> <span class="n">a</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span> <span class="o">-</span><span class="n">b</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">c</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span></div>
 
 
@@ -392,7 +392,7 @@
 <div class="viewcode-block" id="has_muon">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.has_muon">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">has_muon</span><span class="p">(</span><span class="n">particle_key</span><span class="p">)</span> <span class="p">:</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Function returning True if the particle type has muons in the final state</span>
 <span class="sd">    This is numu CC and atmopsheric muons</span>
 
@@ -406,11 +406,11 @@
 <span class="sd">    -------</span>
 <span class="sd">    has_muon : bool</span>
 <span class="sd">        Flag set to try if particle has muon in final state</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
 
     <span class="c1">#TODO consider adding nutau CC where the tau decays to muons</span>
 
-    <span class="k">return</span> <span class="p">(</span> <span class="p">(</span><span class="n">particle_key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;numu&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">particle_key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_cc&quot;</span><span class="p">))</span> <span class="ow">or</span> <span class="n">particle_key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;muon&quot;</span><span class="p">)</span> <span class="p">)</span></div>
+    <span class="k">return</span> <span class="p">(</span> <span class="p">(</span><span class="n">particle_key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"numu"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">particle_key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"_cc"</span><span class="p">))</span> <span class="ow">or</span> <span class="n">particle_key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"muon"</span><span class="p">)</span> <span class="p">)</span></div>
 
 
 
@@ -418,7 +418,7 @@
 <div class="viewcode-block" id="visible_energy_correction">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.visible_energy_correction">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">visible_energy_correction</span><span class="p">(</span><span class="n">particle_key</span><span class="p">)</span> <span class="p">:</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Simple way to estimate the amount of visible energy in the event.</span>
 
 <span class="sd">    Right now considering cases with final state neutrinos, such as NC events,</span>
@@ -427,8 +427,8 @@
 <span class="sd">    Neglecting the much lower losses due to muon decay for numu CC.</span>
 <span class="sd">    Also neglecting fact that different particle types produce differing photon yields.</span>
 
-<span class="sd">    I&#39;ve tuned these by eye due to the biases seen in GRECO pegleg, which to first</span>
-<span class="sd">    order I&#39;m assuming are due to this missing energy.</span>
+<span class="sd">    I've tuned these by eye due to the biases seen in GRECO pegleg, which to first</span>
+<span class="sd">    order I'm assuming are due to this missing energy.</span>
 <span class="sd">    There is also a bias in numu CC in GRECO, but suspect this is due to containment</span>
 <span class="sd">    or stochastics, but either way not reproducing this here.</span>
 
@@ -442,20 +442,20 @@
 <span class="sd">    visible_energy : array</span>
 <span class="sd">        Estimated visible energy in each event</span>
 
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
 
     <span class="c1">#TODO Add some smearing</span>
 
     <span class="c1"># NC events have final state neutrino</span>
-    <span class="k">if</span> <span class="n">particle_key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_nc&quot;</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">if</span> <span class="n">particle_key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"_nc"</span><span class="p">)</span> <span class="p">:</span>
         <span class="k">return</span> <span class="mf">0.4</span> <span class="c1">#TODO tune, consider inelasticity numbers vs energy (including nu vs nubar)</span>
 
     <span class="c1"># nutau CC events have final state neutrino, but from a subsequent tau decay</span>
-    <span class="k">elif</span> <span class="n">particle_key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;nutau&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">particle_key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;_cc&quot;</span><span class="p">)</span> <span class="p">:</span>
+    <span class="k">elif</span> <span class="n">particle_key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"nutau"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">particle_key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"_cc"</span><span class="p">)</span> <span class="p">:</span>
         <span class="k">return</span> <span class="mf">0.6</span> <span class="c1">#TODO tune, consider decay spectrum vs energy</span>
 
-    <span class="c1"># muons are all over the place since their &quot;true_energy&quot; doesn&#39;t reflect any real value in the ice (is energy as surface of generation cylinder)</span>
-    <span class="k">elif</span> <span class="n">particle_key</span> <span class="o">==</span> <span class="s2">&quot;muons&quot;</span> <span class="p">:</span>
+    <span class="c1"># muons are all over the place since their "true_energy" doesn't reflect any real value in the ice (is energy as surface of generation cylinder)</span>
+    <span class="k">elif</span> <span class="n">particle_key</span> <span class="o">==</span> <span class="s2">"muons"</span> <span class="p">:</span>
         <span class="k">return</span> <span class="mf">0.1</span> <span class="c1">#TODO Should really store deposied energy in the frame instead</span>
 
     <span class="c1"># Everything else deposits full energy as visible energy</span>
@@ -467,7 +467,7 @@
 <div class="viewcode-block" id="energy_dependent_sigma">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.energy_dependent_sigma">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">energy_dependent_sigma</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span><span class="n">energy_0</span><span class="p">,</span><span class="n">sigma_0</span><span class="p">,</span><span class="n">energy_power</span><span class="p">)</span> <span class="p">:</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Returns an energy dependent sigma (standard deviation) value(s),</span>
 <span class="sd">    with energy dependence defined as follows:</span>
 
@@ -488,7 +488,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    sigma(energy) : array or float</span>
 <span class="sd">        The value of sigma at the specified energy (or energies)</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
     <span class="k">return</span> <span class="n">sigma_0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">energy</span><span class="o">/</span><span class="n">energy_0</span><span class="p">,</span><span class="n">energy_power</span><span class="p">)</span></div>
 
 
@@ -496,7 +496,7 @@
 <div class="viewcode-block" id="simple_reco_energy_parameterization">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_reco_energy_parameterization">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">simple_reco_energy_parameterization</span><span class="p">(</span><span class="n">particle_key</span><span class="p">,</span><span class="n">true_energy</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="n">random_state</span><span class="p">)</span> <span class="p">:</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Function to produce a smeared reconstructed energy distribution.</span>
 <span class="sd">    Resolution is particle- and energy-dependent</span>
 <span class="sd">    Use as a placeholder if real reconstructions are not currently available.</span>
@@ -512,7 +512,7 @@
 <span class="sd">    params : dict</span>
 <span class="sd">        keys   : particle key (wilcards accepted)</span>
 <span class="sd">        values : list : [ E0 (reference true_energy), median reco error at E0, index/power of energy dependence ]</span>
-<span class="sd">        (example: params = {&#39;nue*_cc&#39;:[10.,0.2,0.2],})</span>
+<span class="sd">        (example: params = {'nue*_cc':[10.,0.2,0.2],})</span>
 
 <span class="sd">    random_state : np.random.RandomState</span>
 <span class="sd">        User must provide the random state, meaning that reproducible results</span>
@@ -522,7 +522,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    reco_energy : array</span>
 <span class="sd">        Reconstructed energy array.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
 
     <span class="c1">#TODO Update docs</span>
 
@@ -536,8 +536,8 @@
     <span class="c1"># Grab the params for this particle type</span>
     <span class="n">_</span><span class="p">,</span><span class="n">energy_dependent_sigma_params</span> <span class="o">=</span> <span class="n">dict_lookup_wildcard</span><span class="p">(</span><span class="n">dict_obj</span><span class="o">=</span><span class="n">params</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="n">particle_key</span><span class="p">)</span>
 
-    <span class="c1"># Get the sigma of the &quot;reco error&quot; distribution (energy dependent)</span>
-    <span class="c1"># Easier to use this than the &quot;reco energy&quot; directly</span>
+    <span class="c1"># Get the sigma of the "reco error" distribution (energy dependent)</span>
+    <span class="c1"># Easier to use this than the "reco energy" directly</span>
     <span class="n">energy_0</span> <span class="o">=</span> <span class="n">energy_dependent_sigma_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">reco_error_sigma_0</span> <span class="o">=</span> <span class="n">energy_dependent_sigma_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">energy_power</span> <span class="o">=</span> <span class="n">energy_dependent_sigma_params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
@@ -560,7 +560,7 @@
 <div class="viewcode-block" id="simple_reco_coszen_parameterization">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_reco_coszen_parameterization">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">simple_reco_coszen_parameterization</span><span class="p">(</span><span class="n">particle_key</span><span class="p">,</span><span class="n">true_energy</span><span class="p">,</span><span class="n">true_coszen</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="n">random_state</span><span class="p">)</span> <span class="p">:</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Function to produce a smeared reconstructed cos(zenith) distribution.</span>
 <span class="sd">    Resolution is particle- and energy-dependent</span>
 <span class="sd">    Use as a placeholder if real reconstructions are not currently available.</span>
@@ -577,7 +577,7 @@
 <span class="sd">    params : dict</span>
 <span class="sd">        keys   : particle key (wilcards accepted)</span>
 <span class="sd">        values : list : [ E0 (reference true_energy), median reco error at E0, index/power of energy dependence ]</span>
-<span class="sd">        (example: params = {&#39;nue*_cc&#39;:[10.,0.2,0.5],})</span>
+<span class="sd">        (example: params = {'nue*_cc':[10.,0.2,0.5],})</span>
 
 <span class="sd">    random_state : np.random.RandomState</span>
 <span class="sd">        User must provide the random state, meaning that reproducible results</span>
@@ -587,7 +587,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    reco_coszen : array</span>
 <span class="sd">        Reconstructed cos(zenith angle) array.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
 
     <span class="c1"># Default random state with no fixed seed</span>
     <span class="k">if</span> <span class="n">random_state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">:</span>
@@ -599,8 +599,8 @@
     <span class="c1"># Grab the params for this particle type</span>
     <span class="n">_</span><span class="p">,</span><span class="n">energy_dependent_sigma_params</span> <span class="o">=</span> <span class="n">dict_lookup_wildcard</span><span class="p">(</span><span class="n">dict_obj</span><span class="o">=</span><span class="n">params</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="n">particle_key</span><span class="p">)</span>
 
-    <span class="c1"># Get the sigma of the &quot;reco error&quot; distribution (energy dependent)</span>
-    <span class="c1"># Easier to use this than the &quot;reco coszen&quot; directly</span>
+    <span class="c1"># Get the sigma of the "reco error" distribution (energy dependent)</span>
+    <span class="c1"># Easier to use this than the "reco coszen" directly</span>
     <span class="n">energy_0</span> <span class="o">=</span> <span class="n">energy_dependent_sigma_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">reco_error_sigma_0</span> <span class="o">=</span> <span class="n">energy_dependent_sigma_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">energy_power</span> <span class="o">=</span> <span class="n">energy_dependent_sigma_params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
@@ -627,7 +627,7 @@
 <div class="viewcode-block" id="simple_pid_parameterization">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_pid_parameterization">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">simple_pid_parameterization</span><span class="p">(</span><span class="n">particle_key</span><span class="p">,</span><span class="n">true_energy</span><span class="p">,</span><span class="n">params</span><span class="p">,</span><span class="n">track_pid</span><span class="p">,</span><span class="n">cascade_pid</span><span class="p">,</span><span class="n">random_state</span><span class="p">,)</span> <span class="p">:</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Function to assign a PID based on truth information.</span>
 <span class="sd">    Is particle-, interaction- and energy-dependent</span>
 <span class="sd">    Approximating energy dependence using a logistic function.</span>
@@ -644,7 +644,7 @@
 <span class="sd">    params : dict</span>
 <span class="sd">        keys   : particle key (wilcards accepted)</span>
 <span class="sd">        values : Logistic function params for track ID (list) : [ normalisation (plateau height), steepness of rise, true_energy at half-height ]</span>
-<span class="sd">        (example: params = {&#39;nue*_cc&#39;:[0.05,0.2,15.],})</span>
+<span class="sd">        (example: params = {'nue*_cc':[0.05,0.2,15.],})</span>
 
 <span class="sd">    track_pid : float</span>
 <span class="sd">        A PID value to assign to track-like events</span>
@@ -660,7 +660,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    pid : array</span>
 <span class="sd">        PID values.</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
 
     <span class="c1"># Default random state with no fixed seed</span>
     <span class="k">if</span> <span class="n">random_state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">:</span>
@@ -685,7 +685,7 @@
 <div class="viewcode-block" id="simple_param">
 <a class="viewcode-back" href="../../../../pisa.stages.reco.html#pisa.stages.reco.simple_param.simple_param">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">simple_param</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stage to generate reconstructed parameters (energy, coszen, pid) using simple parameterizations.</span>
 <span class="sd">    These are not fit to any input data, but are simple and easily understandable and require no</span>
 <span class="sd">    input reconstructed events.</span>
@@ -698,7 +698,7 @@
 <span class="sd">        Must have parameters::</span>
 
 <span class="sd">        perfect_reco : bool</span>
-<span class="sd">            If True, use &quot;perfect reco&quot;: reco == true, numu(bar)_cc -&gt; tracks, rest to cascades</span>
+<span class="sd">            If True, use "perfect reco": reco == true, numu(bar)_cc -&gt; tracks, rest to cascades</span>
 <span class="sd">            If False, use the parametrised reco energy, coszen and pid functions</span>
 
 <span class="sd">        reco_energy_params : dict</span>
@@ -714,10 +714,10 @@
 <span class="sd">            See `simple_pid_parameterization` documentatio for more details</span>
 
 <span class="sd">        track_pid : float</span>
-<span class="sd">            The numerical &#39;pid&#39; variable value to assign for tracks</span>
+<span class="sd">            The numerical 'pid' variable value to assign for tracks</span>
 
 <span class="sd">        cascade_pid : float</span>
-<span class="sd">            The numerical &#39;pid&#39; variable value to assign for cascades</span>
+<span class="sd">            The numerical 'pid' variable value to assign for cascades</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
@@ -725,24 +725,24 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;true_energy&quot;, &quot;true_coszen&quot;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "true_energy", "true_coszen"</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
                 <span class="p">):</span>
 
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;perfect_reco&quot;</span><span class="p">,</span> <span class="c1">#FIXME move these to constructor args? (yes, please)</span>
-            <span class="s2">&quot;reco_energy_params&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;reco_coszen_params&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;pid_track_params&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;track_pid&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;cascade_pid&quot;</span><span class="p">,</span>
+            <span class="s2">"perfect_reco"</span><span class="p">,</span> <span class="c1">#FIXME move these to constructor args? (yes, please)</span>
+            <span class="s2">"reco_energy_params"</span><span class="p">,</span>
+            <span class="s2">"reco_coszen_params"</span><span class="p">,</span>
+            <span class="s2">"pid_track_params"</span><span class="p">,</span>
+            <span class="s2">"track_pid"</span><span class="p">,</span>
+            <span class="s2">"cascade_pid"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
+            <span class="s1">'true_energy'</span><span class="p">,</span>
+            <span class="s1">'true_coszen'</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -762,13 +762,13 @@
         <span class="n">reco_energy_params</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">reco_energy_params</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="n">reco_coszen_params</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">reco_coszen_params</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="n">pid_track_params</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">pid_track_params</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-        <span class="n">track_pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">track_pid</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">)</span>
-        <span class="n">cascade_pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">cascade_pid</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">)</span>
+        <span class="n">track_pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">track_pid</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">"dimensionless"</span><span class="p">)</span>
+        <span class="n">cascade_pid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">cascade_pid</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">"dimensionless"</span><span class="p">)</span>
 
         <span class="c1"># If using random numbers, use a random state with a fixed seed to make the</span>
         <span class="c1"># same smearing for e.g. template and pseudodata (this achieves the same</span>
         <span class="c1"># as we would normally use if we had reco variales in the file).</span>
-        <span class="c1"># Note that this doesn&#39;t affect other random numbers generated by other</span>
+        <span class="c1"># Note that this doesn't affect other random numbers generated by other</span>
         <span class="c1"># calls to numpy.random throughout the code.</span>
         <span class="n">random_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1">#TODO seed as arg/param</span>
 
@@ -776,12 +776,12 @@
 
             <span class="c1"># Get stuff that is used multiples times</span>
             <span class="n">particle_key</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span>
-            <span class="n">true_energy</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">]</span>
-            <span class="n">true_coszen</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_coszen&quot;</span><span class="p">]</span>
+            <span class="n">true_energy</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"true_energy"</span><span class="p">]</span>
+            <span class="n">true_coszen</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"true_coszen"</span><span class="p">]</span>
 
             <span class="c1"># Create container if not already present</span>
-            <span class="k">if</span> <span class="s2">&quot;reco_energy&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">"reco_energy"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'reco_energy'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
             <span class="c1"># Create the reco energy variable</span>
             <span class="k">if</span> <span class="n">perfect_reco</span> <span class="p">:</span>
@@ -795,8 +795,8 @@
                 <span class="p">)</span>
 
             <span class="c1"># Write to the container</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;reco_energy&quot;</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">reco_energy</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;reco_energy&quot;</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"reco_energy"</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">reco_energy</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">"reco_energy"</span><span class="p">)</span>
 
 
             <span class="c1">#</span>
@@ -804,8 +804,8 @@
             <span class="c1">#</span>
 
             <span class="c1"># Create container if not already present</span>
-            <span class="k">if</span> <span class="s2">&quot;reco_coszen&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">true_coszen</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">"reco_coszen"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'reco_coszen'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">true_coszen</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
             <span class="c1"># Create the reco coszen variable</span>
             <span class="k">if</span> <span class="n">perfect_reco</span> <span class="p">:</span>
@@ -820,8 +820,8 @@
                 <span class="p">)</span>
 
             <span class="c1"># Write to the container</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;reco_coszen&quot;</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">reco_coszen</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;reco_coszen&quot;</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"reco_coszen"</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">reco_coszen</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">"reco_coszen"</span><span class="p">)</span>
 
 
             <span class="c1">#</span>
@@ -829,8 +829,8 @@
             <span class="c1">#</span>
 
             <span class="c1"># Create container if not already present</span>
-            <span class="k">if</span> <span class="s2">&quot;pid&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">"pid"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'pid'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
             <span class="c1"># Create the PID variable</span>
             <span class="k">if</span> <span class="n">perfect_reco</span> <span class="p">:</span>
@@ -847,21 +847,21 @@
                 <span class="p">)</span>
 
             <span class="c1"># Write to the container</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;pid&quot;</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">pid</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;pid&quot;</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"pid"</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">pid</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">"pid"</span><span class="p">)</span></div>
 </div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;perfect_reco&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;reco_energy_params&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;{&#39;test*&#39;: [10., 0.2, 0.2]}&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;reco_coszen_params&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;{&#39;test*&#39;: [10., 0.2, 0.5]}&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pid_track_params&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;{&#39;test*&#39;: [0.05, 0.2, 15.]}&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;track_pid&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;cascade_pid&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'perfect_reco'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'reco_energy_params'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">"{'test*': [10., 0.2, 0.2]}"</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'reco_coszen_params'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">"{'test*': [10., 0.2, 0.5]}"</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'pid_track_params'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">"{'test*': [0.05, 0.2, 15.]}"</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'track_pid'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'cascade_pid'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
     <span class="p">])</span>
     <span class="k">return</span> <span class="n">simple_param</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span>
 </pre></div>
@@ -903,7 +903,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

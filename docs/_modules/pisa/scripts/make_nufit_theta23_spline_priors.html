@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.scripts.make_nufit_theta23_spline_priors - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.scripts.make_nufit_theta23_spline_priors - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -283,10 +283,10 @@
           <h1>Source code for pisa.scripts.make_nufit_theta23_spline_priors</h1><div class="highlight"><pre>
 <span></span><span class="ch">#! /usr/bin/env python</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Create splines to the NuFit delta-chi2 surfaces for theta23 and output them in</span>
 <span class="sd">a format that can be read by PISA to use as a prior on this parameter.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span><span class="n">ArgumentDefaultsHelpFormatter</span>
@@ -300,23 +300,23 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_file</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;extract_vals&#39;</span><span class="p">,</span> <span class="s1">&#39;make_prior_dict&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'extract_vals'</span><span class="p">,</span> <span class="s1">'make_prior_dict'</span><span class="p">,</span> <span class="s1">'main'</span><span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;S. Wren&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'S. Wren'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2017, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
 <div class="viewcode-block" id="extract_vals">
@@ -326,14 +326,14 @@
     <span class="n">x</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">infile</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'#'</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="n">string_of_interest</span><span class="p">:</span>
                 <span class="n">readout</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">readout</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">readout</span><span class="p">:</span>
-                <span class="n">vals</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+                <span class="n">vals</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' '</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                     <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
                     <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
@@ -348,30 +348,30 @@
 
     <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">priors</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23&quot;</span><span class="p">][</span><span class="s2">&quot;coeffs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23&quot;</span><span class="p">][</span><span class="s2">&quot;deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23&quot;</span><span class="p">][</span><span class="s2">&quot;knots&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23&quot;</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;spline&quot;</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23&quot;</span><span class="p">][</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;radian&quot;</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23"</span><span class="p">][</span><span class="s2">"coeffs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23"</span><span class="p">][</span><span class="s2">"deg"</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23"</span><span class="p">][</span><span class="s2">"knots"</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23"</span><span class="p">][</span><span class="s2">"kind"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"spline"</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23"</span><span class="p">][</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"radian"</span>
 
     <span class="k">elif</span> <span class="n">f_io</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">f_no</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">priors</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_ih&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_ih&quot;</span><span class="p">][</span><span class="s2">&quot;coeffs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_io</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_ih&quot;</span><span class="p">][</span><span class="s2">&quot;deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_io</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_ih&quot;</span><span class="p">][</span><span class="s2">&quot;knots&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_io</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_ih&quot;</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;spline&quot;</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_ih&quot;</span><span class="p">][</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;radian&quot;</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_nh&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_nh&quot;</span><span class="p">][</span><span class="s2">&quot;coeffs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_no</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_nh&quot;</span><span class="p">][</span><span class="s2">&quot;deg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_no</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_nh&quot;</span><span class="p">][</span><span class="s2">&quot;knots&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_no</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_nh&quot;</span><span class="p">][</span><span class="s2">&quot;kind&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;spline&quot;</span>
-        <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;theta23_nh&quot;</span><span class="p">][</span><span class="s2">&quot;units&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;radian&quot;</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_ih"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_ih"</span><span class="p">][</span><span class="s2">"coeffs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_io</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_ih"</span><span class="p">][</span><span class="s2">"deg"</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_io</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_ih"</span><span class="p">][</span><span class="s2">"knots"</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_io</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_ih"</span><span class="p">][</span><span class="s2">"kind"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"spline"</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_ih"</span><span class="p">][</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"radian"</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_nh"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_nh"</span><span class="p">][</span><span class="s2">"coeffs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_no</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_nh"</span><span class="p">][</span><span class="s2">"deg"</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_no</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_nh"</span><span class="p">][</span><span class="s2">"knots"</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_no</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_nh"</span><span class="p">][</span><span class="s2">"kind"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"spline"</span>
+        <span class="n">priors</span><span class="p">[</span><span class="s2">"theta23_nh"</span><span class="p">][</span><span class="s2">"units"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"radian"</span>
 
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No functions passed to save!&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'No functions passed to save!'</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">priors</span></div>
 
@@ -382,62 +382,62 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">,</span>
                             <span class="n">formatter_class</span><span class="o">=</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-io&#39;</span><span class="p">,</span><span class="s1">&#39;--io_chi2_file&#39;</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span><span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Inverted Ordering Chi2 file from NuFit&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-no&#39;</span><span class="p">,</span><span class="s1">&#39;--no_chi2_file&#39;</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span><span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Inverted Ordering Chi2 file from NuFit&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--shifted&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Flag if wanting prior which attempts to remove</span>
-<span class="s1">                        the ordering prior by subtracting the delta chi2.&#39;&#39;&#39;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--minimised&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Flag if wanting prior which attempts to remove</span>
-<span class="s1">                        the ordering prior by minimising over both surfaces.&#39;&#39;&#39;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--outdir&#39;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;DIR&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Store all output files to this directory. It</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'-io'</span><span class="p">,</span><span class="s1">'--io_chi2_file'</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span><span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Inverted Ordering Chi2 file from NuFit"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'-no'</span><span class="p">,</span><span class="s1">'--no_chi2_file'</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span><span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">"Inverted Ordering Chi2 file from NuFit"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--shifted'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">'''Flag if wanting prior which attempts to remove</span>
+<span class="s1">                        the ordering prior by subtracting the delta chi2.'''</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--minimised'</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">'''Flag if wanting prior which attempts to remove</span>
+<span class="s1">                        the ordering prior by minimising over both surfaces.'''</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">'--outdir'</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s1">'DIR'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">'''Store all output files to this directory. It</span>
 <span class="s1">                        is recommended you save them in the priors directory</span>
-<span class="s1">                        in the PISA resources.&#39;&#39;&#39;</span><span class="p">)</span>
+<span class="s1">                        in the PISA resources.'''</span><span class="p">)</span>
 
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
 
     <span class="n">io_filename</span><span class="p">,</span> <span class="n">io_fileext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">io_chi2_file</span><span class="p">)</span>
     <span class="n">no_filename</span><span class="p">,</span> <span class="n">no_fileext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">no_chi2_file</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">io_fileext</span> <span class="o">!=</span> <span class="s1">&#39;.gz&#39;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> file extension not expected. Please use the file &#39;</span>
-                         <span class="s1">&#39;as downloaded from the Nu-Fit website.&#39;</span><span class="o">%</span><span class="n">io_fileext</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">no_fileext</span> <span class="o">!=</span> <span class="s1">&#39;.gz&#39;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> file extension not expected. Please use the file as &#39;</span>
-                         <span class="s1">&#39;downloaded directly from the Nu-Fit website.&#39;</span><span class="o">%</span><span class="n">no_fileext</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">io_fileext</span> <span class="o">!=</span> <span class="s1">'.gz'</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'</span><span class="si">%s</span><span class="s1"> file extension not expected. Please use the file '</span>
+                         <span class="s1">'as downloaded from the Nu-Fit website.'</span><span class="o">%</span><span class="n">io_fileext</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">no_fileext</span> <span class="o">!=</span> <span class="s1">'.gz'</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'</span><span class="si">%s</span><span class="s1"> file extension not expected. Please use the file as '</span>
+                         <span class="s1">'downloaded directly from the Nu-Fit website.'</span><span class="o">%</span><span class="n">no_fileext</span><span class="p">)</span>
 
     <span class="c1"># Get Nu-Fit version from filenames</span>
-    <span class="n">NuFitVersion</span> <span class="o">=</span> <span class="n">io_filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">NuFitVersion</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">&#39;v&#39;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s%s</span><span class="s1"> input file does not allow for discerning the &#39;</span>
-                         <span class="s1">&#39;Nu-Fit version directly from the filename. Please &#39;</span>
-                         <span class="s1">&#39;use the file as downloaded directly from the Nu-Fit &#39;</span>
-                         <span class="s1">&#39;website.&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">io_filename</span><span class="p">,</span><span class="n">io_fileext</span><span class="p">))</span>
-    <span class="n">NO_NuFitVersion</span> <span class="o">=</span> <span class="n">no_filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">NuFitVersion</span> <span class="o">=</span> <span class="n">io_filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">NuFitVersion</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">'v'</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'</span><span class="si">%s%s</span><span class="s1"> input file does not allow for discerning the '</span>
+                         <span class="s1">'Nu-Fit version directly from the filename. Please '</span>
+                         <span class="s1">'use the file as downloaded directly from the Nu-Fit '</span>
+                         <span class="s1">'website.'</span><span class="o">%</span><span class="p">(</span><span class="n">io_filename</span><span class="p">,</span><span class="n">io_fileext</span><span class="p">))</span>
+    <span class="n">NO_NuFitVersion</span> <span class="o">=</span> <span class="n">no_filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">NuFitVersion</span> <span class="o">!=</span> <span class="n">NO_NuFitVersion</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;The NuFit version extracted from the NO and IO files &#39;</span>
-                         <span class="s1">&#39;do not match. i.e. </span><span class="si">%s</span><span class="s1"> is not the same as </span><span class="si">%s</span><span class="s1">. Please &#39;</span>
-                         <span class="s1">&#39;use the same NuFit version for each of the NO and IO &#39;</span>
-                         <span class="s1">&#39;chi2 surfaces.&#39;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'The NuFit version extracted from the NO and IO files '</span>
+                         <span class="s1">'do not match. i.e. </span><span class="si">%s</span><span class="s1"> is not the same as </span><span class="si">%s</span><span class="s1">. Please '</span>
+                         <span class="s1">'use the same NuFit version for each of the NO and IO '</span>
+                         <span class="s1">'chi2 surfaces.'</span>
                          <span class="o">%</span><span class="p">(</span><span class="n">NuFitVersion</span><span class="p">,</span><span class="n">NO_NuFitVersion</span><span class="p">))</span>
 
     <span class="c1"># Add special treatment for NuFit 2.1 since it has two releases</span>
-    <span class="k">if</span> <span class="n">NuFitVersion</span> <span class="o">==</span> <span class="s1">&#39;v21&#39;</span><span class="p">:</span>
-        <span class="n">NuFitVersion</span> <span class="o">+=</span> <span class="n">io_filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">NuFitVersion</span> <span class="o">==</span> <span class="s1">'v21'</span><span class="p">:</span>
+        <span class="n">NuFitVersion</span> <span class="o">+=</span> <span class="n">io_filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'-'</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="n">io_infile</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">io_chi2_file</span><span class="p">)</span>
     <span class="n">no_infile</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">no_chi2_file</span><span class="p">)</span>
 
     <span class="n">io_s2th23</span><span class="p">,</span> <span class="n">io_dchi2</span> <span class="o">=</span> <span class="n">extract_vals</span><span class="p">(</span>
         <span class="n">infile</span><span class="o">=</span><span class="n">io_infile</span><span class="p">,</span>
-        <span class="n">string_of_interest</span><span class="o">=</span><span class="s1">&#39;# T23 projection: sin^2(theta23) Delta_chi^2&#39;</span>
+        <span class="n">string_of_interest</span><span class="o">=</span><span class="s1">'# T23 projection: sin^2(theta23) Delta_chi^2'</span>
     <span class="p">)</span>
     <span class="n">no_s2th23</span><span class="p">,</span> <span class="n">no_dchi2</span> <span class="o">=</span> <span class="n">extract_vals</span><span class="p">(</span>
         <span class="n">infile</span><span class="o">=</span><span class="n">no_infile</span><span class="p">,</span>
-        <span class="n">string_of_interest</span><span class="o">=</span><span class="s1">&#39;# T23 projection: sin^2(theta23) Delta_chi^2&#39;</span>
+        <span class="n">string_of_interest</span><span class="o">=</span><span class="s1">'# T23 projection: sin^2(theta23) Delta_chi^2'</span>
     <span class="p">)</span>
 
     <span class="n">io_th23</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">io_s2th23</span><span class="p">)))</span>
@@ -453,7 +453,7 @@
                              <span class="n">f_no</span><span class="o">=</span><span class="n">f_no</span><span class="p">)</span>
 
     <span class="n">to_file</span><span class="p">(</span><span class="n">priors</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span>
-                                 <span class="s1">&#39;nufit</span><span class="si">%s</span><span class="s1">standardtheta23splines.json&#39;</span><span class="o">%</span><span class="n">NuFitVersion</span><span class="p">))</span>
+                                 <span class="s1">'nufit</span><span class="si">%s</span><span class="s1">standardtheta23splines.json'</span><span class="o">%</span><span class="n">NuFitVersion</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">shifted</span><span class="p">:</span>
         <span class="c1"># Make priors where the delta chi2 between the orderings is removed.</span>
@@ -470,7 +470,7 @@
 
         <span class="n">to_file</span><span class="p">(</span><span class="n">shiftedpriors</span><span class="p">,</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span>
-                             <span class="s1">&#39;nufit</span><span class="si">%s</span><span class="s1">shiftedtheta23splines.json&#39;</span><span class="o">%</span><span class="n">NuFitVersion</span><span class="p">))</span>
+                             <span class="s1">'nufit</span><span class="si">%s</span><span class="s1">shiftedtheta23splines.json'</span><span class="o">%</span><span class="n">NuFitVersion</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">minimised</span><span class="p">:</span>
         <span class="c1"># Make one prior that is the minimum of both of the original chi2</span>
@@ -485,13 +485,13 @@
 
         <span class="n">to_file</span><span class="p">(</span><span class="n">minimisedprior</span><span class="p">,</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span>
-                             <span class="s1">&#39;nufit</span><span class="si">%s</span><span class="s1">minimisedtheta23spline.json&#39;</span><span class="o">%</span><span class="n">NuFitVersion</span><span class="p">))</span></div>
+                             <span class="s1">'nufit</span><span class="si">%s</span><span class="s1">minimisedtheta23spline.json'</span><span class="o">%</span><span class="n">NuFitVersion</span><span class="p">))</span></div>
 
 
 <span class="n">main</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="vm">__doc__</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
         </article>
@@ -532,7 +532,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

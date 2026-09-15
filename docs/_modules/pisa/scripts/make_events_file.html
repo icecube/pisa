@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.scripts.make_events_file - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.scripts.make_events_file - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -283,11 +283,11 @@
           <h1>Source code for pisa.scripts.make_events_file</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Take simulated (and reconstructed) HDF5 file(s) (as converted from I3 by</span>
 <span class="sd">icecube.hdfwriter.I3HDFTableService) as input and writes out a simplified HDF5</span>
 <span class="sd">file for use with PISA.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
@@ -310,66 +310,66 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;EXAMPLE&#39;</span><span class="p">,</span> <span class="s1">&#39;CMSQ_TO_MSQ&#39;</span><span class="p">,</span> <span class="s1">&#39;EXTRACT_FIELDS&#39;</span><span class="p">,</span> <span class="s1">&#39;OUTPUT_FIELDS&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;powerLawIntegral&#39;</span><span class="p">,</span> <span class="s1">&#39;makeEventsFile&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;parse_args&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'EXAMPLE'</span><span class="p">,</span> <span class="s1">'CMSQ_TO_MSQ'</span><span class="p">,</span> <span class="s1">'EXTRACT_FIELDS'</span><span class="p">,</span> <span class="s1">'OUTPUT_FIELDS'</span><span class="p">,</span>
+           <span class="s1">'powerLawIntegral'</span><span class="p">,</span> <span class="s1">'makeEventsFile'</span><span class="p">,</span>
+           <span class="s1">'parse_args'</span><span class="p">,</span> <span class="s1">'main'</span><span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'J.L. Lanfranchi'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2017, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
-<span class="n">EXAMPLE</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="n">EXAMPLE</span> <span class="o">=</span> <span class="s2">"""</span>
 <span class="s2">Example command-line usage:</span>
 
 <span class="s2">make_events_file.py</span>
-<span class="s2">    --det &quot;PINGU&quot;</span>
-<span class="s2">    --proc &quot;V5.1&quot;</span>
+<span class="s2">    --det "PINGU"</span>
+<span class="s2">    --proc "V5.1"</span>
 <span class="s2">    --run 390 ~/data/390/icetray_hdf5/*.hdf5</span>
 <span class="s2">    --run 389 ~/data/389/icetray_hdf5/*.hdf5</span>
 <span class="s2">    --run 388 ~/data/388/icetray_hdf5/*.hdf5</span>
 <span class="s2">    -vv</span>
 <span class="s2">    --outdir /tmp/events/</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">"""</span>
 
 
 <span class="n">CMSQ_TO_MSQ</span> <span class="o">=</span> <span class="mf">1.0e-4</span>
-<span class="sd">&quot;&quot;&quot;Conversion factor: convert from centimeters^2 to meters^2&quot;&quot;&quot;</span>
+<span class="sd">"""Conversion factor: convert from centimeters^2 to meters^2"""</span>
 
 <span class="c1"># Default fields to extract from source HDF5 files during processing</span>
 <span class="c1"># Note that *_coszen is generated from *_zenith</span>
 <span class="n">EXTRACT_FIELDS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;reco_energy&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;reco_coszen&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;one_weight&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;interaction_prob&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;pid&#39;</span><span class="p">,</span>
+    <span class="s1">'true_energy'</span><span class="p">,</span>
+    <span class="s1">'true_coszen'</span><span class="p">,</span>
+    <span class="s1">'reco_energy'</span><span class="p">,</span>
+    <span class="s1">'reco_coszen'</span><span class="p">,</span>
+    <span class="s1">'one_weight'</span><span class="p">,</span>
+    <span class="s1">'interaction_prob'</span><span class="p">,</span>
+    <span class="s1">'pid'</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="c1"># Default fields to output to destination PISA events HDF5 file</span>
 <span class="n">OUTPUT_FIELDS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;reco_energy&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;reco_coszen&#39;</span><span class="p">,</span>
-    <span class="c1">#&#39;mc_weight&#39;,</span>
-    <span class="c1">#&#39;mc_weight_per_gev_per_sr&#39;,</span>
-    <span class="s1">&#39;weighted_aeff&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;pid&#39;</span><span class="p">,</span>
+    <span class="s1">'true_energy'</span><span class="p">,</span>
+    <span class="s1">'true_coszen'</span><span class="p">,</span>
+    <span class="s1">'reco_energy'</span><span class="p">,</span>
+    <span class="s1">'reco_coszen'</span><span class="p">,</span>
+    <span class="c1">#'mc_weight',</span>
+    <span class="c1">#'mc_weight_per_gev_per_sr',</span>
+    <span class="s1">'weighted_aeff'</span><span class="p">,</span>
+    <span class="s1">'pid'</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -377,7 +377,7 @@
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.make_events_file.powerLawIntegral">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">powerLawIntegral</span><span class="p">(</span><span class="n">E0</span><span class="p">,</span> <span class="n">E1</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sym</span>
-    <span class="n">E</span> <span class="o">=</span> <span class="n">sym</span><span class="o">.</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">&#39;E&#39;</span><span class="p">)</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="n">sym</span><span class="o">.</span><span class="n">Symbol</span><span class="p">(</span><span class="s1">'E'</span><span class="p">)</span>
     <span class="n">I</span> <span class="o">=</span> <span class="n">sym</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">E</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">gamma</span><span class="p">),</span> <span class="n">E</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">I</span><span class="o">.</span><span class="n">evalf</span><span class="p">(</span><span class="n">subs</span><span class="o">=</span><span class="p">{</span><span class="n">E</span><span class="p">:</span> <span class="n">E1</span><span class="p">})</span> <span class="o">-</span> <span class="n">I</span><span class="o">.</span><span class="n">evalf</span><span class="p">(</span><span class="n">subs</span><span class="o">=</span><span class="p">{</span><span class="n">E</span><span class="p">:</span> <span class="n">E0</span><span class="p">})</span></div>
 
@@ -389,7 +389,7 @@
                    <span class="n">run_settings</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data_proc_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">join</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                    <span class="n">cust_cuts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">extract_fields</span><span class="o">=</span><span class="n">EXTRACT_FIELDS</span><span class="p">,</span>
                    <span class="n">output_fields</span><span class="o">=</span><span class="n">OUTPUT_FIELDS</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Take the simulated and reconstructed HDF5 file(s) (as converted from I3</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Take the simulated and reconstructed HDF5 file(s) (as converted from I3</span>
 <span class="sd">    by icecube.hdfwriter.I3HDFTableService) as input and write out a simplified</span>
 <span class="sd">    PISA-standard-format HDF5 file for use in aeff, reco, and/or PID stages.</span>
 
@@ -432,9 +432,9 @@
 
 <span class="sd">    join</span>
 <span class="sd">        String specifying any flavor/interaction types (flavInts) to join</span>
-<span class="sd">        together. Separate flavInts with commas (&#39;,&#39;) and separate groups</span>
-<span class="sd">        with semicolons (&#39;;&#39;). E.g. an acceptable string is:</span>
-<span class="sd">            &#39;numucc+numubarcc; nuall bar NC, nuall NC&#39;</span>
+<span class="sd">        together. Separate flavInts with commas (',') and separate groups</span>
+<span class="sd">        with semicolons (';'). E.g. an acceptable string is:</span>
+<span class="sd">            'numucc+numubarcc; nuall bar NC, nuall NC'</span>
 
 <span class="sd">    cust_cuts</span>
 <span class="sd">        dict with a single DataProcParams cut specification or list of same</span>
@@ -446,16 +446,16 @@
 
 <span class="sd">    output_fields : None or iterable of strings</span>
 <span class="sd">        Fields to include in the generated PISA-standard-format events HDF5</span>
-<span class="sd">        file; note that if &#39;weighted_aeff&#39; is not preent, effective area will</span>
+<span class="sd">        file; note that if 'weighted_aeff' is not preent, effective area will</span>
 <span class="sd">        not be computed. If None, all fields will be written.</span>
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    Compute &quot;weighted_aeff&quot; field:</span>
+<span class="sd">    Compute "weighted_aeff" field:</span>
 
 <span class="sd">    Within each int type (CC or NC), ngen should be added together;</span>
 <span class="sd">    events recorded of that int type then get their one_weight divided by the</span>
-<span class="sd">    total *for that int type only* to obtain the &quot;weighted_aeff&quot; for that</span>
+<span class="sd">    total *for that int type only* to obtain the "weighted_aeff" for that</span>
 <span class="sd">    event (even if int types are being grouped/joined together).</span>
 
 <span class="sd">    This has the effect that within a group, ...</span>
@@ -474,11 +474,11 @@
 <span class="sd">    Note that each grouping of flavors is calculated with the above math</span>
 <span class="sd">    completely independently from other flavor groupings specified.</span>
 
-<span class="sd">    See Justin Lanfranchi&#39;s presentation on the PINGU Analysis call,</span>
+<span class="sd">    See Justin Lanfranchi's presentation on the PINGU Analysis call,</span>
 <span class="sd">    2015-10-21, for more details:</span>
 <span class="sd">      https://wikispaces.psu.edu/download/attachments/282040606/meff_report_jllanfranchi_v05_2015-10-21.pdf</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">run_settings</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">run_settings</span> <span class="o">=</span> <span class="n">DetMCSimRunsSettings</span><span class="p">(</span>
             <span class="n">find_resource</span><span class="p">(</span><span class="n">run_settings</span><span class="p">),</span>
@@ -550,58 +550,58 @@
     <span class="c1">#    #flavs_by_run[run] = run_settings.flavs(run)</span>
     <span class="c1">##flavs_present =</span>
 
-    <span class="n">detector_geom</span> <span class="o">=</span> <span class="n">run_settings</span><span class="p">[</span><span class="n">runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="s1">&#39;geom&#39;</span><span class="p">]</span>
+    <span class="n">detector_geom</span> <span class="o">=</span> <span class="n">run_settings</span><span class="p">[</span><span class="n">runs</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="s1">'geom'</span><span class="p">]</span>
 
     <span class="c1"># Create Events object to store data</span>
     <span class="n">evts</span> <span class="o">=</span> <span class="n">Events</span><span class="p">()</span>
     <span class="n">evts</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
-        <span class="s1">&#39;detector&#39;</span><span class="p">:</span> <span class="n">run_settings</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span>
-        <span class="s1">&#39;proc_ver&#39;</span><span class="p">:</span> <span class="n">data_proc_params</span><span class="o">.</span><span class="n">proc_ver</span><span class="p">,</span>
-        <span class="s1">&#39;geom&#39;</span><span class="p">:</span> <span class="n">detector_geom</span><span class="p">,</span>
-        <span class="s1">&#39;runs&#39;</span><span class="p">:</span> <span class="n">runs</span><span class="p">,</span>
+        <span class="s1">'detector'</span><span class="p">:</span> <span class="n">run_settings</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span>
+        <span class="s1">'proc_ver'</span><span class="p">:</span> <span class="n">data_proc_params</span><span class="o">.</span><span class="n">proc_ver</span><span class="p">,</span>
+        <span class="s1">'geom'</span><span class="p">:</span> <span class="n">detector_geom</span><span class="p">,</span>
+        <span class="s1">'runs'</span><span class="p">:</span> <span class="n">runs</span><span class="p">,</span>
     <span class="p">})</span>
 
     <span class="n">cuts</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cust_cuts</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="n">cust_cuts</span> <span class="o">=</span> <span class="p">[</span><span class="n">cust_cuts</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">cut</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">evts</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cut</span><span class="p">)</span>
+        <span class="n">evts</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">'cuts'</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cut</span><span class="p">)</span>
         <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cut</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">cust_cuts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">ccut</span> <span class="ow">in</span> <span class="n">cust_cuts</span><span class="p">:</span>
-            <span class="n">evts</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;cuts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;custom: &#39;</span> <span class="o">+</span> <span class="n">ccut</span><span class="p">[</span><span class="s1">&#39;pass_if&#39;</span><span class="p">])</span>
+            <span class="n">evts</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">'cuts'</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'custom: '</span> <span class="o">+</span> <span class="n">ccut</span><span class="p">[</span><span class="s1">'pass_if'</span><span class="p">])</span>
             <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ccut</span><span class="p">)</span>
 
     <span class="n">orig_outdir</span> <span class="o">=</span> <span class="n">outdir</span>
     <span class="n">outdir</span> <span class="o">=</span> <span class="n">expand</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Output dir spec</span><span class="se">\&#39;</span><span class="s1">d: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">orig_outdir</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Output dir spec</span><span class="se">\'</span><span class="s1">d: </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">orig_outdir</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">outdir</span> <span class="o">!=</span> <span class="n">orig_outdir</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Output dir expands to: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">outdir</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Output dir expands to: </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">outdir</span><span class="p">)</span>
     <span class="n">mkdir</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span>
 
     <span class="n">detector_label</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">data_proc_params</span><span class="o">.</span><span class="n">detector</span><span class="p">)</span>
-    <span class="n">proc_label</span> <span class="o">=</span> <span class="s1">&#39;proc_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">data_proc_params</span><span class="o">.</span><span class="n">proc_ver</span><span class="p">)</span>
+    <span class="n">proc_label</span> <span class="o">=</span> <span class="s1">'proc_'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">data_proc_params</span><span class="o">.</span><span class="n">proc_ver</span><span class="p">)</span>
 
     <span class="c1"># What flavints to group together</span>
-    <span class="k">if</span> <span class="n">join</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">join</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">join</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">join</span> <span class="o">==</span> <span class="s1">''</span><span class="p">:</span>
         <span class="n">grouped</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">ungrouped</span> <span class="o">=</span> <span class="p">[</span><span class="n">NuFlavIntGroup</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ALL_NUFLAVINTS</span><span class="p">]</span>
-        <span class="n">groups_label</span> <span class="o">=</span> <span class="s1">&#39;unjoined&#39;</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Events in the following groups will be joined together:&#39;</span>
-                     <span class="s1">&#39; (none)&#39;</span><span class="p">)</span>
+        <span class="n">groups_label</span> <span class="o">=</span> <span class="s1">'unjoined'</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Events in the following groups will be joined together:'</span>
+                     <span class="s1">' (none)'</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">grouped</span><span class="p">,</span> <span class="n">ungrouped</span> <span class="o">=</span> <span class="n">xlateGroupsStr</span><span class="p">(</span><span class="n">join</span><span class="p">)</span>
-        <span class="n">evts</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;flavints_joined&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">grouped</span><span class="p">]</span>
-        <span class="n">groups_label</span> <span class="o">=</span> <span class="s1">&#39;joined_G_&#39;</span> <span class="o">+</span> <span class="s1">&#39;_G_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">grouped</span><span class="p">])</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Events in the following groups will be joined together: &#39;</span>
-                     <span class="o">+</span> <span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">grouped</span><span class="p">]))</span>
+        <span class="n">evts</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s1">'flavints_joined'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">grouped</span><span class="p">]</span>
+        <span class="n">groups_label</span> <span class="o">=</span> <span class="s1">'joined_G_'</span> <span class="o">+</span> <span class="s1">'_G_'</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">grouped</span><span class="p">])</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Events in the following groups will be joined together: '</span>
+                     <span class="o">+</span> <span class="s1">'; '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">grouped</span><span class="p">]))</span>
 
     <span class="c1"># Find any flavints not included in the above groupings</span>
     <span class="n">flavint_groupings</span> <span class="o">=</span> <span class="n">grouped</span> <span class="o">+</span> <span class="n">ungrouped</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ungrouped</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">ungrouped</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;(none)&#39;</span><span class="p">]</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Events of the following flavints will NOT be joined&#39;</span>
-                 <span class="s1">&#39;together: &#39;</span> <span class="o">+</span> <span class="s1">&#39;; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ungrouped</span><span class="p">]))</span>
+        <span class="n">ungrouped</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'(none)'</span><span class="p">]</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Events of the following flavints will NOT be joined'</span>
+                 <span class="s1">'together: '</span> <span class="o">+</span> <span class="s1">'; '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ungrouped</span><span class="p">]))</span>
 
     <span class="c1"># Enforce that flavints composing groups are mutually exclusive</span>
     <span class="k">for</span> <span class="n">grp_n</span><span class="p">,</span> <span class="n">flavintgrp0</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">flavint_groupings</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
@@ -630,7 +630,7 @@
         <span class="p">]</span>
 
     <span class="c1"># Instantiate generated-event counts for destination fields; count</span>
-    <span class="c1"># CClseparately from NC because aeff&#39;s for CC &amp; NC add, whereas</span>
+    <span class="c1"># CClseparately from NC because aeff's for CC &amp; NC add, whereas</span>
     <span class="c1"># aeffs intra-CC should be weighted-averaged (as for intra-NC)</span>
     <span class="n">ngen</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">{</span><span class="n">inttype</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">inttype</span> <span class="ow">in</span> <span class="n">ALL_NUINT_TYPES</span><span class="p">}</span>
@@ -648,23 +648,23 @@
         <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">fnames</span><span class="p">:</span>
             <span class="c1"># Retrieve data from all nodes specified in the processing</span>
             <span class="c1"># settings file</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Trying to get data from file </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Trying to get data from file </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">data</span> <span class="o">=</span> <span class="n">data_proc_params</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span>
                     <span class="n">fname</span><span class="p">,</span> <span class="n">run_settings</span><span class="o">=</span><span class="n">run_settings</span>
                 <span class="p">)</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">):</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Bad file encountered: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">'Bad file encountered: </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
                 <span class="n">bad_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
                 <span class="k">continue</span>
 
             <span class="n">file_count</span> <span class="o">+=</span> <span class="mi">1</span>
 
             <span class="c1"># Check to make sure only one run is present in the data</span>
-            <span class="n">runs_in_data</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;run&#39;</span><span class="p">])</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">runs_in_data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Must be just one run in data&#39;</span>
+            <span class="n">runs_in_data</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">'run'</span><span class="p">])</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">runs_in_data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">'Must be just one run in data'</span>
 
-            <span class="c1">#run = int(data[&#39;run&#39;][0])</span>
+            <span class="c1">#run = int(data['run'][0])</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">filecount</span><span class="p">:</span>
                 <span class="n">filecount</span><span class="p">[</span><span class="n">run</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">filecount</span><span class="p">[</span><span class="n">run</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -672,12 +672,12 @@
 
             <span class="c1"># Record geom; check that geom is consistent with other runs</span>
             <span class="k">if</span> <span class="n">detector_geom</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">detector_geom</span> <span class="o">=</span> <span class="n">rs_run</span><span class="p">[</span><span class="s1">&#39;geom&#39;</span><span class="p">]</span>
-            <span class="k">assert</span> <span class="n">rs_run</span><span class="p">[</span><span class="s1">&#39;geom&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">detector_geom</span><span class="p">,</span> \
-                    <span class="s1">&#39;All runs</span><span class="se">\&#39;</span><span class="s1"> geometries must match!&#39;</span>
+                <span class="n">detector_geom</span> <span class="o">=</span> <span class="n">rs_run</span><span class="p">[</span><span class="s1">'geom'</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="n">rs_run</span><span class="p">[</span><span class="s1">'geom'</span><span class="p">]</span> <span class="o">==</span> <span class="n">detector_geom</span><span class="p">,</span> \
+                    <span class="s1">'All runs</span><span class="se">\'</span><span class="s1"> geometries must match!'</span>
 
-            <span class="c1"># Loop through all flavints spec&#39;d for run</span>
-            <span class="k">for</span> <span class="n">run_flavint</span> <span class="ow">in</span> <span class="n">rs_run</span><span class="p">[</span><span class="s1">&#39;flavints&#39;</span><span class="p">]:</span>
+            <span class="c1"># Loop through all flavints spec'd for run</span>
+            <span class="k">for</span> <span class="n">run_flavint</span> <span class="ow">in</span> <span class="n">rs_run</span><span class="p">[</span><span class="s1">'flavints'</span><span class="p">]:</span>
                 <span class="n">barnobar</span> <span class="o">=</span> <span class="n">run_flavint</span><span class="o">.</span><span class="n">bar_code</span>
                 <span class="n">int_type</span> <span class="o">=</span> <span class="n">run_flavint</span><span class="o">.</span><span class="n">intType</span>
 
@@ -690,7 +690,7 @@
                 <span class="p">)</span>
 
                 <span class="c1"># Record the generated count and data for this run/flavor for</span>
-                <span class="c1"># each group to which it&#39;s applicable</span>
+                <span class="c1"># each group to which it's applicable</span>
                 <span class="k">for</span> <span class="n">grp_n</span><span class="p">,</span> <span class="n">flavint_group</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">flavint_groupings</span><span class="p">):</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">run_flavint</span> <span class="ow">in</span> <span class="n">flavint_group</span><span class="p">:</span>
                         <span class="k">continue</span>
@@ -703,7 +703,7 @@
                             <span class="n">NuFlav</span><span class="p">(</span><span class="o">-</span><span class="mi">12</span><span class="p">)</span><span class="o">.</span><span class="n">bar_code</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
                         <span class="p">}</span>
 
-                    <span class="c1"># Record count only if it hasn&#39;t already been recorded</span>
+                    <span class="c1"># Record count only if it hasn't already been recorded</span>
                     <span class="k">if</span> <span class="n">ngen</span><span class="p">[</span><span class="n">grp_n</span><span class="p">][</span><span class="n">int_type</span><span class="p">][</span><span class="n">run</span><span class="p">][</span><span class="n">barnobar</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="c1"># Note that one_weight includes cc/nc:total fraction,</span>
                         <span class="c1"># so DO NOT specify the full flavint here, only flav</span>
@@ -728,21 +728,21 @@
                             <span class="n">extracted_data</span><span class="p">[</span><span class="n">grp_n</span><span class="p">][</span><span class="n">int_type</span><span class="p">][</span><span class="n">f</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
                                 <span class="n">intonly_cut_data</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
                             <span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;File count for run </span><span class="si">%s</span><span class="s1">: </span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">file_count</span><span class="p">)</span>
-    <span class="n">to_file</span><span class="p">(</span><span class="n">bad_files</span><span class="p">,</span> <span class="s1">&#39;/tmp/bad_files.json&#39;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'File count for run </span><span class="si">%s</span><span class="s1">: </span><span class="si">%d</span><span class="s1">'</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">file_count</span><span class="p">)</span>
+    <span class="n">to_file</span><span class="p">(</span><span class="n">bad_files</span><span class="p">,</span> <span class="s1">'/tmp/bad_files.json'</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="p">((</span><span class="n">output_fields</span> <span class="ow">is</span> <span class="kc">None</span>
-         <span class="ow">and</span> <span class="p">(</span><span class="n">extract_fields</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="s1">&#39;one_weight&#39;</span> <span class="ow">in</span> <span class="n">extract_fields</span><span class="p">))</span>
-            <span class="ow">or</span> <span class="s1">&#39;weighted_aeff&#39;</span> <span class="ow">in</span> <span class="n">output_fields</span><span class="p">):</span>
-        <span class="n">fmtfields</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">*</span><span class="mi">12</span><span class="o">+</span><span class="s1">&#39;flavint_group&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;int type&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;     run&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;part/anti&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;part/anti count&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;aggregate count&#39;</span><span class="p">)</span>
+         <span class="ow">and</span> <span class="p">(</span><span class="n">extract_fields</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="s1">'one_weight'</span> <span class="ow">in</span> <span class="n">extract_fields</span><span class="p">))</span>
+            <span class="ow">or</span> <span class="s1">'weighted_aeff'</span> <span class="ow">in</span> <span class="n">output_fields</span><span class="p">):</span>
+        <span class="n">fmtfields</span> <span class="o">=</span> <span class="p">(</span><span class="s1">' '</span><span class="o">*</span><span class="mi">12</span><span class="o">+</span><span class="s1">'flavint_group'</span><span class="p">,</span>
+                     <span class="s1">'int type'</span><span class="p">,</span>
+                     <span class="s1">'     run'</span><span class="p">,</span>
+                     <span class="s1">'part/anti'</span><span class="p">,</span>
+                     <span class="s1">'part/anti count'</span><span class="p">,</span>
+                     <span class="s1">'aggregate count'</span><span class="p">)</span>
         <span class="n">fmt_n</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fmtfields</span><span class="p">]</span>
-        <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">r</span><span class="s1">&#39;%&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">+</span><span class="sa">r</span><span class="s1">&#39;s&#39;</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">fmt_n</span><span class="p">])</span>
-        <span class="n">lines</span> <span class="o">=</span> <span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">fmt_n</span><span class="p">])</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s1">'  '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">r</span><span class="s1">'%'</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">+</span><span class="sa">r</span><span class="s1">'s'</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">fmt_n</span><span class="p">])</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="s1">'  '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">'-'</span><span class="o">*</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">fmt_n</span><span class="p">])</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">fmt</span><span class="p">,</span> <span class="n">fmtfields</span><span class="p">)</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">grp_n</span><span class="p">,</span> <span class="n">flavint_group</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">flavint_groupings</span><span class="p">):</span>
@@ -766,19 +766,19 @@
                     <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">extract_fields</span><span class="p">:</span>
                         <span class="n">extracted_data</span><span class="p">[</span><span class="n">grp_n</span><span class="p">][</span><span class="n">int_type</span><span class="p">][</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> \
                                 <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">extracted_data</span><span class="p">[</span><span class="n">grp_n</span><span class="p">][</span><span class="n">int_type</span><span class="p">][</span><span class="n">field</span><span class="p">])</span>
-                <span class="c1"># Generate weighted_aeff field for this group / int type&#39;s data</span>
-                <span class="n">extracted_data</span><span class="p">[</span><span class="n">grp_n</span><span class="p">][</span><span class="n">int_type</span><span class="p">][</span><span class="s1">&#39;weighted_aeff&#39;</span><span class="p">]</span> <span class="o">=</span> \
-                        <span class="n">extracted_data</span><span class="p">[</span><span class="n">grp_n</span><span class="p">][</span><span class="n">int_type</span><span class="p">][</span><span class="s1">&#39;one_weight&#39;</span><span class="p">]</span> \
+                <span class="c1"># Generate weighted_aeff field for this group / int type's data</span>
+                <span class="n">extracted_data</span><span class="p">[</span><span class="n">grp_n</span><span class="p">][</span><span class="n">int_type</span><span class="p">][</span><span class="s1">'weighted_aeff'</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">extracted_data</span><span class="p">[</span><span class="n">grp_n</span><span class="p">][</span><span class="n">int_type</span><span class="p">][</span><span class="s1">'one_weight'</span><span class="p">]</span> \
                         <span class="o">/</span> <span class="n">ngen_it_tot</span> <span class="o">*</span> <span class="n">CMSQ_TO_MSQ</span>
 
     <span class="c1"># Report file count per run</span>
     <span class="k">for</span> <span class="n">run</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">filecount</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Files read, run </span><span class="si">%s</span><span class="s1">: </span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
-        <span class="n">ref_num_i3_files</span> <span class="o">=</span> <span class="n">run_settings</span><span class="p">[</span><span class="n">run</span><span class="p">][</span><span class="s1">&#39;num_i3_files&#39;</span><span class="p">]</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Files read, run </span><span class="si">%s</span><span class="s1">: </span><span class="si">%d</span><span class="s1">'</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
+        <span class="n">ref_num_i3_files</span> <span class="o">=</span> <span class="n">run_settings</span><span class="p">[</span><span class="n">run</span><span class="p">][</span><span class="s1">'num_i3_files'</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">count</span> <span class="o">!=</span> <span class="n">ref_num_i3_files</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s1">&#39;Run </span><span class="si">%s</span><span class="s1">, Number of files read (</span><span class="si">%d</span><span class="s1">) != number of &#39;</span>
-                <span class="s1">&#39;source I3 files (</span><span class="si">%d</span><span class="s1">), which may indicate an error.&#39;</span><span class="p">,</span>
+                <span class="s1">'Run </span><span class="si">%s</span><span class="s1">, Number of files read (</span><span class="si">%d</span><span class="s1">) != number of '</span>
+                <span class="s1">'source I3 files (</span><span class="si">%d</span><span class="s1">), which may indicate an error.'</span><span class="p">,</span>
                 <span class="n">run</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">ref_num_i3_files</span>
             <span class="p">)</span>
 
@@ -787,12 +787,12 @@
         <span class="n">int_type</span> <span class="o">=</span> <span class="n">flavint</span><span class="o">.</span><span class="n">intType</span>
         <span class="k">for</span> <span class="n">grp_n</span><span class="p">,</span> <span class="n">flavint_group</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">flavint_groupings</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">flavint</span> <span class="ow">in</span> <span class="n">flavint_group</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;flavint </span><span class="si">%s</span><span class="s1"> not in flavint_group </span><span class="si">%s</span><span class="s1">, passing.&#39;</span><span class="p">,</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'flavint </span><span class="si">%s</span><span class="s1"> not in flavint_group </span><span class="si">%s</span><span class="s1">, passing.'</span><span class="p">,</span>
                               <span class="n">flavint</span><span class="p">,</span> <span class="n">flavint_group</span><span class="p">)</span>
                 <span class="k">continue</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span>
-                    <span class="s1">&#39;flavint </span><span class="si">%s</span><span class="s1"> **IS** in flavint_group </span><span class="si">%s</span><span class="s1">, storing.&#39;</span><span class="p">,</span>
+                    <span class="s1">'flavint </span><span class="si">%s</span><span class="s1"> **IS** in flavint_group </span><span class="si">%s</span><span class="s1">, storing.'</span><span class="p">,</span>
                     <span class="n">flavint</span><span class="p">,</span> <span class="n">flavint_group</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="n">output_fields</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -815,18 +815,18 @@
         <span class="n">run_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">list2hrlist</span><span class="p">(</span><span class="n">numerical_runs</span><span class="p">))</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">alphanumerical_runs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">run_labels</span> <span class="o">+=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">alphanumerical_runs</span><span class="p">)</span>
-    <span class="n">run_label</span> <span class="o">=</span> <span class="s1">&#39;runs_&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">run_labels</span><span class="p">)</span>
-    <span class="n">geom_label</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span> <span class="o">+</span> <span class="n">detector_geom</span>
-    <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;events__&#39;</span> <span class="o">+</span> <span class="s1">&#39;__&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
+    <span class="n">run_label</span> <span class="o">=</span> <span class="s1">'runs_'</span> <span class="o">+</span> <span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">run_labels</span><span class="p">)</span>
+    <span class="n">geom_label</span> <span class="o">=</span> <span class="s1">''</span> <span class="o">+</span> <span class="n">detector_geom</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="s1">'events__'</span> <span class="o">+</span> <span class="s1">'__'</span><span class="o">.</span><span class="n">join</span><span class="p">([</span>
         <span class="n">detector_label</span><span class="p">,</span>
         <span class="n">geom_label</span><span class="p">,</span>
         <span class="n">run_label</span><span class="p">,</span>
         <span class="n">proc_label</span><span class="p">,</span>
         <span class="n">groups_label</span><span class="p">,</span>
-    <span class="p">])</span> <span class="o">+</span> <span class="s1">&#39;.hdf5&#39;</span>
+    <span class="p">])</span> <span class="o">+</span> <span class="s1">'.hdf5'</span>
 
     <span class="n">outfpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Writing events to </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">outfpath</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Writing events to </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">outfpath</span><span class="p">)</span>
 
     <span class="c1"># Save data to output file</span>
     <span class="n">evts</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">outfpath</span><span class="p">)</span></div>
@@ -836,62 +836,62 @@
 <div class="viewcode-block" id="parse_args">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.make_events_file.parse_args">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get command line arguments&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Get command line arguments"""</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span>
         <span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span> <span class="o">+</span> <span class="n">EXAMPLE</span><span class="p">,</span>
         <span class="n">formatter_class</span><span class="o">=</span><span class="n">ArgumentDefaultsHelpFormatter</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--det&#39;</span><span class="p">,</span>
-        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;DETECTOR&#39;</span><span class="p">,</span>
+        <span class="s1">'--det'</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">'DETECTOR'</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Detector, e.g. &quot;PINGU&quot; or &quot;DeepCore&quot;. This is used as the</span>
-<span class="s1">        top-most key in run_settings.json and data_proc_params.json files.&#39;&#39;&#39;</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'''Detector, e.g. "PINGU" or "DeepCore". This is used as the</span>
+<span class="s1">        top-most key in run_settings.json and data_proc_params.json files.'''</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--proc&#39;</span><span class="p">,</span>
-        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;PROC_VER&#39;</span><span class="p">,</span>
+        <span class="s1">'--proc'</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">'PROC_VER'</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Processing version applied to simulation; processing versions</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'''Processing version applied to simulation; processing versions</span>
 <span class="s1">        are defined with respect to each geometry version. See</span>
 <span class="s1">        data_proc_params.json file for definitions (or edit that file to add</span>
-<span class="s1">        more).&#39;&#39;&#39;</span>
+<span class="s1">        more).'''</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--run&#39;</span><span class="p">,</span>
-        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;RUN_ID H5_FILE0 H5_FILE1 ...&#39;</span><span class="p">,</span>
+        <span class="s1">'--run'</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">'RUN_ID H5_FILE0 H5_FILE1 ...'</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">"+"</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">'append'</span><span class="p">,</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;nue HDF5 file(s)&#39;</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'nue HDF5 file(s)'</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--outdir&#39;</span><span class="p">,</span>
-        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;DIR&#39;</span><span class="p">,</span>
+        <span class="s1">'--outdir'</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">'DIR'</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
         <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;directory into which to store resulting HDF5 file&#39;</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'directory into which to store resulting HDF5 file'</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--run-settings&#39;</span><span class="p">,</span>
-        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;JSON_FILE&#39;</span><span class="p">,</span>
+        <span class="s1">'--run-settings'</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">'JSON_FILE'</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;events/mc_sim_run_settings.json&#39;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;JSON file with reference run settings&#39;</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">'events/mc_sim_run_settings.json'</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'JSON file with reference run settings'</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--data-proc-params&#39;</span><span class="p">,</span>
-        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;JSON_FILE&#39;</span><span class="p">,</span>
+        <span class="s1">'--data-proc-params'</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">'JSON_FILE'</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;events/data_proc_params.json&#39;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;JSON file with reference processing settings&#39;</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">'events/data_proc_params.json'</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'JSON file with reference processing settings'</span>
     <span class="p">)</span>
 
     <span class="c1"># NOTE:</span>
@@ -901,87 +901,87 @@
     <span class="c1"># template settings file (i.e., if different files are specified for</span>
     <span class="c1"># different PISA stages, ensure they all come from the same detector,</span>
     <span class="c1"># geometry, and processing versions and have events groupings that do not</span>
-    <span class="c1"># lead to erroneous conclusions for the stages they&#39;re specified for)</span>
+    <span class="c1"># lead to erroneous conclusions for the stages they're specified for)</span>
 
     <span class="c1">#parser.add_argument(</span>
-    <span class="c1">#    &#39;--join&#39;,</span>
-    <span class="c1">#    const=&#39;nuecc,nuebarcc;numucc,numubarcc;nutaucc,nutaubarcc;&#39;</span>
-    <span class="c1">#          &#39;nuallnc,nuallbarnc&#39;,</span>
-    <span class="c1">#    default=&#39;&#39;,</span>
-    <span class="c1">#    action=&#39;store&#39;,</span>
-    <span class="c1">#    nargs=&#39;?&#39;,</span>
+    <span class="c1">#    '--join',</span>
+    <span class="c1">#    const='nuecc,nuebarcc;numucc,numubarcc;nutaucc,nutaubarcc;'</span>
+    <span class="c1">#          'nuallnc,nuallbarnc',</span>
+    <span class="c1">#    default='',</span>
+    <span class="c1">#    action='store',</span>
+    <span class="c1">#    nargs='?',</span>
     <span class="c1">#    type=str,</span>
     <span class="c1">#    help= \</span>
-    <span class="c1">#    &#39;&#39;&#39;Optionally join flavors together to increase statistics for Aeff</span>
+    <span class="c1">#    '''Optionally join flavors together to increase statistics for Aeff</span>
     <span class="c1">#    and/or resolutions (aeff and reco stages, respectively). Specifying the</span>
     <span class="c1">#    --join option without an argument joins together: nu_x &amp;</span>
     <span class="c1">#    nu_x_bar CC events together (one set for each of x=e, x=mu, and x=tau),</span>
     <span class="c1">#    and joins nuall NC &amp; nuallbar NC events tegether. If a string</span>
     <span class="c1">#    argument is supplied, this specifies custom groups to join together</span>
     <span class="c1">#    instead. The string must be a semicolon-separated list each field of</span>
-    <span class="c1">#    which itself a comma-separated list of event &quot;flavints&quot; (flavor and</span>
+    <span class="c1">#    which itself a comma-separated list of event "flavints" (flavor and</span>
     <span class="c1">#    interaction type) to grup together. Any event flavint not included in</span>
     <span class="c1">#    that string will be found individually, i.e., not joined together with</span>
-    <span class="c1">#    any other flavors&#39;&#39;&#39;</span>
+    <span class="c1">#    any other flavors'''</span>
     <span class="c1">#)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--cut&#39;</span><span class="p">,</span>
-        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;CUT_NAME&#39;</span><span class="p">,</span>
+        <span class="s1">'--cut'</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">'CUT_NAME'</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Name of pre-defined cut to apply. See the specified</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'''Name of pre-defined cut to apply. See the specified</span>
 <span class="s1">        --data-proc-params file for definitions for the detector and processing</span>
-<span class="s1">        version you&#39;re working with (note that the names of cuts and what these</span>
-<span class="s1">        entail varies by detector and processing version)&#39;&#39;&#39;</span>
+<span class="s1">        version you're working with (note that the names of cuts and what these</span>
+<span class="s1">        entail varies by detector and processing version)'''</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--ccut-pass-if&#39;</span><span class="p">,</span>
-        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;CRITERIA&#39;</span><span class="p">,</span>
+        <span class="s1">'--ccut-pass-if'</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">'CRITERIA'</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">''</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span> \
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;Custom cut: String containing criteria for passing a cut, using</span>
+<span class="w">        </span><span class="sd">'''Custom cut: String containing criteria for passing a cut, using</span>
 <span class="sd">        field names specified by the --ccut-fields argument. Standard Python-</span>
 <span class="sd">        and numpy-namespace expressions are allowed as well, since this string</span>
-<span class="sd">        is passed to &#39;eval&#39;. E.g.:</span>
-<span class="sd">        --ccut-fields=&quot;z:MCNeutrino/zenith,l6:my_l6/value&quot; \</span>
-<span class="sd">        --ccut-pass-if=&quot;(l6 == 1) &amp; (z &gt; pi/2)&quot; &#39;&#39;&#39;</span>
+<span class="sd">        is passed to 'eval'. E.g.:</span>
+<span class="sd">        --ccut-fields="z:MCNeutrino/zenith,l6:my_l6/value" \</span>
+<span class="sd">        --ccut-pass-if="(l6 == 1) &amp; (z &gt; pi/2)" '''</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--ccut-fields&#39;</span><span class="p">,</span>
-        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;FIELDS&#39;</span><span class="p">,</span>
+        <span class="s1">'--ccut-fields'</span><span class="p">,</span>
+        <span class="n">metavar</span><span class="o">=</span><span class="s1">'FIELDS'</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Custom cut: String of comma-separated fields, each containing</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">''</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'''Custom cut: String of comma-separated fields, each containing</span>
 <span class="s1">        colon-separated (variable name : HDF5 address) tuples. For example,</span>
 <span class="s1">        specifying:</span>
-<span class="s1">        --ccut-fields=&quot;l5:my_l5/value,l6:my_l6/value&quot;</span>
-<span class="s1">        allows for a custom cut to be defined via --ccut-pass-if=&quot;(l5 == 1) &amp;</span>
-<span class="s1">        (l6 == 1)&quot;&#39;&#39;&#39;</span>
+<span class="s1">        --ccut-fields="l5:my_l5/value,l6:my_l6/value"</span>
+<span class="s1">        allows for a custom cut to be defined via --ccut-pass-if="(l5 == 1) &amp;</span>
+<span class="s1">        (l6 == 1)"'''</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--no-aeff&#39;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Do not compute or include the &#39;weighted_aeff&#39; field in the</span>
+        <span class="s1">'--no-aeff'</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'''Do not compute or include the 'weighted_aeff' field in the</span>
 <span class="s1">        generated PISA events HDF5 file, disallowing use of the file for</span>
-<span class="s1">        effective area parameterizations or the Monte Carlo aeff stage&#39;&#39;&#39;</span>
+<span class="s1">        effective area parameterizations or the Monte Carlo aeff stage'''</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--no-pid&#39;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Do not include the &#39;pid&#39; field in the generated PISA events</span>
+        <span class="s1">'--no-pid'</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'''Do not include the 'pid' field in the generated PISA events</span>
 <span class="s1">        HDF5 file, disallowing use of the file for PID parameterizations or the</span>
-<span class="s1">        Monte Carlo PID stage&#39;&#39;&#39;</span>
+<span class="s1">        Monte Carlo PID stage'''</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;-v&#39;</span><span class="p">,</span> <span class="s1">&#39;--verbose&#39;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">,</span>
+        <span class="s1">'-v'</span><span class="p">,</span> <span class="s1">'--verbose'</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">'count'</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;set verbosity level&#39;</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'set verbosity level'</span>
     <span class="p">)</span>
 
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
@@ -1011,24 +1011,24 @@
         <span class="n">data_proc_params</span><span class="o">=</span><span class="n">find_resource</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">data_proc_params</span><span class="p">)</span>
     <span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Using detector </span><span class="si">%s</span><span class="s1">, processing version </span><span class="si">%s</span><span class="s1">.&#39;</span><span class="p">,</span> <span class="n">det</span><span class="p">,</span> <span class="n">proc</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Using detector </span><span class="si">%s</span><span class="s1">, processing version </span><span class="si">%s</span><span class="s1">.'</span><span class="p">,</span> <span class="n">det</span><span class="p">,</span> <span class="n">proc</span><span class="p">)</span>
 
     <span class="n">extract_fields</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">EXTRACT_FIELDS</span><span class="p">)</span>
     <span class="n">output_fields</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">OUTPUT_FIELDS</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">no_pid</span><span class="p">:</span>
-        <span class="n">extract_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">extract_fields</span> <span class="k">if</span> <span class="n">f</span> <span class="o">!=</span> <span class="s1">&#39;pid&#39;</span><span class="p">]</span>
-        <span class="n">output_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">output_fields</span> <span class="k">if</span> <span class="n">f</span> <span class="o">!=</span> <span class="s1">&#39;pid&#39;</span><span class="p">]</span>
+        <span class="n">extract_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">extract_fields</span> <span class="k">if</span> <span class="n">f</span> <span class="o">!=</span> <span class="s1">'pid'</span><span class="p">]</span>
+        <span class="n">output_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">output_fields</span> <span class="k">if</span> <span class="n">f</span> <span class="o">!=</span> <span class="s1">'pid'</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">no_aeff</span><span class="p">:</span>
-        <span class="n">output_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">output_fields</span> <span class="k">if</span> <span class="n">f</span> <span class="o">!=</span> <span class="s1">&#39;weighted_aeff&#39;</span><span class="p">]</span>
+        <span class="n">output_fields</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">output_fields</span> <span class="k">if</span> <span class="n">f</span> <span class="o">!=</span> <span class="s1">'weighted_aeff'</span><span class="p">]</span>
 
     <span class="c1"># Add any custom cuts specified on command line</span>
     <span class="n">ccut</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">ccut_pass_if</span><span class="p">:</span>
         <span class="n">ccut</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;pass_if&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">ccut_pass_if</span><span class="p">,</span>
-            <span class="s1">&#39;fields&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">ccut_fields</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="s1">'pass_if'</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">ccut_pass_if</span><span class="p">,</span>
+            <span class="s1">'fields'</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">ccut_fields</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span>
         <span class="p">}</span>
 
     <span class="c1"># One events file will be produced for each of The following flavint</span>
@@ -1037,11 +1037,11 @@
         <span class="c1"># No events joined together</span>
         <span class="kc">None</span><span class="p">,</span>
         <span class="c1"># CC events unjoined; join nuall NC and nuallbar NC separately (used</span>
-        <span class="c1"># for generating aeff param service&#39;s aeff parameterizations)</span>
-        <span class="s1">&#39;nuallnc,nuallbarnc&#39;</span><span class="p">,</span>
+        <span class="c1"># for generating aeff param service's aeff parameterizations)</span>
+        <span class="s1">'nuallnc,nuallbarnc'</span><span class="p">,</span>
         <span class="c1"># CC events paried by flav--anti-flav; nuallNC+nuallbarNC all joined</span>
         <span class="c1"># together; used for reco services (MC and vbwkde)</span>
-        <span class="s1">&#39;nuecc+nuebarcc,numucc+numubarcc,nutaucc+nutaubarcc,nuallnc+nuallbarnc&#39;</span><span class="p">,</span>
+        <span class="s1">'nuecc+nuebarcc,numucc+numubarcc,nutaucc+nutaubarcc,nuallnc+nuallbarnc'</span><span class="p">,</span>
     <span class="p">]</span>
 
     <span class="c1"># Create the events files</span>
@@ -1062,7 +1062,7 @@
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
         </article>
@@ -1103,7 +1103,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

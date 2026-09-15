@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Creating a service - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>Creating a service - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -319,11 +319,11 @@ Since the directory structure unambiguously identifies what stage a service impl
 <section id="module-docstring">
 <h3>Module docstring<a class="headerlink" href="#module-docstring" title="Link to this heading">¶</a></h3>
 <p>Just beneath an authorship comment at the top of the file, you should place the module docstring:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">"""</span>
 <span class="sd">This is a dummy oscillations service, provided as a template others can use to</span>
 <span class="sd">build their own services.</span>
 <span class="sd">...</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 </pre></div>
 </div>
 <p>Include a module docstring for your service, too, if there’s general information (particularly about how this service addresses the physics/functionality expected for this stage of the analysis) that is higher-level than the
@@ -360,7 +360,7 @@ Document the parameters (aka keyword arguments) specified by the <code class="do
 Include a <code class="docutils literal notranslate"><span class="pre">Notes</span></code> section to discuss things like details of implementation that the user should be aware of that are too lengthy to put in the brief descriptions in the <code class="docutils literal notranslate"><span class="pre">Parameters</span></code> section.
 Each section has dashes underneath the section name (same length as the name), and is separated by the above section by one or two empty lines.
 Refer to the <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/general_conventions.md" rel="noreferer noopener" target="_blank">general conventions</a> for references where you can find out more about writing docstrings.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="sd">&quot;&quot;&quot;Docstring (mandatory!)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="sd">"""Docstring (mandatory!)</span>
 
 <span class="sd">    What is the purpose of this stage? Short 1-2 sentence description</span>
 
@@ -389,13 +389,13 @@ Refer to the <a class="reference external" href="https://github.com/icecube/pisa
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &#39;true_energy&#39;, &#39;true_coszen&#39;, &#39;weights&#39;</span>
+<span class="sd">        'true_energy', 'true_coszen', 'weights'</span>
 
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    Einstein, Albert. &quot;The photoelectric effect.&quot; Ann. Phys 17.132 (1905): 4.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    Einstein, Albert. "The photoelectric effect." Ann. Phys 17.132 (1905): 4.</span>
+<span class="sd">    """</span>
 </pre></div>
 </div>
 <p>Note that the “Parameters” section has parameter names optionally followed by <code class="docutils literal notranslate"><span class="pre">:</span></code> and then a list of types that the parameter can be.
@@ -409,11 +409,11 @@ How to determine which parameters belong to the <code class="docutils literal no
 <p>The definition of the init method is how the class must be called to be instantiated.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">something_else</span><span class="p">,</span> <span class="n">some_arg_with_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">std_kwargs</span><span class="p">):</span>
 
-        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)</span>
-        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;true_energy&#39;</span><span class="p">,</span> <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span> <span class="s1">&#39;weights&#39;</span><span class="p">)</span>
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'a'</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">)</span>
+        <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'true_energy'</span><span class="p">,</span> <span class="s1">'true_coszen'</span><span class="p">,</span> <span class="s1">'weights'</span><span class="p">)</span>
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="n">MultiDimBinning</span><span class="p">,</span>
-            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;events&#39;</span>
+            <span class="s1">'calc_mode'</span><span class="p">:</span> <span class="n">MultiDimBinning</span><span class="p">,</span>
+            <span class="s1">'apply_mode'</span><span class="p">:</span> <span class="s1">'events'</span>
         <span class="p">}</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -424,9 +424,9 @@ How to determine which parameters belong to the <code class="docutils literal no
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">foo</span> <span class="o">=</span> <span class="n">something_else</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Description&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Description"""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bar</span> <span class="o">=</span> <span class="n">some_arg_with_default</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Description&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Description"""</span>
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">std_kwargs</span></code> can only contain <code class="docutils literal notranslate"><span class="pre">data</span></code>, <code class="docutils literal notranslate"><span class="pre">params</span></code>, <code class="docutils literal notranslate"><span class="pre">expected_params</span></code>, <code class="docutils literal notranslate"><span class="pre">expected_container_keys</span></code>, <code class="docutils literal notranslate"><span class="pre">debug_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">error_method</span></code>, <code class="docutils literal notranslate"><span class="pre">supported_reps</span></code>, <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>, <code class="docutils literal notranslate"><span class="pre">profile</span></code>, and <code class="docutils literal notranslate"><span class="pre">in_standalone_mode</span></code>. Of these, <code class="docutils literal notranslate"><span class="pre">data</span></code> and <code class="docutils literal notranslate"><span class="pre">params</span></code> will be automatically populated when a <code class="docutils literal notranslate"><span class="pre">Pipeline</span></code> containing the service is instantiated.</p>
@@ -489,11 +489,11 @@ It is useful to generate nominal transforms if it is slow to compute them or rea
 <h4><code class="docutils literal notranslate"><span class="pre">apply_function</span></code> example<a class="headerlink" href="#apply-function-example" title="Link to this heading">¶</a></h4>
 <p>An example of an <code class="docutils literal notranslate"><span class="pre">apply_function</span></code>—which performs some non-sensical scaling of ‘weights’—could look like this:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">a_magnitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
-        <span class="n">b_magnitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+        <span class="n">a_magnitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">a</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">'dimensionless'</span><span class="p">)</span>
+        <span class="n">b_magnitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">b</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">'dimensionless'</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">a_magnitude</span> <span class="o">*</span> <span class="n">b_magnitude</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span> <span class="o">*=</span> <span class="n">a_magnitude</span> <span class="o">*</span> <span class="n">b_magnitude</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s1">'true_energy'</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s1">'true_coszen'</span><span class="p">]</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'weights'</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="important admonition">
@@ -510,10 +510,10 @@ This will be detected and called by the service-testing script that attempts to 
 In case the service instantiation requires reading from some input file: if the file is generally useful, doesn’t contain non-public information, and is not too large, consider adding it to PISA; otherwise, consider creating a correctly formatted dummy file on the fly within the function below with which the service is instantiable.</p>
 <p>The instantiation test function for our simple dummy service could look like</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Initialisation example"""</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">'a'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">'b'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
     <span class="p">])</span>
     <span class="k">return</span> <span class="n">dummy</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">,</span> <span class="n">something_else</span><span class="o">=</span><span class="mf">0.42</span><span class="p">)</span>
 </pre></div>
@@ -615,7 +615,7 @@ In case the service instantiation requires reading from some input file: if the 
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

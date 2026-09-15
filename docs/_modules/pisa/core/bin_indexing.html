@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.core.bin_indexing - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.core.bin_indexing - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,7 +281,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.core.bin_indexing</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Functions to retrieve the bin index for a 1- to 3-dimensional sample.</span>
 
 <span class="sd">Functions were adapted from translation.py</span>
@@ -297,12 +297,12 @@
 
 <span class="sd">First bin is index = 0 and last bin is index = (num_bins - 1)</span>
 
-<span class="sd">* Values below the lowermost-edge of any dimension&#39;s binning return index = -1</span>
+<span class="sd">* Values below the lowermost-edge of any dimension's binning return index = -1</span>
 <span class="sd">* NaN values return index = -1</span>
-<span class="sd">* Otherwise, values above the uppermost-edge of any dimension&#39;s binning return</span>
+<span class="sd">* Otherwise, values above the uppermost-edge of any dimension's binning return</span>
 <span class="sd">  index = num_bins</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
@@ -315,30 +315,30 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;lookup_indices&quot;</span><span class="p">,</span> <span class="s2">&quot;test_lookup_indices&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"lookup_indices"</span><span class="p">,</span> <span class="s2">"test_lookup_indices"</span><span class="p">]</span>
 
 
-<span class="n">FX</span> <span class="o">=</span> <span class="s2">&quot;f4&quot;</span> <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span> <span class="k">else</span> <span class="s2">&quot;f8&quot;</span>
+<span class="n">FX</span> <span class="o">=</span> <span class="s2">"f4"</span> <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span> <span class="k">else</span> <span class="s2">"f8"</span>
 
 
 <span class="nd">@guvectorize</span><span class="p">(</span>
-    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], i8[:])&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;(), (j) -&gt; ()&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], i8[:])"</span><span class="p">],</span>
+    <span class="s2">"(), (j) -&gt; ()"</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">lookup_indices_vectorized_1d</span><span class="p">(</span><span class="n">sample_x</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lookup bin indices for sample_x values, where binning is defined by</span>
-<span class="sd">    `bin_edges_x`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Lookup bin indices for sample_x values, where binning is defined by</span>
+<span class="sd">    `bin_edges_x`."""</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_x</span><span class="p">)</span>
 
 
 <span class="nd">@guvectorize</span><span class="p">(</span>
-    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], i8[:])&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;(), (), (a), (b) -&gt; ()&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], i8[:])"</span><span class="p">],</span>
+    <span class="s2">"(), (), (a), (b) -&gt; ()"</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">lookup_indices_vectorized_2d</span><span class="p">(</span><span class="n">sample_x</span><span class="p">,</span> <span class="n">sample_y</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Same as above, except we get back the index&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Same as above, except we get back the index"""</span>
     <span class="n">idx_x</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_x</span><span class="p">)</span>
     <span class="n">idx_y</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_y</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_y</span><span class="p">)</span>
 
@@ -357,14 +357,14 @@
 
 
 <span class="nd">@guvectorize</span><span class="p">(</span>
-    <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], i8[:])&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;(), (), (), (a), (b), (c) -&gt; ()&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], i8[:])"</span><span class="p">],</span>
+    <span class="s2">"(), (), (), (a), (b), (c) -&gt; ()"</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">lookup_indices_vectorized_3d</span><span class="p">(</span>
     <span class="n">sample_x</span><span class="p">,</span> <span class="n">sample_y</span><span class="p">,</span> <span class="n">sample_z</span><span class="p">,</span> <span class="n">bin_edges_x</span><span class="p">,</span> <span class="n">bin_edges_y</span><span class="p">,</span> <span class="n">bin_edges_z</span><span class="p">,</span> <span class="n">out</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Vectorized gufunc to perform the lookup&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Vectorized gufunc to perform the lookup"""</span>
     <span class="n">idx_x</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_x</span><span class="p">)</span>
     <span class="n">idx_y</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_y</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_y</span><span class="p">)</span>
     <span class="n">idx_z</span> <span class="o">=</span> <span class="n">find_index</span><span class="p">(</span><span class="n">sample_z</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bin_edges_z</span><span class="p">)</span>
@@ -387,7 +387,7 @@
 <div class="viewcode-block" id="lookup_indices">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.bin_indexing.lookup_indices">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">lookup_indices</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">binning</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Lookup (flattened) bin index for sample points.</span>
+<span class="w">    </span><span class="sd">"""Lookup (flattened) bin index for sample points.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -409,16 +409,16 @@
 <span class="sd">    -----</span>
 <span class="sd">    this method works for 1d, 2d and 3d histogram only</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Convert non-MultiDimBinning objects into MultiDimBinning if possible;</span>
     <span class="c1"># if this fails, an error will result, as it should</span>
     <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">binning</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="o">!=</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;`binning` has </span><span class="si">{</span><span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span><span class="si">}</span><span class="s2"> dimension(s), but `sample`&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot; contains </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span><span class="si">}</span><span class="s2"> arrays (so represents </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot; dimensions)&quot;</span>
+            <span class="sa">f</span><span class="s2">"`binning` has </span><span class="si">{</span><span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span><span class="si">}</span><span class="s2"> dimension(s), but `sample`"</span>
+            <span class="sa">f</span><span class="s2">" contains </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span><span class="si">}</span><span class="s2"> arrays (so represents </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">" dimensions)"</span>
         <span class="p">)</span>
 
     <span class="n">lookup_funcs</span> <span class="o">=</span> <span class="p">{</span>
@@ -429,7 +429,7 @@
 
     <span class="k">if</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lookup_funcs</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s2">&quot;binning must have num_dims in </span><span class="si">{}</span><span class="s2">; got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s2">"binning must have num_dims in </span><span class="si">{}</span><span class="s2">; got </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                 <span class="nb">sorted</span><span class="p">(</span><span class="n">lookup_funcs</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="n">binning</span><span class="o">.</span><span class="n">num_dims</span>
             <span class="p">)</span>
         <span class="p">)</span>
@@ -440,7 +440,7 @@
         <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">sample</span><span class="p">]</span>
         <span class="o">+</span> <span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">edge_magnitudes</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">binning</span><span class="p">]</span>
     <span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;lookup_func_args = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lookup_func_args</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"lookup_func_args = </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lookup_func_args</span><span class="p">))</span>
 
     <span class="c1"># Create an array to store the results</span>
     <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
@@ -455,7 +455,7 @@
 <div class="viewcode-block" id="test_lookup_indices">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.bin_indexing.test_lookup_indices">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_lookup_indices</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `lookup_indices` function&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Unit tests for `lookup_indices` function"""</span>
 
     <span class="c1">#</span>
     <span class="c1"># Test a variety of points.</span>
@@ -469,9 +469,9 @@
 
     <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_evts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
-    <span class="n">binning_x</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">])</span>
-    <span class="n">binning_y</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
-    <span class="n">binning_z</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="n">binning_x</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">])</span>
+    <span class="n">binning_y</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+    <span class="n">binning_z</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"z"</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 
     <span class="n">binning_1d</span> <span class="o">=</span> <span class="n">binning_x</span>
     <span class="n">binning_2d</span> <span class="o">=</span> <span class="n">binning_x</span> <span class="o">*</span> <span class="n">binning_y</span>
@@ -481,54 +481,54 @@
     <span class="c1">#</span>
     <span class="c1"># All values higher or equal to the last bin edges are assigned an index of zero</span>
     <span class="c1">#</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;TEST 1D:&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Total number of bins: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">7</span><span class="p">))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;array in 1D: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Binning: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">binning_1d</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"TEST 1D:"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"Total number of bins: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">7</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"array in 1D: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"Binning: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">binning_1d</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
     <span class="n">indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">([</span><span class="n">x</span><span class="p">],</span> <span class="n">binning_1d</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;indices of each array element: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;*********************************&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"indices of each array element: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"*********************************"</span><span class="p">)</span>
     <span class="n">test</span> <span class="o">=</span> <span class="n">indices</span>
     <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">6</span><span class="p">])</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="s2">&quot;test=</span><span class="si">{}</span><span class="s2"> != ref=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="s2">"test=</span><span class="si">{}</span><span class="s2"> != ref=</span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
 
     <span class="c1"># 2D case:</span>
     <span class="c1">#</span>
     <span class="c1"># The binning edges are flattened as follows:</span>
     <span class="c1">#   [(x=0, y=0), (x=0, y=1), (x=1, y=0), ...]</span>
     <span class="c1">#</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;TEST 2D:&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Total number of bins: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">4</span><span class="p">))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;array in 2D: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Binning: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">binning_2d</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"TEST 2D:"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"Total number of bins: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"array in 2D: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"Binning: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">binning_2d</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">))</span>
     <span class="n">indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">],</span> <span class="n">binning_2d</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;indices of each array element: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;*********************************&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"indices of each array element: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"*********************************"</span><span class="p">)</span>
     <span class="n">test</span> <span class="o">=</span> <span class="n">indices</span>
     <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">26</span><span class="p">])</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="s2">&quot;test=</span><span class="si">{}</span><span class="s2"> != ref=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="s2">"test=</span><span class="si">{}</span><span class="s2"> != ref=</span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
 
     <span class="c1"># 3D case:</span>
     <span class="c1">#</span>
     <span class="c1"># the binning edges are flattened as follows:</span>
     <span class="c1">#   [(x=0, y=0, z=0), (x=0, y=0, z=1), (x=0, y=1, z=0)...]</span>
     <span class="c1">#</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;TEST 3D:&quot;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Total number of bins: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;array in 3D: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;Binning: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">binning_3d</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"TEST 3D:"</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"Total number of bins: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">7</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"array in 3D: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"Binning: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">binning_3d</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">))</span>
     <span class="n">indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">],</span> <span class="n">binning_3d</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;indices of each array element: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;*********************************&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"indices of each array element: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">"*********************************"</span><span class="p">)</span>
     <span class="n">test</span> <span class="o">=</span> <span class="n">indices</span>
     <span class="n">ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">51</span><span class="p">,</span> <span class="mi">54</span><span class="p">,</span> <span class="mi">56</span><span class="p">,</span> <span class="mi">52</span><span class="p">])</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="s2">&quot;test=</span><span class="si">{}</span><span class="s2"> != ref=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span> <span class="s2">"test=</span><span class="si">{}</span><span class="s2"> != ref=</span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;&lt;&lt; PASS : test_lookup_indices &gt;&gt;&quot;</span><span class="p">)</span></div>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&lt;&lt; PASS : test_lookup_indices &gt;&gt;"</span><span class="p">)</span></div>
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">test_lookup_indices</span><span class="p">()</span>
 </pre></div>
@@ -570,7 +570,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

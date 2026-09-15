@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.utils.fix_error - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.utils.fix_error - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,12 +281,12 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.utils.fix_error</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Stage to take the initial errors of MC and keep them</span>
 <span class="sd">for all minimization.</span>
 
 <span class="sd">Needed for the DRAGON nutau appearance analysis.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
@@ -299,7 +299,7 @@
 <div class="viewcode-block" id="fix_error">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.fix_error.fix_error">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">fix_error</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stage to fix the error returned by template_maker.</span>
 
 <span class="sd">    Notes</span>
@@ -307,8 +307,8 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;errors&quot;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "errors"</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -316,7 +316,7 @@
     <span class="p">):</span>
 
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;errors&#39;</span><span class="p">,</span>
+            <span class="s1">'errors'</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -329,23 +329,23 @@
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.fix_error.fix_error.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;frozen_errors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'frozen_errors'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="fix_error.compute_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.fix_error.fix_error.compute_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;frozen_errors&quot;</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;frozen_errors&#39;</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"frozen_errors"</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"errors"</span><span class="p">]</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'frozen_errors'</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="fix_error.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.fix_error.fix_error.apply_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;frozen_errors&#39;</span><span class="p">]</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'errors'</span><span class="p">][:]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'frozen_errors'</span><span class="p">]</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'errors'</span><span class="p">)</span></div>
 </div>
 
 </pre></div>
@@ -387,7 +387,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

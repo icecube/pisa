@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.osc.osc_params - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.osc.osc_params - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -283,14 +283,14 @@
           <h1>Source code for pisa.stages.osc.osc_params</h1><div class="highlight"><pre>
 <span></span><span class="c1"># author: T. Ehrhardt</span>
 <span class="c1"># date:   2018</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">OscParams: Characterize neutrino oscillation parameters</span>
 <span class="sd">           (mixing angles, Dirac-type CP-violating phase, mass splittings)</span>
 
 <span class="sd">changed by Elisa Lohfink (ellohfin; elohfink@icecube.wisc.edu)</span>
 <span class="sd">to include NSI changes made by Thomas Ehrhardt on his branch:</span>
 <span class="sd">original version can be found in thehrh/pisa nsi_reparameterisation branch</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">division</span>
 
@@ -298,13 +298,13 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">FTYPE</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;OscParams&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'OscParams'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="OscParams">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.osc_params.OscParams">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">OscParams</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Holds neutrino oscillation parameters, i.e., mixing angles, squared-mass</span>
 <span class="sd">    differences, and a Dirac-type CPV phase. The neutrino mixing (PMNS) matrix</span>
 <span class="sd">    constructed from these parameters is given in the standard</span>
@@ -354,7 +354,7 @@
 <span class="sd">    dm_matrix : 2d float array of shape (3, 3)</span>
 <span class="sd">        Antisymmetric matrix of squared-mass differences in vacuum</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_sin12</span> <span class="o">=</span> <span class="mf">0.</span>
@@ -372,7 +372,7 @@
     <span class="c1"># --- theta12 ---</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sin12</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 1-2 mixing angle&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Sine of 1-2 mixing angle"""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin12</span>
 
     <span class="nd">@sin12</span><span class="o">.</span><span class="n">setter</span>
@@ -391,7 +391,7 @@
     <span class="c1"># --- theta13 ---</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sin13</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 1-3 mixing angle&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Sine of 1-3 mixing angle"""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin13</span>
 
     <span class="nd">@sin13</span><span class="o">.</span><span class="n">setter</span>
@@ -410,7 +410,7 @@
     <span class="c1"># --- theta23 ---</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sin23</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 2-3 mixing angle&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Sine of 2-3 mixing angle"""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin23</span>
 
     <span class="nd">@sin23</span><span class="o">.</span><span class="n">setter</span>
@@ -429,7 +429,7 @@
     <span class="c1"># --- theta14 ---</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sin14</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sine of 1-4 mixing angle&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Sine of 1-4 mixing angle"""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sin14</span>
 
     <span class="nd">@sin14</span><span class="o">.</span><span class="n">setter</span>
@@ -448,7 +448,7 @@
     <span class="c1"># --- deltaCP ---</span>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">deltacp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;CPV phase&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""CPV phase"""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deltacp</span>
 
     <span class="nd">@deltacp</span><span class="o">.</span><span class="n">setter</span>
@@ -458,7 +458,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">mix_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Neutrino mixing matrix in its &#39;standard&#39; form&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Neutrino mixing matrix in its 'standard' form"""</span>
         <span class="n">mix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
         <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deltacp</span><span class="p">)</span>
@@ -491,13 +491,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">mix_matrix_complex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Mixing matrix as complex 2-d array&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Mixing matrix as complex 2-d array"""</span>
         <span class="n">mix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_matrix</span>
         <span class="k">return</span> <span class="n">mix</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">mix</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.</span><span class="n">j</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">mix_matrix_reparam</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Neutrino mixing matrix reparameterised in a way</span>
 <span class="sd">        such that the CPT trafo Hvac -&gt; -Hvac*  is exactly implemented by</span>
 <span class="sd">        the simultaneous transformations</span>
@@ -510,7 +510,7 @@
 <span class="sd">        This representation follows from the standard form U</span>
 <span class="sd">        as diag(exp(i*deltacp), 0, 0) * U * diag(exp(-i*deltacp), 0, 0).</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">mix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
         <span class="n">sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deltacp</span><span class="p">)</span>
@@ -543,13 +543,13 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">mix_matrix_reparam_complex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reparameterised mixing matrix as complex 2-d array&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Reparameterised mixing matrix as complex 2-d array"""</span>
         <span class="n">mix_reparam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mix_matrix_reparam</span>
         <span class="k">return</span> <span class="n">mix_reparam</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">mix_reparam</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1.</span><span class="n">j</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dm_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Neutrino mass splitting matrix in vacuum&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Neutrino mass splitting matrix in vacuum"""</span>
         <span class="n">dmVacVac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="n">mVac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="n">delta</span> <span class="o">=</span> <span class="mf">5.e-9</span>
@@ -579,16 +579,16 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_osc_params</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    # TODO: implement me!</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">pass</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s1">'__main__'</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">TARGET</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">set_verbosity</span><span class="p">,</span> <span class="n">logging</span>
-    <span class="k">assert</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="s2">&quot;Cannot test functions on GPU, set PISA_TARGET to &#39;cpu&#39;&quot;</span>
+    <span class="k">assert</span> <span class="n">TARGET</span> <span class="o">==</span> <span class="s1">'cpu'</span><span class="p">,</span> <span class="s2">"Cannot test functions on GPU, set PISA_TARGET to 'cpu'"</span>
     <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">test_osc_params</span><span class="p">()</span>
 
@@ -631,7 +631,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

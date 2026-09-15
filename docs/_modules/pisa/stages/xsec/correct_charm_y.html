@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.xsec.correct_charm_y - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.xsec.correct_charm_y - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,13 +281,13 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.xsec.correct_charm_y</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">This stage corrects inelasticity distribution </span>
 <span class="sd">to remove the most obvious impact from charm </span>
 <span class="sd">production bug in GENIE.</span>
 
 <span class="sd">Maria Liubarska</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
@@ -297,7 +297,7 @@
 <div class="viewcode-block" id="correct_charm_y">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.correct_charm_y.correct_charm_y">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">correct_charm_y</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This stage reweights inelasticity distribution</span>
 <span class="sd">    to remove the most obvious impact from charm</span>
 <span class="sd">    production bug in GENIE 2.12.8. The bug effectively </span>
@@ -317,7 +317,7 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &#39;true_energy&#39;, &#39;true_coszen&#39;, &#39;bjorken_y&#39;, &#39;weights&#39;</span>
+<span class="sd">        'true_energy', 'true_coszen', 'bjorken_y', 'weights'</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -326,22 +326,22 @@
 
 <span class="sd">    Slides showing use for check with oscNext VS (osc. call, 19 Dec 2022): </span>
 <span class="sd">    https://drive.google.com/file/d/14h0WYWPWn7yS7wLQpyMAPTenfKfFAq3k/view?usp=drive_link</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
-            <span class="n">nu_cc_container_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">],</span>
-            <span class="n">nubar_cc_container_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">],</span>
+            <span class="n">nu_cc_container_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'nue_cc'</span><span class="p">,</span> <span class="s1">'numu_cc'</span><span class="p">,</span> <span class="s1">'nutau_cc'</span><span class="p">],</span>
+            <span class="n">nubar_cc_container_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'nuebar_cc'</span><span class="p">,</span> <span class="s1">'numubar_cc'</span><span class="p">,</span> <span class="s1">'nutaubar_cc'</span><span class="p">],</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">()</span>
 
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;bjorken_y&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+            <span class="s1">'true_energy'</span><span class="p">,</span>
+            <span class="s1">'true_coszen'</span><span class="p">,</span>
+            <span class="s1">'bjorken_y'</span><span class="p">,</span>
+            <span class="s1">'weights'</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># init base class</span>
@@ -359,14 +359,14 @@
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.correct_charm_y.correct_charm_y.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="n">init_y_disrt_hists</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;cross_sections/charm_y_correction_2d_coszen_split.pckl&#39;</span><span class="p">)</span>
+        <span class="n">init_y_disrt_hists</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">'cross_sections/charm_y_correction_2d_coszen_split.pckl'</span><span class="p">)</span>
 
-        <span class="n">h_nucc_upg</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">&#39;nu_cc_upg&#39;</span><span class="p">]</span>
-        <span class="n">h_nubarcc_upg</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">&#39;nubar_cc_upg&#39;</span><span class="p">]</span>
-        <span class="n">h_nucc_oth</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">&#39;nu_cc_oth&#39;</span><span class="p">]</span>
-        <span class="n">h_nubarcc_oth</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">&#39;nubar_cc_oth&#39;</span><span class="p">]</span>
-        <span class="n">xed</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">&#39;bins_lgE&#39;</span><span class="p">]</span>
-        <span class="n">yed</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">&#39;bins_y&#39;</span><span class="p">]</span>
+        <span class="n">h_nucc_upg</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">'nu_cc_upg'</span><span class="p">]</span>
+        <span class="n">h_nubarcc_upg</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">'nubar_cc_upg'</span><span class="p">]</span>
+        <span class="n">h_nucc_oth</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">'nu_cc_oth'</span><span class="p">]</span>
+        <span class="n">h_nubarcc_oth</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">'nubar_cc_oth'</span><span class="p">]</span>
+        <span class="n">xed</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">'bins_lgE'</span><span class="p">]</span>
+        <span class="n">yed</span> <span class="o">=</span> <span class="n">init_y_disrt_hists</span><span class="p">[</span><span class="s1">'bins_y'</span><span class="p">]</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">eval_hist</span><span class="p">(</span><span class="n">lgE</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">coszen</span><span class="p">,</span> <span class="n">nubar</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
@@ -400,14 +400,14 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">continue</span>
 
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;charm_y_distr_corr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"charm_y_distr_corr"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
-            <span class="n">true_lg_energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">])</span>
-            <span class="n">true_y</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bjorken_y&#39;</span><span class="p">]</span>
-            <span class="n">true_coszen</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span>
+            <span class="n">true_lg_energy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">"true_energy"</span><span class="p">])</span>
+            <span class="n">true_y</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'bjorken_y'</span><span class="p">]</span>
+            <span class="n">true_coszen</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'true_coszen'</span><span class="p">]</span>
 
             <span class="n">apply_mask</span> <span class="o">=</span> <span class="n">true_y</span> <span class="o">&gt;=</span> <span class="mi">0</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;apply_mask&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">apply_mask</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"apply_mask"</span><span class="p">]</span> <span class="o">=</span> <span class="n">apply_mask</span>
 
             <span class="n">lgE_min</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">true_lg_energy</span> <span class="o">&gt;=</span> <span class="n">lgE_min</span>
@@ -423,8 +423,8 @@
             <span class="n">distr_extrap_erange</span> <span class="o">=</span> <span class="n">eval_hist</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">true_y</span><span class="p">[</span><span class="n">extrp_mask</span><span class="p">])</span><span class="o">*</span><span class="n">lgE_min</span><span class="p">,</span>
                                             <span class="n">true_y</span><span class="p">[</span><span class="n">extrp_mask</span><span class="p">],</span> <span class="n">true_coszen</span><span class="p">[</span><span class="n">extrp_mask</span><span class="p">],</span> <span class="n">nubar</span><span class="o">=</span><span class="n">is_nubar</span><span class="p">)</span>
 
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;charm_y_distr_corr&quot;</span><span class="p">][</span><span class="n">valid_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">distr_valid_erange</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;charm_y_distr_corr&quot;</span><span class="p">][</span><span class="n">extrp_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">distr_extrap_erange</span> </div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"charm_y_distr_corr"</span><span class="p">][</span><span class="n">valid_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">distr_valid_erange</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"charm_y_distr_corr"</span><span class="p">][</span><span class="n">extrp_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">distr_extrap_erange</span> </div>
 
 
 <div class="viewcode-block" id="correct_charm_y.apply_function">
@@ -434,18 +434,18 @@
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="c1"># reweighting all (anti-)neutrino CC events</span>
             <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_cc_keys</span><span class="p">:</span>
-                <span class="n">modif_weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;charm_y_distr_corr&quot;</span><span class="p">]</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">modif_weights</span></div>
+                <span class="n">modif_weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">"charm_y_distr_corr"</span><span class="p">]</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">modif_weights</span></div>
 </div>
 
 
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.correct_charm_y.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example that enables actual testing on toy containers from test_services.py&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example that enables actual testing on toy containers from test_services.py"""</span>
     <span class="k">return</span> <span class="n">correct_charm_y</span><span class="p">(</span>
-        <span class="n">nu_cc_container_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;test1_cc&quot;</span><span class="p">],</span>
-        <span class="n">nubar_cc_container_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;test2_nc&quot;</span><span class="p">]</span>
+        <span class="n">nu_cc_container_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">"test1_cc"</span><span class="p">],</span>
+        <span class="n">nubar_cc_container_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">"test2_nc"</span><span class="p">]</span>
     <span class="p">)</span></div>
 
         
@@ -488,7 +488,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

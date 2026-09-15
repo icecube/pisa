@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.data.csv_loader - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.data.csv_loader - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.data.csv_loader</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">A Stage to load data from a CSV datarelease format file into a ContainerSet</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
@@ -296,13 +296,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.container</span><span class="w"> </span><span class="kn">import</span> <span class="n">Container</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">split</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;csv_loader&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'csv_loader'</span><span class="p">,</span> <span class="s1">'init_test'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="csv_loader">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_loader.csv_loader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">csv_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    CSV file loader class</span>
 
 <span class="sd">    Parameters</span>
@@ -336,7 +336,7 @@
 <span class="sd">    scale_aeff : bool, default: False</span>
 <span class="sd">        Convert effective area from cm^2 to m^2 (PISA flux tables are stored in m^2)</span>
 <span class="sd">        if given in cm^2.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -360,14 +360,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span> <span class="o">=</span> <span class="n">data_dict</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Unsupported type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span><span class="si">}</span><span class="s2"> for data_dict.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Unsupported type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span><span class="si">}</span><span class="s2"> for data_dict."</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span> <span class="o">=</span> <span class="n">output_names</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;Found duplicates in `output_names`, but each name must be&#39;</span>
-                <span class="s1">&#39; unique.&#39;</span>
+                <span class="s1">'Found duplicates in `output_names`, but each name must be'</span>
+                <span class="s1">' unique.'</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span> <span class="o">=</span> <span class="n">neutrinos</span>
@@ -378,8 +378,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">scale_aeff</span> <span class="o">=</span> <span class="n">scale_aeff</span>
 
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;calc_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;apply_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span>
+            <span class="s2">"calc_mode"</span><span class="p">:</span> <span class="s2">"events"</span><span class="p">,</span>
+            <span class="s2">"apply_mode"</span><span class="p">:</span> <span class="s2">"events"</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -403,53 +403,53 @@
             <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neutrinos</span><span class="p">:</span>
-                <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s1">&#39;bar&#39;</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
-                <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s1">'bar'</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="s1">'e'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
                     <span class="n">flav</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="k">if</span> <span class="s1">&#39;mu&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">'mu'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
                     <span class="n">flav</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="k">if</span> <span class="s1">&#39;tau&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">'tau'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
                     <span class="n">flav</span> <span class="o">=</span> <span class="mi">2</span>
-                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;nubar&#39;</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
-                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">&#39;flav&#39;</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">'nubar'</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s1">'flav'</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
 
                 <span class="c1"># cut out right part</span>
                 <span class="n">pdg</span> <span class="o">=</span> <span class="n">nubar</span> <span class="o">*</span> <span class="p">(</span><span class="mi">12</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">flav</span><span class="p">)</span>
-                <span class="k">if</span> <span class="s1">&#39;pdg_code&#39;</span> <span class="ow">in</span> <span class="n">raw_data</span><span class="p">:</span>
-                    <span class="n">mask</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;pdg_code&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">pdg</span>
-                <span class="k">elif</span> <span class="s1">&#39;pdg&#39;</span> <span class="ow">in</span> <span class="n">raw_data</span><span class="p">:</span>
-                    <span class="n">mask</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;pdg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">pdg</span>
+                <span class="k">if</span> <span class="s1">'pdg_code'</span> <span class="ow">in</span> <span class="n">raw_data</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">'pdg_code'</span><span class="p">]</span> <span class="o">==</span> <span class="n">pdg</span>
+                <span class="k">elif</span> <span class="s1">'pdg'</span> <span class="ow">in</span> <span class="n">raw_data</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">'pdg'</span><span class="p">]</span> <span class="o">==</span> <span class="n">pdg</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either &#39;pdg&#39; or &#39;pdg_code&#39; must be in file.&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Either 'pdg' or 'pdg_code' must be in file."</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="s1">&#39;cc&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">'cc'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">'type'</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s1">'type'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
 
                 <span class="n">events</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">events</span> <span class="o">=</span> <span class="n">raw_data</span>
 
             <span class="c1"># fill container</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">))</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">))</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'initial_weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">))</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">events</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">container</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="n">val</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
                 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_aeff</span> <span class="ow">and</span> <span class="s1">&#39;weighted_aeff&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weighted_aeff&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">1.e-4</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_aeff</span> <span class="ow">and</span> <span class="s1">'weighted_aeff'</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'weighted_aeff'</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">1.e-4</span>
             
             <span class="c1"># Convert interaction key to dis boolen (if needed)</span>
-            <span class="k">if</span> <span class="s1">&#39;dis&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="ow">and</span> <span class="s1">&#39;interaction&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">dis_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;dis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;interaction&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dis_idx</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">'dis'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="ow">and</span> <span class="s1">'interaction'</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">dis_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'dis'</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'interaction'</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dis_idx</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
 
         <span class="c1"># check created at least one container</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;No containers created during data loading for some reason.&#39;</span>
+                <span class="s1">'No containers created during data loading for some reason.'</span>
             <span class="p">)</span></div>
 
 
@@ -458,7 +458,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># reset weights to initial weights prior to downstream stages running</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'initial_weights'</span><span class="p">])</span></div>
 </div>
 
 
@@ -466,17 +466,17 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.csv_loader.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
-    <span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;true_energy&#39;</span><span class="p">:</span><span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;true_coszen&#39;</span><span class="p">:</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;weighted_aeff&#39;</span><span class="p">:</span><span class="s1">&#39;weight&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;reco_energy&#39;</span><span class="p">:</span><span class="s1">&#39;reco_energy&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;reco_coszen&#39;</span><span class="p">:</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;pid&#39;</span><span class="p">:</span><span class="s1">&#39;pid&#39;</span>
+<span class="w">    </span><span class="sd">"""Initialisation example"""</span>
+    <span class="n">data_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'true_energy'</span><span class="p">:</span><span class="s1">'true_energy'</span><span class="p">,</span>
+                 <span class="s1">'true_coszen'</span><span class="p">:</span><span class="s1">'true_coszen'</span><span class="p">,</span>
+                 <span class="s1">'weighted_aeff'</span><span class="p">:</span><span class="s1">'weight'</span><span class="p">,</span>
+                 <span class="s1">'reco_energy'</span><span class="p">:</span><span class="s1">'reco_energy'</span><span class="p">,</span>
+                 <span class="s1">'reco_coszen'</span><span class="p">:</span><span class="s1">'reco_coszen'</span><span class="p">,</span>
+                 <span class="s1">'pid'</span><span class="p">:</span><span class="s1">'pid'</span>
                 <span class="p">}</span>
-    <span class="k">return</span> <span class="n">csv_loader</span><span class="p">(</span><span class="n">events_file</span><span class="o">=</span><span class="s1">&#39;events/IceCube_3y_oscillations/neutrino_mc.csv.bz2&#39;</span><span class="p">,</span>
+    <span class="k">return</span> <span class="n">csv_loader</span><span class="p">(</span><span class="n">events_file</span><span class="o">=</span><span class="s1">'events/IceCube_3y_oscillations/neutrino_mc.csv.bz2'</span><span class="p">,</span>
                       <span class="n">data_dict</span><span class="o">=</span><span class="n">data_dict</span><span class="p">,</span>
-                      <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">],</span>
+                      <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">'nue_cc'</span><span class="p">,</span> <span class="s1">'numu_cc'</span><span class="p">],</span>
                      <span class="p">)</span></div>
 
 </pre></div>
@@ -518,7 +518,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

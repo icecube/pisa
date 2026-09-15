@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.osc.prob3numba.test_numba - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.osc.prob3numba.test_numba - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,10 +281,10 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.osc.prob3numba.test_numba</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Test functions used during developpement of the osc. code</span>
 <span class="sd">Please ignore unless you are the author</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">print_function</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
@@ -318,8 +318,8 @@
 
 
 <span class="nd">@guvectorize</span><span class="p">(</span>
-    <span class="p">[</span><span class="s2">&quot;void(float64[:,:], complex128, int32[:], int32[:])&quot;</span><span class="p">],</span>
-    <span class="s2">&quot;(a,b),(),(f)-&gt;()&quot;</span><span class="p">,</span>
+    <span class="p">[</span><span class="s2">"void(float64[:,:], complex128, int32[:], int32[:])"</span><span class="p">],</span>
+    <span class="s2">"(a,b),(),(f)-&gt;()"</span><span class="p">,</span>
     <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">sum_row</span><span class="p">(</span><span class="n">mix</span><span class="p">,</span> <span class="n">bla</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
@@ -329,7 +329,7 @@
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../../../pisa.stages.osc.prob3numba.html#pisa.stages.osc.prob3numba.test_numba.main">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ftype=&quot;</span><span class="p">,</span> <span class="n">ftype</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"ftype="</span><span class="p">,</span> <span class="n">ftype</span><span class="p">)</span>
 
     <span class="c1"># hist arrays</span>
     <span class="n">mix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
@@ -340,18 +340,18 @@
     <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="n">sum_row</span><span class="p">(</span><span class="n">mix</span><span class="p">,</span> <span class="mf">42.0</span> <span class="o">+</span> <span class="mi">2</span><span class="n">j</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span>
     <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;took </span><span class="si">%.5f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"took </span><span class="si">%.5f</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">))</span>
     <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="n">sum_row</span><span class="p">(</span><span class="n">mix</span><span class="p">,</span> <span class="mf">42.0</span> <span class="o">+</span> <span class="mi">2</span><span class="n">j</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span>
     <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;took </span><span class="si">%.5f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"took </span><span class="si">%.5f</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">))</span>
     <span class="n">out</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="n">out</span><span class="p">)</span></div>
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
         </article>
@@ -392,7 +392,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../../_static/scripts/furo.js?v=46bd48cc"></script>

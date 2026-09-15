@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.core.prior - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.core.prior - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.core.prior</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Prior class for use in pisa.core.Param objects</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
@@ -306,45 +306,45 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Prior&#39;</span><span class="p">,</span> <span class="s1">&#39;get_prior_bounds&#39;</span><span class="p">,</span> <span class="s1">&#39;test_Prior&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'Prior'</span><span class="p">,</span> <span class="s1">'get_prior_bounds'</span><span class="p">,</span> <span class="s1">'test_Prior'</span><span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'J.L. Lanfranchi'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2019, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2019, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
 <span class="c1"># TODO: uniform prior should take a constant, such that e.g. discrete parameter</span>
 <span class="c1"># values when run separately will return valid comparisons across the</span>
 <span class="c1"># discretely-chosen values (with different uniform priors)</span>
 
-<span class="c1"># TODO: use units &quot;natively&quot; (not via strings) internal to the object; only</span>
+<span class="c1"># TODO: use units "natively" (not via strings) internal to the object; only</span>
 <span class="c1"># serializing to json should convert to strings (and deserializing should</span>
 <span class="c1"># convert from strings to Units objects)</span>
 
-<span class="c1"># TODO: add a &quot;to&quot; and/or &quot;ito&quot; method for converting units akin to those</span>
+<span class="c1"># TODO: add a "to" and/or "ito" method for converting units akin to those</span>
 <span class="c1"># methods in Pint quantities.</span>
 <div class="viewcode-block" id="Prior">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.prior.Prior">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Prior</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Prior information for a parameter. Defines the penalty (in</span>
+<span class="w">    </span><span class="sd">"""Prior information for a parameter. Defines the penalty (in</span>
 <span class="sd">    log-likelihood (llh)) for a parameter being at a given value (within the</span>
-<span class="sd">    prior&#39;s valid parameter range). Chi-squared penalties can also be returned</span>
+<span class="sd">    prior's valid parameter range). Chi-squared penalties can also be returned</span>
 <span class="sd">    (but the *definition* of a prior here is always in terms of llh).</span>
 
-<span class="sd">    Note that since this is a penalty, the more negative the prior&#39;s log</span>
-<span class="sd">    likelihood, the greater the penalty and the less likely the parameter&#39;s</span>
+<span class="sd">    Note that since this is a penalty, the more negative the prior's log</span>
+<span class="sd">    likelihood, the greater the penalty and the less likely the parameter's</span>
 <span class="sd">    value is.</span>
 
 <span class="sd">    Valid parameters and properties of the object differ based upon what `kind`</span>
@@ -352,19 +352,19 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    kind=&#39;uniform&#39;, llh_offset=...</span>
+<span class="sd">    kind='uniform', llh_offset=...</span>
 <span class="sd">        Uniform prior, no preference for any position relative to the valid</span>
 <span class="sd">        range, which is taken to be [-inf, +inf] [x-units].</span>
 
-<span class="sd">    kind=&#39;gaussian&#39;, mean=..., stddev=...</span>
+<span class="sd">    kind='gaussian', mean=..., stddev=...</span>
 <span class="sd">        Gaussian prior, defining log likelihood penalty for parameter being at</span>
 <span class="sd">        any particular position. Valid range is [-inf, +inf] [x-units].</span>
 
-<span class="sd">    kind=&#39;linterp&#39;, param_vals=..., llh_vals=...</span>
-<span class="sd">        Linearly-interpolated prior. Note that &quot;corners&quot; in linear</span>
+<span class="sd">    kind='linterp', param_vals=..., llh_vals=...</span>
+<span class="sd">        Linearly-interpolated prior. Note that "corners" in linear</span>
 <span class="sd">        interpolation may cause difficulties for some minimizers.</span>
 
-<span class="sd">    kind=&#39;spline&#39;, knots=..., coeffs=..., deg=...</span>
+<span class="sd">    kind='spline', knots=..., coeffs=..., deg=...</span>
 <span class="sd">        Smooth spline interpolation.</span>
 
 <span class="sd">    Properties</span>
@@ -376,18 +376,18 @@
 <span class="sd">    valid_range</span>
 
 <span class="sd">    Additional properties are defined based on `kind`:</span>
-<span class="sd">    kind=&#39;uniform&#39;:</span>
+<span class="sd">    kind='uniform':</span>
 <span class="sd">        llh_offset</span>
 
-<span class="sd">    kind=&#39;gaussian&#39;:</span>
+<span class="sd">    kind='gaussian':</span>
 <span class="sd">        mean</span>
 <span class="sd">        stddev</span>
 
-<span class="sd">    kind=&#39;linterp&#39;:</span>
+<span class="sd">    kind='linterp':</span>
 <span class="sd">        param_vals</span>
 <span class="sd">        llh_vals</span>
 
-<span class="sd">    kind=&#39;spline&#39;:</span>
+<span class="sd">    kind='spline':</span>
 <span class="sd">        knots</span>
 <span class="sd">        coeffs</span>
 <span class="sd">        deg</span>
@@ -399,12 +399,12 @@
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    If the parameter the prior is being applied to has units, the prior&#39;s</span>
-<span class="sd">    &quot;x&quot;-values specification must have compatible units.</span>
+<span class="sd">    If the parameter the prior is being applied to has units, the prior's</span>
+<span class="sd">    "x"-values specification must have compatible units.</span>
 
 <span class="sd">    If you implement a new prior, it ***must*** raise an exception if methods</span>
-<span class="sd">    `llh` or `chi2` are called with a parameter value outside the prior&#39;s valid</span>
-<span class="sd">    range, so subtle bugs aren&#39;t introduced that appear as an issue in e.g. the</span>
+<span class="sd">    `llh` or `chi2` are called with a parameter value outside the prior's valid</span>
+<span class="sd">    range, so subtle bugs aren't introduced that appear as an issue in e.g. the</span>
 <span class="sd">    minimizer.</span>
 
 <span class="sd">    Examples</span>
@@ -421,7 +421,7 @@
 <span class="sd">    &gt;&gt;&gt; # Define spline interpolant</span>
 <span class="sd">    &gt;&gt;&gt; knots, coeffs, deg = splrep(param_vals, llh_vals)</span>
 <span class="sd">    &gt;&gt;&gt; # Instantiate spline prior</span>
-<span class="sd">    &gt;&gt;&gt; prior = Prior(kind=&#39;spline&#39;, knots=knots, coeffs=coeffs, deg=deg)</span>
+<span class="sd">    &gt;&gt;&gt; prior = Prior(kind='spline', knots=knots, coeffs=coeffs, deg=deg)</span>
 <span class="sd">    &gt;&gt;&gt; # Generate sample points for interpolation</span>
 <span class="sd">    &gt;&gt;&gt; param_upsamp = np.linspace(-10, 10, 1000)</span>
 <span class="sd">    &gt;&gt;&gt; # Evaluation of spline using splev</span>
@@ -430,38 +430,38 @@
 <span class="sd">    &gt;&gt;&gt; all(prior.llh(param_upsamp) == llh_upsamp)</span>
 <span class="sd">    True</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;kind&#39;</span><span class="p">]</span> <span class="c1">#, &#39;units&#39;, &#39;valid_range&#39;]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'kind'</span><span class="p">]</span> <span class="c1">#, 'units', 'valid_range']</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">kind</span> <span class="o">=</span> <span class="n">kind</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">kind</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">chi2</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">llh</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># Dispatch the correct initialization method</span>
-        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;uniform&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="s1">'none'</span><span class="p">,</span> <span class="s1">'uniform'</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__init_uniform</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">'gaussian'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__init_gaussian</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;linterp&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">'linterp'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__init_linterp</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;spline&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">'spline'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__init_spline</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">&#39;jeffreys&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s1">'jeffreys'</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__init_jeffreys</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unknown Prior kind `&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kind</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;`&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Unknown Prior kind `'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kind</span><span class="p">)</span> <span class="o">+</span> <span class="s1">'`'</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">units_str</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s1">&#39;&#39;</span>
-        <span class="k">return</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nb">format</span><span class="p">(</span><span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">)</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="s1">&#39;~&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">return</span> <span class="s1">''</span>
+        <span class="k">return</span> <span class="s1">' '</span> <span class="o">+</span> <span class="nb">format</span><span class="p">(</span><span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">)</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="s1">'~'</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">&#39;&lt;&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;&gt;&#39;</span>
+        <span class="k">return</span> <span class="s1">'&lt;'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span> <span class="o">+</span> <span class="s1">' '</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span> <span class="o">+</span> <span class="s1">'&gt;'</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
@@ -483,25 +483,25 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__init_uniform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">llh_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;llh_offset&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;uniform&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'llh_offset'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">'uniform'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">llh_offset</span> <span class="o">=</span> <span class="n">llh_offset</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">llh</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
             <span class="k">return</span> <span class="mf">0.</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">__strip</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">llh_offset</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">llh</span> <span class="o">=</span> <span class="n">llh</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_at</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_at_str</span> <span class="o">=</span> <span class="s1">&#39;no maximum&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_at_str</span> <span class="o">=</span> <span class="s1">'no maximum'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_range</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">),</span>
                             <span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s1">&#39;uniform prior, llh_offset=</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">llh_offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s1">'uniform prior, llh_offset=</span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">llh_offset</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__init_jeffreys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate jeffreys prior as defined in Sivia p.125&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;jeffreys&#39;</span>
+<span class="w">        </span><span class="sd">"""Calculate jeffreys prior as defined in Sivia p.125"""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">'jeffreys'</span>
         <span class="n">A</span> <span class="o">=</span> <span class="n">interpret_quantity</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">B</span> <span class="o">=</span> <span class="n">interpret_quantity</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">A</span><span class="o">.</span><span class="n">dimensionality</span> <span class="o">==</span> <span class="n">B</span><span class="o">.</span><span class="n">dimensionality</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">'A'</span><span class="p">,</span> <span class="s1">'B'</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
         <span class="n">B</span> <span class="o">=</span> <span class="n">B</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="n">A</span>
@@ -516,14 +516,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">max_at_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_at</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_range</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">),</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">B</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s2">&quot;jeffreys&#39; prior, range [</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">]&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s2">"jeffreys' prior, range [</span><span class="si">%s</span><span class="s2">,</span><span class="si">%s</span><span class="s2">]"</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__init_gaussian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">stddev</span><span class="p">):</span>
         <span class="n">mean</span> <span class="o">=</span> <span class="n">interpret_quantity</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">stddev</span> <span class="o">=</span> <span class="n">interpret_quantity</span><span class="p">(</span><span class="n">stddev</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">mean</span><span class="o">.</span><span class="n">dimensionality</span> <span class="o">==</span> <span class="n">stddev</span><span class="o">.</span><span class="n">dimensionality</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;stddev&#39;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;gaussian&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">'mean'</span><span class="p">,</span> <span class="s1">'stddev'</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">'gaussian'</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">mean</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stddev</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">),</span> \
@@ -541,17 +541,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">max_at_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_at</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_range</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">),</span>
                             <span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s1">&#39;gaussian prior: stddev=</span><span class="si">%s%s</span><span class="s1">, maximum at </span><span class="si">%s%s</span><span class="s1">&#39;</span> \
+        <span class="bp">self</span><span class="o">.</span><span class="n">_str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s1">'gaussian prior: stddev=</span><span class="si">%s%s</span><span class="s1">, maximum at </span><span class="si">%s%s</span><span class="s1">'</span> \
                 <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stddev</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">units_str</span><span class="p">,</span>
                   <span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">units_str</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__init_linterp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_vals</span><span class="p">,</span> <span class="n">llh_vals</span><span class="p">):</span>
         <span class="n">param_vals</span> <span class="o">=</span> <span class="n">interpret_quantity</span><span class="p">(</span><span class="n">param_vals</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">&#39;param_vals&#39;</span><span class="p">,</span> <span class="s1">&#39;llh_vals&#39;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;linterp&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">'param_vals'</span><span class="p">,</span> <span class="s1">'llh_vals'</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">'linterp'</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param_vals</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">param_vals</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">interp</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">param_vals</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span> <span class="n">llh_vals</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interp</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">param_vals</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span> <span class="n">llh_vals</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s1">'linear'</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                <span class="n">bounds_error</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">assume_sorted</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">param_vals</span> <span class="o">=</span> <span class="n">param_vals</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">llh_vals</span> <span class="o">=</span> <span class="n">llh_vals</span>
@@ -560,18 +560,18 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">llh</span> <span class="o">=</span> <span class="n">llh</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_at</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_vals</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">llh_vals</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">llh_vals</span><span class="p">)]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_at_str</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_at</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_at_str</span> <span class="o">=</span> <span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_at</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_range</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_vals</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">),</span>
                             <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_vals</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s1">&#39;linearly-interpolated prior: valid in [</span><span class="si">%s</span><span class="s1">, </span><span class="si">%s</span><span class="s1">]</span><span class="si">%s</span><span class="s1">, maxima at (</span><span class="si">%s</span><span class="s1">)</span><span class="si">%s</span><span class="s1">&#39;</span> \
+        <span class="bp">self</span><span class="o">.</span><span class="n">_str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s1">'linearly-interpolated prior: valid in [</span><span class="si">%s</span><span class="s1">, </span><span class="si">%s</span><span class="s1">]</span><span class="si">%s</span><span class="s1">, maxima at (</span><span class="si">%s</span><span class="s1">)</span><span class="si">%s</span><span class="s1">'</span> \
                 <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_vals</span><span class="p">)),</span>
                   <span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param_vals</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">units_str</span><span class="p">,</span>
                   <span class="bp">self</span><span class="o">.</span><span class="n">max_at_str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">units_str</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__init_spline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knots</span><span class="p">,</span> <span class="n">coeffs</span><span class="p">,</span> <span class="n">deg</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">knots</span> <span class="o">=</span> <span class="n">interpret_quantity</span><span class="p">(</span><span class="n">knots</span><span class="p">,</span> <span class="n">expect_sequence</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">&#39;knots&#39;</span><span class="p">,</span> <span class="s1">&#39;coeffs&#39;</span><span class="p">,</span> <span class="s1">&#39;deg&#39;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">&#39;spline&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state_attrs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">'knots'</span><span class="p">,</span> <span class="s1">'coeffs'</span><span class="p">,</span> <span class="s1">'deg'</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="s1">'spline'</span>
         <span class="k">if</span> <span class="n">isunitless</span><span class="p">(</span><span class="n">knots</span><span class="p">):</span>
             <span class="n">knots</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">knots</span><span class="p">,</span> <span class="n">units</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -598,7 +598,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">max_at_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_at</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valid_range</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knots</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">),</span>
                             <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knots</span><span class="p">)</span> <span class="o">*</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s1">&#39;spline prior: deg=</span><span class="si">%d</span><span class="s1">, valid in [</span><span class="si">%s</span><span class="s1">, </span><span class="si">%s</span><span class="s1">]</span><span class="si">%s</span><span class="s1">; max at </span><span class="si">%s%s</span><span class="s1">&#39;</span> \
+        <span class="bp">self</span><span class="o">.</span><span class="n">_str</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s1">'spline prior: deg=</span><span class="si">%d</span><span class="s1">, valid in [</span><span class="si">%s</span><span class="s1">, </span><span class="si">%s</span><span class="s1">]</span><span class="si">%s</span><span class="s1">; max at </span><span class="si">%s%s</span><span class="s1">'</span> \
                 <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">deg</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knots</span><span class="p">)),</span>
                   <span class="bp">self</span><span class="o">.</span><span class="n">__stringify</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knots</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">units_str</span><span class="p">,</span>
                   <span class="bp">self</span><span class="o">.</span><span class="n">max_at_str</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">units_str</span><span class="p">)</span>
@@ -608,27 +608,27 @@
             <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">param_val</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span>
                     <span class="ow">and</span> <span class="n">param_val</span><span class="o">.</span><span class="n">dimensionality</span>
                     <span class="o">!=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Passed a value with units (</span><span class="si">%s</span><span class="s1">), but this&#39;</span>
-                                <span class="s1">&#39; prior has no units.&#39;</span> <span class="o">%</span><span class="n">param_val</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Passed a value with units (</span><span class="si">%s</span><span class="s1">), but this'</span>
+                                <span class="s1">' prior has no units.'</span> <span class="o">%</span><span class="n">param_val</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param_val</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Passed a value without units, but this prior&#39;</span>
-                                <span class="s1">&#39; has units (</span><span class="si">%s</span><span class="s1">).&#39;</span> <span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Passed a value without units, but this prior'</span>
+                                <span class="s1">' has units (</span><span class="si">%s</span><span class="s1">).'</span> <span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">param_val</span><span class="o">.</span><span class="n">dimensionality</span> <span class="o">!=</span> <span class="n">ureg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">)</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Passed a value with units (</span><span class="si">%s</span><span class="s1">);&#39;</span>
-                                <span class="s1">&#39; incompatible with prior units (</span><span class="si">%s</span><span class="s1">)&#39;</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Passed a value with units (</span><span class="si">%s</span><span class="s1">);'</span>
+                                <span class="s1">' incompatible with prior units (</span><span class="si">%s</span><span class="s1">)'</span>
                                 <span class="o">%</span><span class="p">(</span><span class="n">param_val</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">)</span>
                     <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">dimensionality</span> <span class="o">!=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">dimensionless</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;No units on prior, so cannot understand&#39;</span>
-                                <span class="s1">&#39; passed value (with units): </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'No units on prior, so cannot understand'</span>
+                                <span class="s1">' passed value (with units): </span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span><span class="n">x</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">x</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Units </span><span class="si">%s</span><span class="s1"> must be present on param values (got&#39;</span>
-                            <span class="s1">&#39; </span><span class="si">%s</span><span class="s1">, type </span><span class="si">%s</span><span class="s1"> instead).&#39;</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">'Units </span><span class="si">%s</span><span class="s1"> must be present on param values (got'</span>
+                            <span class="s1">' </span><span class="si">%s</span><span class="s1">, type </span><span class="si">%s</span><span class="s1"> instead).'</span>
                             <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
 
@@ -641,7 +641,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">__stringify</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
-        <span class="k">return</span> <span class="nb">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;0.4e&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">'0.4e'</span><span class="p">)</span>
 
     <span class="c1"># TODO: proper function wrapping, including @wraps decorator</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">__attach_units_to_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
@@ -658,7 +658,7 @@
 <div class="viewcode-block" id="get_prior_bounds">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.prior.get_prior_bounds">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_prior_bounds</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">param</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stddev</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Obtain confidence intervals for given number of</span>
+<span class="w">    </span><span class="sd">"""Obtain confidence intervals for given number of</span>
 <span class="sd">    standard deviations from parameter prior.</span>
 
 <span class="sd">    Parameters</span>
@@ -684,7 +684,7 @@
 <span class="sd">        A dictionary mapping the passed `stddev` values to the corresponding</span>
 <span class="sd">        bounds</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">isscalar</span><span class="p">(</span><span class="n">stddev</span><span class="p">):</span>
         <span class="n">stddev</span> <span class="o">=</span> <span class="p">[</span><span class="n">stddev</span><span class="p">]</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stddev</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">):</span>
@@ -699,16 +699,16 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s1">&#39;params&#39;</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
-            <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">'params'</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s1">'params'</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">param</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
-        <span class="k">if</span> <span class="s1">&#39;prior&#39;</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
-            <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s1">&#39;prior&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">'prior'</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span><span class="p">[</span><span class="s1">'prior'</span><span class="p">]</span>
 
         <span class="n">prior</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="o">**</span><span class="n">obj</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Getting confidence region from prior: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">prior</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Getting confidence region from prior: </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">prior</span><span class="p">)</span>
     <span class="n">x0</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">valid_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">x1</span> <span class="o">=</span> <span class="n">prior</span><span class="o">.</span><span class="n">valid_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mi">10000</span><span class="p">),</span> <span class="n">prior</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
@@ -730,17 +730,17 @@
 <div class="viewcode-block" id="test_Prior">
 <a class="viewcode-back" href="../../../pisa.core.html#pisa.core.prior.test_Prior">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_Prior</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for Prior class&quot;&quot;&quot;</span>
-    <span class="n">uniform</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;uniform&#39;</span><span class="p">,</span> <span class="n">llh_offset</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
-    <span class="n">jeffreys</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;jeffreys&#39;</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">3</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span>
-    <span class="n">gaussian</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">stddev</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Unit tests for Prior class"""</span>
+    <span class="n">uniform</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">'uniform'</span><span class="p">,</span> <span class="n">llh_offset</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+    <span class="n">jeffreys</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">'jeffreys'</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="mi">3</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span>
+    <span class="n">gaussian</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">'gaussian'</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">stddev</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span>
-    <span class="n">linterp</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;linterp&#39;</span><span class="p">,</span> <span class="n">param_vals</span><span class="o">=</span><span class="n">x</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">meter</span> <span class="o">/</span> <span class="n">ureg</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">llh_vals</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+    <span class="n">linterp</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">'linterp'</span><span class="p">,</span> <span class="n">param_vals</span><span class="o">=</span><span class="n">x</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">meter</span> <span class="o">/</span> <span class="n">ureg</span><span class="o">.</span><span class="n">s</span><span class="p">,</span> <span class="n">llh_vals</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
     <span class="n">param_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
     <span class="n">llh_vals</span> <span class="o">=</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span>
     <span class="n">knots</span><span class="p">,</span> <span class="n">coeffs</span><span class="p">,</span> <span class="n">deg</span> <span class="o">=</span> <span class="n">splrep</span><span class="p">(</span><span class="n">param_vals</span><span class="p">,</span> <span class="n">llh_vals</span><span class="p">)</span>
-    <span class="n">spline</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">&#39;spline&#39;</span><span class="p">,</span> <span class="n">knots</span><span class="o">=</span><span class="n">knots</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">foot</span><span class="p">,</span> <span class="n">coeffs</span><span class="o">=</span><span class="n">coeffs</span><span class="p">,</span>
+    <span class="n">spline</span> <span class="o">=</span> <span class="n">Prior</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="s1">'spline'</span><span class="p">,</span> <span class="n">knots</span><span class="o">=</span><span class="n">knots</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">foot</span><span class="p">,</span> <span class="n">coeffs</span><span class="o">=</span><span class="n">coeffs</span><span class="p">,</span>
                    <span class="n">deg</span><span class="o">=</span><span class="n">deg</span><span class="p">)</span>
     <span class="n">param_upsamp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">foot</span>
     <span class="n">llh_upsamp</span> <span class="o">=</span> <span class="n">splev</span><span class="p">(</span><span class="n">param_upsamp</span><span class="o">.</span><span class="n">magnitude</span><span class="p">,</span> <span class="n">tck</span><span class="o">=</span><span class="p">(</span><span class="n">knots</span><span class="p">,</span> <span class="n">coeffs</span><span class="p">,</span> <span class="n">deg</span><span class="p">),</span> <span class="n">ext</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -796,25 +796,25 @@
 
     <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">temp_dir</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">pri</span> <span class="ow">in</span> <span class="p">[</span><span class="n">uniform</span><span class="p">,</span> <span class="n">jeffreys</span><span class="p">,</span> <span class="n">gaussian</span><span class="p">,</span> <span class="n">linterp</span><span class="p">,</span> <span class="n">spline</span><span class="p">]:</span>
-            <span class="n">fpath</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">pri</span><span class="o">.</span><span class="n">kind</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span><span class="p">)</span>
+            <span class="n">fpath</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">pri</span><span class="o">.</span><span class="n">kind</span> <span class="o">+</span> <span class="s1">'.json'</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">to_file</span><span class="p">(</span><span class="n">pri</span><span class="p">,</span> <span class="n">fpath</span><span class="p">)</span>
                 <span class="n">loaded</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">Prior</span><span class="p">)</span>
                 <span class="k">assert</span> <span class="n">loaded</span> <span class="o">==</span> <span class="n">pri</span>
             <span class="k">except</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;prior </span><span class="si">%s</span><span class="s1"> failed&#39;</span><span class="p">,</span> <span class="n">pri</span><span class="o">.</span><span class="n">kind</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">'prior </span><span class="si">%s</span><span class="s1"> failed'</span><span class="p">,</span> <span class="n">pri</span><span class="o">.</span><span class="n">kind</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">isfile</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                        <span class="s1">&#39;contents of </span><span class="si">%s</span><span class="s1">:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span>
-                        <span class="n">fpath</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span>
+                        <span class="s1">'contents of </span><span class="si">%s</span><span class="s1">:</span><span class="se">\n</span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span>
+                        <span class="n">fpath</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">(),</span>
                     <span class="p">)</span>
                 <span class="k">raise</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Prior &gt;&gt;&#39;</span><span class="p">)</span></div>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'&lt;&lt; PASS : test_Prior &gt;&gt;'</span><span class="p">)</span></div>
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
     <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">test_Prior</span><span class="p">()</span>
 </pre></div>
@@ -856,7 +856,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

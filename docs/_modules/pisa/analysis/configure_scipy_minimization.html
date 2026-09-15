@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.analysis.configure_scipy_minimization - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.analysis.configure_scipy_minimization - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.analysis.configure_scipy_minimization</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Utilities for validating and configuring scipy minimization settings.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Mapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
@@ -298,24 +298,24 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">EVAL_MSG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;make_scipy_local_minimizer_kwargs&#39;</span><span class="p">,</span> <span class="s1">&#39;set_minimizer_defaults&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;validate_minimizer_settings&#39;</span><span class="p">,</span> <span class="s1">&#39;make_scipy_constraint_dict&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;scipy_constraints_to_callables&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'make_scipy_local_minimizer_kwargs'</span><span class="p">,</span> <span class="s1">'set_minimizer_defaults'</span><span class="p">,</span>
+           <span class="s1">'validate_minimizer_settings'</span><span class="p">,</span> <span class="s1">'make_scipy_constraint_dict'</span><span class="p">,</span>
+           <span class="s1">'scipy_constraints_to_callables'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="make_scipy_local_minimizer_kwargs">
 <a class="viewcode-back" href="../../../pisa.analysis.html#pisa.analysis.configure_scipy_minimization.make_scipy_local_minimizer_kwargs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">make_scipy_local_minimizer_kwargs</span><span class="p">(</span><span class="n">minimizer_settings</span><span class="p">,</span> <span class="n">constrs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Small helper function containing common logic for</span>
+<span class="w">    </span><span class="sd">"""Small helper function containing common logic for</span>
 <span class="sd">    creating minimizer keyword args in calls to global</span>
-<span class="sd">    routines via their scipy interface.&quot;&quot;&quot;</span>
+<span class="sd">    routines via their scipy interface."""</span>
     <span class="n">minimizer_kwargs</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">minimizer_settings</span><span class="p">)</span>
-    <span class="n">minimizer_kwargs</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">minimizer_settings</span><span class="p">[</span><span class="s2">&quot;method&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
-    <span class="n">minimizer_kwargs</span><span class="p">[</span><span class="s2">&quot;options&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">minimizer_settings</span><span class="p">[</span><span class="s2">&quot;options&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+    <span class="n">minimizer_kwargs</span><span class="p">[</span><span class="s2">"method"</span><span class="p">]</span> <span class="o">=</span> <span class="n">minimizer_settings</span><span class="p">[</span><span class="s2">"method"</span><span class="p">][</span><span class="s2">"value"</span><span class="p">]</span>
+    <span class="n">minimizer_kwargs</span><span class="p">[</span><span class="s2">"options"</span><span class="p">]</span> <span class="o">=</span> <span class="n">minimizer_settings</span><span class="p">[</span><span class="s2">"options"</span><span class="p">][</span><span class="s2">"value"</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">constrs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">minimizer_kwargs</span><span class="p">[</span><span class="s2">&quot;constraints&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrs</span>
+        <span class="n">minimizer_kwargs</span><span class="p">[</span><span class="s2">"constraints"</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrs</span>
     <span class="k">if</span> <span class="n">bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">minimizer_kwargs</span><span class="p">[</span><span class="s2">&quot;bounds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bounds</span>
+        <span class="n">minimizer_kwargs</span><span class="p">[</span><span class="s2">"bounds"</span><span class="p">]</span> <span class="o">=</span> <span class="n">bounds</span>
     <span class="k">return</span> <span class="n">minimizer_kwargs</span></div>
 
 
@@ -323,7 +323,7 @@
 <div class="viewcode-block" id="set_minimizer_defaults">
 <a class="viewcode-back" href="../../../pisa.analysis.html#pisa.analysis.configure_scipy_minimization.set_minimizer_defaults">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_minimizer_defaults</span><span class="p">(</span><span class="n">minimizer_settings</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fill in default values for minimizer settings.</span>
+<span class="w">    </span><span class="sd">"""Fill in default values for minimizer settings.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -333,86 +333,86 @@
 <span class="sd">    -------</span>
 <span class="sd">    new_minimizer_settings : dict</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">new_minimizer_settings</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;desc&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">},</span>
-        <span class="s1">&#39;options&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;desc&#39;</span><span class="p">:</span> <span class="p">{}}</span>
+        <span class="s1">'method'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'value'</span><span class="p">:</span> <span class="s1">''</span><span class="p">,</span> <span class="s1">'desc'</span><span class="p">:</span> <span class="s1">''</span><span class="p">},</span>
+        <span class="s1">'options'</span><span class="p">:</span> <span class="p">{</span><span class="s1">'value'</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">'desc'</span><span class="p">:</span> <span class="p">{}}</span>
     <span class="p">}</span>
     <span class="n">new_minimizer_settings</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">minimizer_settings</span><span class="p">)</span>
 
     <span class="n">sqrt_ftype_eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
     <span class="n">opt_defaults</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">method</span> <span class="o">=</span> <span class="n">minimizer_settings</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">minimizer_settings</span><span class="p">[</span><span class="s1">'method'</span><span class="p">][</span><span class="s1">'value'</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;l-bfgs-b&#39;</span> <span class="ow">and</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'l-bfgs-b'</span> <span class="ow">and</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
         <span class="c1"># From `scipy.optimize.lbfgsb._minimize_lbfgsb`</span>
         <span class="n">opt_defaults</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;maxcor&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
-            <span class="s1">&#39;ftol&#39;</span><span class="p">:</span> <span class="mf">2.2204460492503131e-09</span><span class="p">,</span>
-            <span class="s1">&#39;gtol&#39;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
-            <span class="s1">&#39;eps&#39;</span><span class="p">:</span> <span class="mf">1e-8</span><span class="p">,</span>
-            <span class="s1">&#39;maxfun&#39;</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span>
-            <span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span>
-            <span class="s1">&#39;maxls&#39;</span><span class="p">:</span> <span class="mi">20</span>
+            <span class="s1">'maxcor'</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s1">'ftol'</span><span class="p">:</span> <span class="mf">2.2204460492503131e-09</span><span class="p">,</span>
+            <span class="s1">'gtol'</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+            <span class="s1">'eps'</span><span class="p">:</span> <span class="mf">1e-8</span><span class="p">,</span>
+            <span class="s1">'maxfun'</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span>
+            <span class="s1">'maxiter'</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span>
+            <span class="s1">'maxls'</span><span class="p">:</span> <span class="mi">20</span>
         <span class="p">}</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;l-bfgs-b&#39;</span> <span class="ow">and</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'l-bfgs-b'</span> <span class="ow">and</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
         <span class="c1"># Adapted to lower precision</span>
         <span class="n">opt_defaults</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;maxcor&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
-            <span class="s1">&#39;ftol&#39;</span><span class="p">:</span> <span class="n">sqrt_ftype_eps</span><span class="p">,</span>
-            <span class="s1">&#39;gtol&#39;</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span>
-            <span class="s1">&#39;eps&#39;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
-            <span class="s1">&#39;maxfun&#39;</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span>
-            <span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span>
-            <span class="s1">&#39;maxls&#39;</span><span class="p">:</span> <span class="mi">20</span>
+            <span class="s1">'maxcor'</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s1">'ftol'</span><span class="p">:</span> <span class="n">sqrt_ftype_eps</span><span class="p">,</span>
+            <span class="s1">'gtol'</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span>
+            <span class="s1">'eps'</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+            <span class="s1">'maxfun'</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span>
+            <span class="s1">'maxiter'</span><span class="p">:</span> <span class="mi">15000</span><span class="p">,</span>
+            <span class="s1">'maxls'</span><span class="p">:</span> <span class="mi">20</span>
         <span class="p">}</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;slsqp&#39;</span> <span class="ow">and</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'slsqp'</span> <span class="ow">and</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
         <span class="n">opt_defaults</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-            <span class="s1">&#39;ftol&#39;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
-            <span class="s1">&#39;iprint&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s1">&#39;eps&#39;</span><span class="p">:</span> <span class="n">sqrt_ftype_eps</span><span class="p">,</span>
+            <span class="s1">'maxiter'</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="s1">'ftol'</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span>
+            <span class="s1">'iprint'</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">'eps'</span><span class="p">:</span> <span class="n">sqrt_ftype_eps</span><span class="p">,</span>
         <span class="p">}</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;slsqp&#39;</span> <span class="ow">and</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'slsqp'</span> <span class="ow">and</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
         <span class="n">opt_defaults</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-            <span class="s1">&#39;ftol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
-            <span class="s1">&#39;iprint&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s1">&#39;eps&#39;</span><span class="p">:</span> <span class="n">sqrt_ftype_eps</span>
+            <span class="s1">'maxiter'</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="s1">'ftol'</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+            <span class="s1">'iprint'</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s1">'eps'</span><span class="p">:</span> <span class="n">sqrt_ftype_eps</span>
         <span class="p">}</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cobyla&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'cobyla'</span><span class="p">:</span>
         <span class="n">opt_defaults</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;rhobeg&#39;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
-            <span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
-            <span class="s1">&#39;tol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+            <span class="s1">'rhobeg'</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+            <span class="s1">'maxiter'</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+            <span class="s1">'tol'</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
         <span class="p">}</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cobyqa&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'cobyqa'</span><span class="p">:</span>
         <span class="c1"># just make this solver available for now</span>
         <span class="k">pass</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;trust-constr&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'trust-constr'</span><span class="p">:</span>
         <span class="n">opt_defaults</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;maxiter&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
-            <span class="s1">&#39;gtol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
-            <span class="s1">&#39;xtol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
-            <span class="s1">&#39;barrier_tol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span>
+            <span class="s1">'maxiter'</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
+            <span class="s1">'gtol'</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+            <span class="s1">'xtol'</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+            <span class="s1">'barrier_tol'</span><span class="p">:</span> <span class="mf">1e-4</span>
         <span class="p">}</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;nelder-mead&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'nelder-mead'</span><span class="p">:</span>
         <span class="n">opt_defaults</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;maxfev&#39;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
-            <span class="s1">&#39;xatol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
-            <span class="s1">&#39;fatol&#39;</span><span class="p">:</span> <span class="mf">1e-4</span>
+            <span class="s1">'maxfev'</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span>
+            <span class="s1">'xatol'</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
+            <span class="s1">'fatol'</span><span class="p">:</span> <span class="mf">1e-4</span>
         <span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unhandled minimizer &quot;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s1">&quot; / FTYPE=</span><span class="si">{</span><span class="n">FTYPE</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Unhandled minimizer "</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s1">" / FTYPE=</span><span class="si">{</span><span class="n">FTYPE</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
-    <span class="n">opt_defaults</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_minimizer_settings</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">])</span>
+    <span class="n">opt_defaults</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_minimizer_settings</span><span class="p">[</span><span class="s1">'options'</span><span class="p">][</span><span class="s1">'value'</span><span class="p">])</span>
 
-    <span class="n">new_minimizer_settings</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt_defaults</span>
+    <span class="n">new_minimizer_settings</span><span class="p">[</span><span class="s1">'options'</span><span class="p">][</span><span class="s1">'value'</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt_defaults</span>
 
     <span class="c1"># Populate the descriptions with something</span>
-    <span class="k">for</span> <span class="n">opt_name</span> <span class="ow">in</span> <span class="n">new_minimizer_settings</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">opt_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">new_minimizer_settings</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;desc&#39;</span><span class="p">]:</span>
-            <span class="n">new_minimizer_settings</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;desc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;no desc&#39;</span>
+    <span class="k">for</span> <span class="n">opt_name</span> <span class="ow">in</span> <span class="n">new_minimizer_settings</span><span class="p">[</span><span class="s1">'options'</span><span class="p">][</span><span class="s1">'value'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">opt_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">new_minimizer_settings</span><span class="p">[</span><span class="s1">'options'</span><span class="p">][</span><span class="s1">'desc'</span><span class="p">]:</span>
+            <span class="n">new_minimizer_settings</span><span class="p">[</span><span class="s1">'options'</span><span class="p">][</span><span class="s1">'desc'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'no desc'</span>
 
     <span class="k">return</span> <span class="n">new_minimizer_settings</span></div>
 
@@ -421,7 +421,7 @@
 <div class="viewcode-block" id="validate_minimizer_settings">
 <a class="viewcode-back" href="../../../pisa.analysis.html#pisa.analysis.configure_scipy_minimization.validate_minimizer_settings">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_minimizer_settings</span><span class="p">(</span><span class="n">minimizer_settings</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate minimizer settings.</span>
+<span class="w">    </span><span class="sd">"""Validate minimizer settings.</span>
 
 <span class="sd">    Supported minimizers are the same as in `set_minimizer_defaults`.</span>
 
@@ -436,132 +436,132 @@
 <span class="sd">    ValueError</span>
 <span class="sd">        If any minimizer settings are deemed to be invalid.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">ftype_eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
-    <span class="n">method</span> <span class="o">=</span> <span class="n">minimizer_settings</span><span class="p">[</span><span class="s1">&#39;method&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-    <span class="n">options</span> <span class="o">=</span> <span class="n">minimizer_settings</span><span class="p">[</span><span class="s1">&#39;options&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">minimizer_settings</span><span class="p">[</span><span class="s1">'method'</span><span class="p">][</span><span class="s1">'value'</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">options</span> <span class="o">=</span> <span class="n">minimizer_settings</span><span class="p">[</span><span class="s1">'options'</span><span class="p">][</span><span class="s1">'value'</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;l-bfgs-b&#39;</span><span class="p">:</span>
-        <span class="n">must_have</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;maxcor&#39;</span><span class="p">,</span> <span class="s1">&#39;ftol&#39;</span><span class="p">,</span> <span class="s1">&#39;gtol&#39;</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">,</span> <span class="s1">&#39;maxfun&#39;</span><span class="p">,</span> <span class="s1">&#39;maxiter&#39;</span><span class="p">,</span>
-                     <span class="s1">&#39;maxls&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'l-bfgs-b'</span><span class="p">:</span>
+        <span class="n">must_have</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'maxcor'</span><span class="p">,</span> <span class="s1">'ftol'</span><span class="p">,</span> <span class="s1">'gtol'</span><span class="p">,</span> <span class="s1">'eps'</span><span class="p">,</span> <span class="s1">'maxfun'</span><span class="p">,</span> <span class="s1">'maxiter'</span><span class="p">,</span>
+                     <span class="s1">'maxls'</span><span class="p">)</span>
         <span class="c1"># TODO: remove disp and iprint eventually (&gt;= scipy 1.18.0)</span>
-        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">&#39;args&#39;</span><span class="p">,</span> <span class="s1">&#39;jac&#39;</span><span class="p">,</span> <span class="s1">&#39;bounds&#39;</span><span class="p">,</span> <span class="s1">&#39;disp&#39;</span><span class="p">,</span> <span class="s1">&#39;iprint&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;callback&#39;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;slsqp&#39;</span><span class="p">:</span>
-        <span class="n">must_have</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;maxiter&#39;</span><span class="p">,</span> <span class="s1">&#39;ftol&#39;</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">)</span>
-        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">&#39;args&#39;</span><span class="p">,</span> <span class="s1">&#39;jac&#39;</span><span class="p">,</span> <span class="s1">&#39;bounds&#39;</span><span class="p">,</span> <span class="s1">&#39;constraints&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;iprint&#39;</span><span class="p">,</span> <span class="s1">&#39;disp&#39;</span><span class="p">,</span> <span class="s1">&#39;callback&#39;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cobyla&#39;</span><span class="p">:</span>
-        <span class="n">must_have</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;maxiter&#39;</span><span class="p">,</span> <span class="s1">&#39;rhobeg&#39;</span><span class="p">,</span> <span class="s1">&#39;tol&#39;</span><span class="p">)</span>
-        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">&#39;disp&#39;</span><span class="p">,</span> <span class="s1">&#39;catol&#39;</span><span class="p">,</span> <span class="s1">&#39;constraints&#39;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cobyqa&#39;</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">parse_version</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">parse_version</span><span class="p">(</span><span class="s1">&#39;1.14.0&#39;</span><span class="p">)</span>
+        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">'args'</span><span class="p">,</span> <span class="s1">'jac'</span><span class="p">,</span> <span class="s1">'bounds'</span><span class="p">,</span> <span class="s1">'disp'</span><span class="p">,</span> <span class="s1">'iprint'</span><span class="p">,</span>
+                                <span class="s1">'callback'</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'slsqp'</span><span class="p">:</span>
+        <span class="n">must_have</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'maxiter'</span><span class="p">,</span> <span class="s1">'ftol'</span><span class="p">,</span> <span class="s1">'eps'</span><span class="p">)</span>
+        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">'args'</span><span class="p">,</span> <span class="s1">'jac'</span><span class="p">,</span> <span class="s1">'bounds'</span><span class="p">,</span> <span class="s1">'constraints'</span><span class="p">,</span>
+                                <span class="s1">'iprint'</span><span class="p">,</span> <span class="s1">'disp'</span><span class="p">,</span> <span class="s1">'callback'</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'cobyla'</span><span class="p">:</span>
+        <span class="n">must_have</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'maxiter'</span><span class="p">,</span> <span class="s1">'rhobeg'</span><span class="p">,</span> <span class="s1">'tol'</span><span class="p">)</span>
+        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">'disp'</span><span class="p">,</span> <span class="s1">'catol'</span><span class="p">,</span> <span class="s1">'constraints'</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'cobyqa'</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">parse_version</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">parse_version</span><span class="p">(</span><span class="s1">'1.14.0'</span><span class="p">)</span>
         <span class="n">must_have</span> <span class="o">=</span> <span class="p">()</span>
-        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">&#39;disp&#39;</span><span class="p">,</span> <span class="s1">&#39;maxiter&#39;</span><span class="p">,</span> <span class="s1">&#39;maxfev&#39;</span><span class="p">,</span> <span class="s1">&#39;f_target&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;feasibility_tol&#39;</span><span class="p">,</span> <span class="s1">&#39;initial_tr_radius&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;final_tr_radius&#39;</span><span class="p">,</span> <span class="s1">&#39;scale&#39;</span><span class="p">,</span> <span class="s1">&#39;constraints&#39;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;trust-constr&#39;</span><span class="p">:</span>
-        <span class="n">must_have</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;maxiter&#39;</span><span class="p">,</span> <span class="s1">&#39;gtol&#39;</span><span class="p">,</span> <span class="s1">&#39;xtol&#39;</span><span class="p">,</span> <span class="s1">&#39;barrier_tol&#39;</span><span class="p">)</span>
-        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">&#39;sparse_jacobian&#39;</span><span class="p">,</span> <span class="s1">&#39;initial_tr_radius&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;initial_constr_penalty&#39;</span><span class="p">,</span> <span class="s1">&#39;constraints&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;initial_barrier_parameter&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;initial_barrier_tolerance&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;factorization_method&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;finite_diff_rel_step&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;verbose&#39;</span><span class="p">,</span> <span class="s1">&#39;disp&#39;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;nelder-mead&#39;</span><span class="p">:</span>
-        <span class="n">must_have</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;maxfev&#39;</span><span class="p">,</span> <span class="s1">&#39;xatol&#39;</span><span class="p">,</span> <span class="s1">&#39;fatol&#39;</span><span class="p">)</span>
-        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">&#39;disp&#39;</span><span class="p">,</span> <span class="s1">&#39;maxiter&#39;</span><span class="p">,</span> <span class="s1">&#39;return_all&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;initial_simplex&#39;</span><span class="p">,</span> <span class="s1">&#39;adaptive&#39;</span><span class="p">,</span>
-                                <span class="s1">&#39;bounds&#39;</span><span class="p">)</span>
+        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">'disp'</span><span class="p">,</span> <span class="s1">'maxiter'</span><span class="p">,</span> <span class="s1">'maxfev'</span><span class="p">,</span> <span class="s1">'f_target'</span><span class="p">,</span>
+                                <span class="s1">'feasibility_tol'</span><span class="p">,</span> <span class="s1">'initial_tr_radius'</span><span class="p">,</span>
+                                <span class="s1">'final_tr_radius'</span><span class="p">,</span> <span class="s1">'scale'</span><span class="p">,</span> <span class="s1">'constraints'</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'trust-constr'</span><span class="p">:</span>
+        <span class="n">must_have</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'maxiter'</span><span class="p">,</span> <span class="s1">'gtol'</span><span class="p">,</span> <span class="s1">'xtol'</span><span class="p">,</span> <span class="s1">'barrier_tol'</span><span class="p">)</span>
+        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">'sparse_jacobian'</span><span class="p">,</span> <span class="s1">'initial_tr_radius'</span><span class="p">,</span>
+                                <span class="s1">'initial_constr_penalty'</span><span class="p">,</span> <span class="s1">'constraints'</span><span class="p">,</span>
+                                <span class="s1">'initial_barrier_parameter'</span><span class="p">,</span>
+                                <span class="s1">'initial_barrier_tolerance'</span><span class="p">,</span>
+                                <span class="s1">'factorization_method'</span><span class="p">,</span>
+                                <span class="s1">'finite_diff_rel_step'</span><span class="p">,</span>
+                                <span class="s1">'verbose'</span><span class="p">,</span> <span class="s1">'disp'</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'nelder-mead'</span><span class="p">:</span>
+        <span class="n">must_have</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'maxfev'</span><span class="p">,</span> <span class="s1">'xatol'</span><span class="p">,</span> <span class="s1">'fatol'</span><span class="p">)</span>
+        <span class="n">may_have</span> <span class="o">=</span> <span class="n">must_have</span> <span class="o">+</span> <span class="p">(</span><span class="s1">'disp'</span><span class="p">,</span> <span class="s1">'maxiter'</span><span class="p">,</span> <span class="s1">'return_all'</span><span class="p">,</span>
+                                <span class="s1">'initial_simplex'</span><span class="p">,</span> <span class="s1">'adaptive'</span><span class="p">,</span>
+                                <span class="s1">'bounds'</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unhandled minimizer &quot;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s1">&quot; / FTYPE=</span><span class="si">{</span><span class="n">FTYPE</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Unhandled minimizer "</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s1">" / FTYPE=</span><span class="si">{</span><span class="n">FTYPE</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
     <span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">must_have</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">options</span><span class="p">))</span>
     <span class="n">excess</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">options</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">may_have</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Missing the following options for </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s1"> &#39;</span>
-                         <span class="sa">f</span><span class="s1">&#39;minimizer: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Missing the following options for </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s1"> '</span>
+                         <span class="sa">f</span><span class="s1">'minimizer: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">excess</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Excess options for </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s1"> minimizer: </span><span class="si">{</span><span class="n">excess</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Excess options for </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s1"> minimizer: </span><span class="si">{</span><span class="n">excess</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
-    <span class="n">eps_msg</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> minimizer option </span><span class="si">%s</span><span class="s1">(=</span><span class="si">%e</span><span class="s1">) is &lt; </span><span class="si">%d</span><span class="s1"> * </span><span class="si">%s</span><span class="s1">_EPS(=</span><span class="si">%e</span><span class="s1">)&#39;</span>
-    <span class="n">eps_gt_msg</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> minimizer option </span><span class="si">%s</span><span class="s1">(=</span><span class="si">%e</span><span class="s1">) is &gt; </span><span class="si">%e</span><span class="s1">&#39;</span>
+    <span class="n">eps_msg</span> <span class="o">=</span> <span class="s1">'</span><span class="si">%s</span><span class="s1"> minimizer option </span><span class="si">%s</span><span class="s1">(=</span><span class="si">%e</span><span class="s1">) is &lt; </span><span class="si">%d</span><span class="s1"> * </span><span class="si">%s</span><span class="s1">_EPS(=</span><span class="si">%e</span><span class="s1">)'</span>
+    <span class="n">eps_gt_msg</span> <span class="o">=</span> <span class="s1">'</span><span class="si">%s</span><span class="s1"> minimizer option </span><span class="si">%s</span><span class="s1">(=</span><span class="si">%e</span><span class="s1">) is &gt; </span><span class="si">%e</span><span class="s1">'</span>
     <span class="n">fp64_eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
 
-    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;l-bfgs-b&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'l-bfgs-b'</span><span class="p">:</span>
         <span class="n">err_lim</span><span class="p">,</span> <span class="n">warn_lim</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">10</span>
-        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ftol&#39;</span><span class="p">,</span> <span class="s1">&#39;gtol&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'ftol'</span><span class="p">,</span> <span class="s1">'gtol'</span><span class="p">]:</span>
             <span class="n">val</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">err_lim</span> <span class="o">*</span> <span class="n">ftype_eps</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">err_lim</span><span class="p">,</span> <span class="s1">&#39;FTYPE&#39;</span><span class="p">,</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">err_lim</span><span class="p">,</span> <span class="s1">'FTYPE'</span><span class="p">,</span>
                                             <span class="n">ftype_eps</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">warn_lim</span> <span class="o">*</span> <span class="n">ftype_eps</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">,</span> <span class="s1">&#39;FTYPE&#39;</span><span class="p">,</span> <span class="n">ftype_eps</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">,</span> <span class="s1">'FTYPE'</span><span class="p">,</span> <span class="n">ftype_eps</span><span class="p">)</span>
 
-        <span class="n">val</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;eps&#39;</span><span class="p">]</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s1">'eps'</span><span class="p">]</span>
         <span class="n">err_lim</span><span class="p">,</span> <span class="n">warn_lim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span>
         <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">err_lim</span> <span class="o">*</span> <span class="n">fp64_eps</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">err_lim</span><span class="p">,</span> <span class="s1">&#39;FP64&#39;</span><span class="p">,</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="s1">'eps'</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">err_lim</span><span class="p">,</span> <span class="s1">'FP64'</span><span class="p">,</span>
                                         <span class="n">fp64_eps</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">warn_lim</span> <span class="o">*</span> <span class="n">ftype_eps</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">,</span> <span class="s1">&#39;FTYPE&#39;</span><span class="p">,</span> <span class="n">ftype_eps</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="s1">'eps'</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">,</span> <span class="s1">'FTYPE'</span><span class="p">,</span> <span class="n">ftype_eps</span><span class="p">)</span>
 
         <span class="n">err_lim</span><span class="p">,</span> <span class="n">warn_lim</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.1</span>
         <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="n">err_lim</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_gt_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">err_lim</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_gt_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="s1">'eps'</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">err_lim</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="n">warn_lim</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_gt_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_gt_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="s1">'eps'</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;slsqp&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'slsqp'</span><span class="p">:</span>
         <span class="n">err_lim</span><span class="p">,</span> <span class="n">warn_lim</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">10</span>
-        <span class="n">val</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;ftol&#39;</span><span class="p">]</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s1">'ftol'</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">err_lim</span> <span class="o">*</span> <span class="n">ftype_eps</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="s1">&#39;ftol&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">err_lim</span><span class="p">,</span> <span class="s1">&#39;FTYPE&#39;</span><span class="p">,</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="s1">'ftol'</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">err_lim</span><span class="p">,</span> <span class="s1">'FTYPE'</span><span class="p">,</span>
                                         <span class="n">ftype_eps</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">warn_lim</span> <span class="o">*</span> <span class="n">ftype_eps</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="s1">&#39;ftol&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">,</span> <span class="s1">&#39;FTYPE&#39;</span><span class="p">,</span> <span class="n">ftype_eps</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="s1">'ftol'</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">,</span> <span class="s1">'FTYPE'</span><span class="p">,</span> <span class="n">ftype_eps</span><span class="p">)</span>
 
-        <span class="n">val</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;eps&#39;</span><span class="p">]</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">options</span><span class="p">[</span><span class="s1">'eps'</span><span class="p">]</span>
         <span class="n">err_lim</span><span class="p">,</span> <span class="n">warn_lim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span>
         <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">err_lim</span> <span class="o">*</span> <span class="n">fp64_eps</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;FP64&#39;</span><span class="p">,</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="s1">'eps'</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">'FP64'</span><span class="p">,</span>
                                         <span class="n">fp64_eps</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="n">warn_lim</span> <span class="o">*</span> <span class="n">ftype_eps</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">,</span> <span class="s1">&#39;FP64&#39;</span><span class="p">,</span> <span class="n">fp64_eps</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="s1">'eps'</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">,</span> <span class="s1">'FP64'</span><span class="p">,</span> <span class="n">fp64_eps</span><span class="p">)</span>
 
         <span class="n">err_lim</span><span class="p">,</span> <span class="n">warn_lim</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.1</span>
         <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="n">err_lim</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_gt_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">err_lim</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">eps_gt_msg</span> <span class="o">%</span> <span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="s1">'eps'</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">err_lim</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="n">warn_lim</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_gt_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="s1">&#39;eps&#39;</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">eps_gt_msg</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="s1">'eps'</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">warn_lim</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;cobyla&#39;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;rhobeg&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;starting step-size &gt; 0.5 will overstep boundary&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;rhobeg&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">1e-2</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;starting step-size is very low, convergence will be slow&#39;</span><span class="p">)</span></div>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">'cobyla'</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">'rhobeg'</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'starting step-size &gt; 0.5 will overstep boundary'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s1">'rhobeg'</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">1e-2</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">'starting step-size is very low, convergence will be slow'</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="make_scipy_constraint_dict">
 <a class="viewcode-back" href="../../../pisa.analysis.html#pisa.analysis.configure_scipy_minimization.make_scipy_constraint_dict">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">make_scipy_constraint_dict</span><span class="p">(</span><span class="n">constr_type</span><span class="p">,</span> <span class="n">fun</span><span class="p">,</span> <span class="n">jac</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Makes a constraint dictionary in the form accepted by scipy,</span>
-<span class="sd">    see e.g. https://docs.scipy.org/doc/scipy-1.13.1/reference/generated/scipy.optimize.minimize.html&quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="n">constr_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;eq&quot;</span><span class="p">,</span> <span class="s2">&quot;ineq&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""Makes a constraint dictionary in the form accepted by scipy,</span>
+<span class="sd">    see e.g. https://docs.scipy.org/doc/scipy-1.13.1/reference/generated/scipy.optimize.minimize.html"""</span>
+    <span class="k">assert</span> <span class="n">constr_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"eq"</span><span class="p">,</span> <span class="s2">"ineq"</span><span class="p">]</span>
     <span class="n">t</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">fun</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Constraint function has to be callable, not </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-    <span class="n">constr_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">constr_type</span><span class="p">,</span> <span class="s1">&#39;fun&#39;</span><span class="p">:</span> <span class="n">fun</span><span class="p">}</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Constraint function has to be callable, not </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+    <span class="n">constr_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'type'</span><span class="p">:</span> <span class="n">constr_type</span><span class="p">,</span> <span class="s1">'fun'</span><span class="p">:</span> <span class="n">fun</span><span class="p">}</span>
     <span class="k">if</span> <span class="n">jac</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">t</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">jac</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">jac</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Jacobian has to be callable, not </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-        <span class="n">constr_dict</span><span class="p">[</span><span class="s1">&#39;jac&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jac</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Jacobian has to be callable, not </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="n">constr_dict</span><span class="p">[</span><span class="s1">'jac'</span><span class="p">]</span> <span class="o">=</span> <span class="n">jac</span>
     <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span>
-        <span class="n">constr_dict</span><span class="p">[</span><span class="s1">&#39;args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="n">constr_dict</span><span class="p">[</span><span class="s1">'args'</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span>
     <span class="k">return</span> <span class="n">constr_dict</span></div>
 
 
@@ -569,13 +569,13 @@
 <div class="viewcode-block" id="scipy_constraints_to_callables">
 <a class="viewcode-back" href="../../../pisa.analysis.html#pisa.analysis.configure_scipy_minimization.scipy_constraints_to_callables">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">scipy_constraints_to_callables</span><span class="p">(</span><span class="n">constr_dicts</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert constraints expressions in terms of ParamSets</span>
-<span class="sd">    into callables for scipy. Overwrites &quot;fun&quot; entries</span>
+<span class="w">    </span><span class="sd">"""Convert constraints expressions in terms of ParamSets</span>
+<span class="sd">    into callables for scipy. Overwrites "fun" entries</span>
 <span class="sd">    in `constr_dicts`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">constr_func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">constr_func_params</span><span class="p">):</span>
         <span class="n">hypo_maker</span><span class="o">.</span><span class="n">_set_rescaled_free_params</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="c1"># pylint: disable=protected-access</span>
-        <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"Detectors"</span><span class="p">:</span>
             <span class="c1"># updates values for ALL detectors</span>
             <span class="n">update_param_values_detector</span><span class="p">(</span><span class="n">hypo_maker</span><span class="p">,</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">free</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">constr_func_params</span><span class="p">(</span><span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
@@ -585,18 +585,18 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cd</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
         <span class="c1"># the equality constraint is specified as a function that takes a</span>
         <span class="c1"># ParamSet as its input</span>
-        <span class="k">assert</span> <span class="s2">&quot;fun&quot;</span> <span class="ow">in</span> <span class="n">cd</span>
-        <span class="n">constr</span> <span class="o">=</span> <span class="n">cd</span><span class="p">[</span><span class="s2">&quot;fun&quot;</span><span class="p">]</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;adding scipy constraint: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">constr</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="s2">"fun"</span> <span class="ow">in</span> <span class="n">cd</span>
+        <span class="n">constr</span> <span class="o">=</span> <span class="n">cd</span><span class="p">[</span><span class="s2">"fun"</span><span class="p">]</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"adding scipy constraint: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">constr</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">constr</span><span class="p">):</span>
             <span class="n">constr_func_params</span> <span class="o">=</span> <span class="n">constr</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">constr_func_params</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">constr</span><span class="p">)</span>
             <span class="n">t</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">constr_func_params</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">constr_func_params</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Evaluated object not a callable, but </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Evaluated object not a callable, but </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="c1"># overwrite</span>
-        <span class="n">cd</span><span class="p">[</span><span class="s2">&quot;fun&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">constr_func</span><span class="p">,</span> <span class="n">constr_func_params</span><span class="o">=</span><span class="n">constr_func_params</span><span class="p">)</span></div>
+        <span class="n">cd</span><span class="p">[</span><span class="s2">"fun"</span><span class="p">]</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">constr_func</span><span class="p">,</span> <span class="n">constr_func_params</span><span class="o">=</span><span class="n">constr_func_params</span><span class="p">)</span></div>
 
 </pre></div>
         </article>
@@ -637,7 +637,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

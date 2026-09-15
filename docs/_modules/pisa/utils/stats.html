@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.stats - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.utils.stats - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.utils.stats</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Statistical functions</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
@@ -297,56 +297,56 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">likelihood_functions</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;SMALL_POS&#39;</span><span class="p">,</span> <span class="s1">&#39;CHI2_METRICS&#39;</span><span class="p">,</span> <span class="s1">&#39;LLH_METRICS&#39;</span><span class="p">,</span> <span class="s1">&#39;ALL_METRICS&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;maperror_logmsg&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;llh&#39;</span><span class="p">,</span> <span class="s1">&#39;poisson_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;log_poisson&#39;</span><span class="p">,</span> <span class="s1">&#39;log_smear&#39;</span><span class="p">,</span> <span class="s1">&#39;conv_poisson&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;norm_conv_poisson&#39;</span><span class="p">,</span> <span class="s1">&#39;conv_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;barlow_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;correct_chi2&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;mcllh_mean&#39;</span><span class="p">,</span> <span class="s1">&#39;mcllh_eff&#39;</span><span class="p">,</span> <span class="s1">&#39;signed_sqrt_mod_chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;generalized_poisson_llh&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'SMALL_POS'</span><span class="p">,</span> <span class="s1">'CHI2_METRICS'</span><span class="p">,</span> <span class="s1">'LLH_METRICS'</span><span class="p">,</span> <span class="s1">'ALL_METRICS'</span><span class="p">,</span>
+           <span class="s1">'maperror_logmsg'</span><span class="p">,</span>
+           <span class="s1">'chi2'</span><span class="p">,</span> <span class="s1">'llh'</span><span class="p">,</span> <span class="s1">'poisson_llh'</span><span class="p">,</span> <span class="s1">'log_poisson'</span><span class="p">,</span> <span class="s1">'log_smear'</span><span class="p">,</span> <span class="s1">'conv_poisson'</span><span class="p">,</span>
+           <span class="s1">'norm_conv_poisson'</span><span class="p">,</span> <span class="s1">'conv_llh'</span><span class="p">,</span> <span class="s1">'barlow_llh'</span><span class="p">,</span> <span class="s1">'mod_chi2'</span><span class="p">,</span> <span class="s1">'correct_chi2'</span><span class="p">,</span>
+           <span class="s1">'mcllh_mean'</span><span class="p">,</span> <span class="s1">'mcllh_eff'</span><span class="p">,</span> <span class="s1">'signed_sqrt_mod_chi2'</span><span class="p">,</span> <span class="s1">'generalized_poisson_llh'</span><span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;P. Eller, T. Ehrhardt, J.L. Lanfranchi, E. Bourbeau&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'P. Eller, T. Ehrhardt, J.L. Lanfranchi, E. Bourbeau'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2026, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
 <span class="n">SMALL_POS</span> <span class="o">=</span> <span class="mf">1e-10</span> <span class="c1">#if FTYPE == np.float64 else FTYPE_PREC</span>
-<span class="sd">&quot;&quot;&quot;A small positive number with which to replace numbers smaller than it&quot;&quot;&quot;</span>
+<span class="sd">"""A small positive number with which to replace numbers smaller than it"""</span>
 
-<span class="n">CHI2_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;correct_chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;weighted_chi2&#39;</span><span class="p">,</span>
-<span class="s1">&#39;signed_sqrt_mod_chi2&#39;</span><span class="p">]</span>
-<span class="sd">&quot;&quot;&quot;Metrics defined that result in measures of chi squared&quot;&quot;&quot;</span>
+<span class="n">CHI2_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'chi2'</span><span class="p">,</span> <span class="s1">'mod_chi2'</span><span class="p">,</span> <span class="s1">'correct_chi2'</span><span class="p">,</span> <span class="s1">'weighted_chi2'</span><span class="p">,</span>
+<span class="s1">'signed_sqrt_mod_chi2'</span><span class="p">]</span>
+<span class="sd">"""Metrics defined that result in measures of chi squared"""</span>
 
-<span class="n">LLH_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;llh&#39;</span><span class="p">,</span> <span class="s1">&#39;poisson_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;conv_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;barlow_llh&#39;</span><span class="p">,</span> <span class="s1">&#39;mcllh_mean&#39;</span><span class="p">,</span>
-<span class="s1">&#39;mcllh_eff&#39;</span><span class="p">,</span> <span class="s1">&#39;generalized_poisson_llh&#39;</span><span class="p">]</span>
-<span class="sd">&quot;&quot;&quot;Metrics defined that result in measures of log likelihood&quot;&quot;&quot;</span>
+<span class="n">LLH_METRICS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'llh'</span><span class="p">,</span> <span class="s1">'poisson_llh'</span><span class="p">,</span> <span class="s1">'conv_llh'</span><span class="p">,</span> <span class="s1">'barlow_llh'</span><span class="p">,</span> <span class="s1">'mcllh_mean'</span><span class="p">,</span>
+<span class="s1">'mcllh_eff'</span><span class="p">,</span> <span class="s1">'generalized_poisson_llh'</span><span class="p">]</span>
+<span class="sd">"""Metrics defined that result in measures of log likelihood"""</span>
 
 <span class="n">ALL_METRICS</span> <span class="o">=</span> <span class="n">LLH_METRICS</span> <span class="o">+</span> <span class="n">CHI2_METRICS</span>
-<span class="sd">&quot;&quot;&quot;All metrics defined&quot;&quot;&quot;</span>
+<span class="sd">"""All metrics defined"""</span>
 
 <span class="n">METRICS_TO_MAXIMIZE</span> <span class="o">=</span> <span class="n">LLH_METRICS</span>
-<span class="sd">&quot;&quot;&quot;Metrics that must be maximized to obtain a better fit&quot;&quot;&quot;</span>
+<span class="sd">"""Metrics that must be maximized to obtain a better fit"""</span>
 
 <span class="n">METRICS_TO_MINIMIZE</span> <span class="o">=</span> <span class="n">CHI2_METRICS</span>
-<span class="sd">&quot;&quot;&quot;Metrics that must be minimized to obtain a better fit&quot;&quot;&quot;</span>
+<span class="sd">"""Metrics that must be minimized to obtain a better fit"""</span>
 
 
 <span class="c1"># TODO(philippeller):</span>
-<span class="c1"># * unit tests to ensure these don&#39;t break</span>
+<span class="c1"># * unit tests to ensure these don't break</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">it_got_better</span><span class="p">(</span><span class="n">new_metric_val</span><span class="p">,</span> <span class="n">old_metric_val</span><span class="p">,</span> <span class="n">metric</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compare metric values and report whether improvement found.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Compare metric values and report whether improvement found.</span>
+<span class="sd">    """</span>
     <span class="n">to_maximize</span> <span class="o">=</span> <span class="n">is_metric_to_maximize</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">to_maximize</span><span class="p">:</span>
         <span class="n">got_better</span> <span class="o">=</span> <span class="n">new_metric_val</span> <span class="o">&gt;</span> <span class="n">old_metric_val</span>
@@ -355,37 +355,37 @@
     <span class="k">return</span> <span class="n">got_better</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">is_metric_to_maximize</span><span class="p">(</span><span class="n">metric</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether the resulting metric has to be maximized or minimized.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Check whether the resulting metric has to be maximized or minimized.</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">metric</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">m</span> <span class="ow">in</span> <span class="n">METRICS_TO_MAXIMIZE</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">metric</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">m</span> <span class="ow">in</span> <span class="n">METRICS_TO_MINIMIZE</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">metric</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">False</span>
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Defined metrics </span><span class="si">%s</span><span class="s1"> are not compatible&#39;</span> <span class="o">%</span> <span class="n">metric</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Defined metrics </span><span class="si">%s</span><span class="s1"> are not compatible'</span> <span class="o">%</span> <span class="n">metric</span><span class="p">)</span>
 
 <div class="viewcode-block" id="maperror_logmsg">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.maperror_logmsg">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">maperror_logmsg</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create message with thorough info about a map for logging purposes&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;    min val : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;    max val : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;    mean val: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;    num &lt; 0 : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;    num == 0: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;    num &gt; 0 : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">&#39;    num nan : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+<span class="w">    </span><span class="sd">"""Create message with thorough info about a map for logging purposes"""</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">''</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">'    min val : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">'</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">'    max val : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">'</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">'    mean val: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">'</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">'    num &lt; 0 : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">'</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">'    num == 0: </span><span class="si">%s</span><span class="se">\n</span><span class="s1">'</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">'    num &gt; 0 : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">'</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s1">'    num nan : </span><span class="si">%s</span><span class="se">\n</span><span class="s1">'</span> <span class="o">%</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">msg</span></div>
 
 
 <div class="viewcode-block" id="chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.chi2">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Compute Pearson&#39;s chi-square between each value in `actual_values`</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
+<span class="sd">    Compute Pearson's chi-square between each value in `actual_values`</span>
 <span class="sd">    and `expected_values`.</span>
 
 <span class="sd">    .. math::</span>
@@ -406,11 +406,11 @@
 <span class="sd">    * `expected_values` are clipped to the range [SMALL_POS, inf] prior to</span>
 <span class="sd">      the calculation to avoid infinities when dividing</span>
 <span class="sd">    * `actual_values` = 0 are allowed (appear only in numerator)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">actual_values</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s1">&#39;Shape mismatch: actual_values.shape = </span><span class="si">%s</span><span class="s1">,&#39;</span>
-            <span class="s1">&#39; expected_values.shape = </span><span class="si">%s</span><span class="s1">&#39;</span>
+            <span class="s1">'Shape mismatch: actual_values.shape = </span><span class="si">%s</span><span class="s1">,'</span>
+            <span class="s1">' expected_values.shape = </span><span class="si">%s</span><span class="s1">'</span>
             <span class="o">%</span> <span class="p">(</span><span class="n">actual_values</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
         <span class="p">)</span>
 
@@ -420,7 +420,7 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">isbarenumeric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">):</span>
         <span class="n">expected_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
 
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
         <span class="c1"># Mask off any nan expected values (these are assumed to be ok)</span>
         <span class="n">actual_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
         <span class="n">expected_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
@@ -428,19 +428,19 @@
         <span class="c1"># TODO: this check (and the same for `actual_values`) should probably</span>
         <span class="c1"># be done elsewhere... maybe?</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">actual_values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`actual_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`actual_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">actual_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">expected_values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="c1"># TODO: Is this okay to do? Mathematically suspect at best, and can</span>
-        <span class="c1">#       still destroy a minimizer&#39;s hopes and dreams...</span>
+        <span class="c1">#       still destroy a minimizer's hopes and dreams...</span>
 
-        <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf in division</span>
+        <span class="c1"># Replace 0's with small positive numbers to avoid inf in division</span>
         <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
                 <span class="n">out</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
 
@@ -458,7 +458,7 @@
 <div class="viewcode-block" id="llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.llh">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Compute the log-likelihoods that each count in `actual_values`</span>
 <span class="sd">    came from the corresponding expected value in `expected_values`.</span>
 
@@ -499,7 +499,7 @@
 <span class="sd">    --------</span>
 <span class="sd">    poisson_llh : true Poissonian log-likelihood function</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">assert</span> <span class="n">actual_values</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="c1"># Convert to simple numpy arrays containing floats</span>
@@ -508,35 +508,35 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">isbarenumeric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">):</span>
         <span class="n">expected_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
 
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
 
         <span class="c1"># Mask off any nan expected values (these can result from bin masking)</span>
         <span class="n">actual_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
         <span class="n">expected_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
 
-        <span class="c1"># TODO: How should we handle nan / masked values in the &quot;data&quot;</span>
+        <span class="c1"># TODO: How should we handle nan / masked values in the "data"</span>
         <span class="c1"># (actual_values) distribution? How about negative numbers?</span>
 
-        <span class="c1"># Make sure actual values (aka &quot;data&quot;) are valid -- no infs, no nans,</span>
+        <span class="c1"># Make sure actual values (aka "data") are valid -- no infs, no nans,</span>
         <span class="c1"># etc.</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">actual_values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">actual_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="c1"># Check that new array contains all valid entries</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">expected_values</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-        <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf in log</span>
+        <span class="c1"># Replace 0's with small positive numbers to avoid inf in log</span>
         <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
                 <span class="n">out</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
 
     <span class="c1">#</span>
     <span class="c1"># natural logarith m of the Poisson probability</span>
-    <span class="c1"># (uses Stirling&#39;s approximation to estimate ln(k!) ~ kln(k)-k)</span>
+    <span class="c1"># (uses Stirling's approximation to estimate ln(k!) ~ kln(k)-k)</span>
     <span class="c1">#</span>
     <span class="n">llh_val</span> <span class="o">=</span> <span class="n">actual_values</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">expected_values</span>
     <span class="n">llh_val</span> <span class="o">-=</span> <span class="n">actual_values</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span> <span class="o">-</span> <span class="n">actual_values</span>
@@ -547,7 +547,7 @@
 <div class="viewcode-block" id="poisson_llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.poisson_llh">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">poisson_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Compute the log-likelihoods that each count in `actual_values`</span>
 <span class="sd">    came from the corresponding expected value in `expected_values`,</span>
 <span class="sd">    using the Poisson distribution with accurate factorial computation.</span>
@@ -556,7 +556,7 @@
 <span class="sd">      \mathcal{L} = N_{\mathrm{actual}} \ln(N_{\mathrm{exp}}) - N_{\mathrm{exp}} - \ln(N_{\mathrm{actual}}!)</span>
 
 <span class="sd">    This uses :math:`\ln(\Gamma(n+1)) = \ln(n!)` for accurate computation,</span>
-<span class="sd">    which correctly handles zero and low counts where Stirling&#39;s approximation</span>
+<span class="sd">    which correctly handles zero and low counts where Stirling's approximation</span>
 <span class="sd">    fails.</span>
 
 <span class="sd">    Parameters</span>
@@ -575,13 +575,13 @@
 <span class="sd">    * Values in `expected_values` are clipped to the range [SMALL_POS, inf]</span>
 <span class="sd">      prior to the calculation to avoid infinities due to the log function.</span>
 <span class="sd">    * This is a true Poissonian log-likelihood, unlike the `llh`</span>
-<span class="sd">      function which uses Stirling&#39;s approximation.</span>
+<span class="sd">      function which uses Stirling's approximation.</span>
 
 <span class="sd">    See also</span>
 <span class="sd">    --------</span>
-<span class="sd">    llh : similar function using Stirling&#39;s approximation</span>
+<span class="sd">    llh : similar function using Stirling's approximation</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">assert</span> <span class="n">actual_values</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="c1"># Convert to simple numpy arrays containing floats</span>
@@ -590,25 +590,25 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">isbarenumeric</span><span class="p">(</span><span class="n">expected_values</span><span class="p">):</span>
         <span class="n">expected_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
 
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
 
         <span class="c1"># Mask off any nan expected values (these can result from bin masking)</span>
         <span class="n">actual_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
         <span class="n">expected_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
 
-        <span class="c1"># Make sure actual values (aka &quot;data&quot;) are valid -- no infs, no nans, etc.</span>
+        <span class="c1"># Make sure actual values (aka "data") are valid -- no infs, no nans, etc.</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">actual_values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">actual_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="c1"># Check that expected values are valid</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">expected_values</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-        <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf in log</span>
+        <span class="c1"># Replace 0's with small positive numbers to avoid inf in log</span>
         <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
                 <span class="n">out</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
 
@@ -623,7 +623,7 @@
 <div class="viewcode-block" id="mcllh_mean">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.mcllh_mean">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">mcllh_mean</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the log-likelihood (llh) based on LMean in table 2 - https://doi.org/10.1007/JHEP06(2019)030</span>
+<span class="w">    </span><span class="sd">"""Compute the log-likelihood (llh) based on LMean in table 2 - https://doi.org/10.1007/JHEP06(2019)030</span>
 <span class="sd">    accounting for finite MC statistics.</span>
 <span class="sd">    This is the second most recommended likelihood in the paper.</span>
 
@@ -637,7 +637,7 @@
 <span class="sd">        llh corresponding to each pair of elements in `actual_values` and</span>
 <span class="sd">        `expected_values`.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">assert</span> <span class="n">actual_values</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="c1"># Convert to simple numpy arrays containing floats</span>
@@ -645,30 +645,30 @@
     <span class="n">sigma</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="n">expected_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
 
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
 
         <span class="c1"># Mask off any NaN bin/sigma values (resulting from bin masking)</span>
         <span class="n">actual_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
         <span class="n">expected_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
         <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
 
-        <span class="c1"># TODO: How should we handle nan / masked values in the &quot;data&quot;</span>
+        <span class="c1"># TODO: How should we handle nan / masked values in the "data"</span>
         <span class="c1"># (actual_values) distribution? How about negative numbers?</span>
 
-        <span class="c1"># Make sure actual values (aka &quot;data&quot;) are valid -- no infs, no nans,</span>
+        <span class="c1"># Make sure actual values (aka "data") are valid -- no infs, no nans,</span>
         <span class="c1"># etc.</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">actual_values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">actual_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="c1"># Check that new array contains all valid entries</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">expected_values</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-        <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf in log</span>
+        <span class="c1"># Replace 0's with small positive numbers to avoid inf in log</span>
         <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
                 <span class="n">out</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
 
@@ -682,7 +682,7 @@
 <div class="viewcode-block" id="mcllh_eff">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.mcllh_eff">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">mcllh_eff</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the log-likelihood (llh) based on eq. 3.16 - https://doi.org/10.1007/JHEP06(2019)030</span>
+<span class="w">    </span><span class="sd">"""Compute the log-likelihood (llh) based on eq. 3.16 - https://doi.org/10.1007/JHEP06(2019)030</span>
 <span class="sd">    accounting for finite MC statistics.</span>
 <span class="sd">    This is the most recommended likelihood in the paper.</span>
 
@@ -696,7 +696,7 @@
 <span class="sd">        llh corresponding to each pair of elements in `actual_values` and</span>
 <span class="sd">        `expected_values`.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">assert</span> <span class="n">actual_values</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="c1"># Convert to simple numpy arrays containing floats</span>
@@ -704,30 +704,30 @@
     <span class="n">sigma</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="n">expected_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
 
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
 
         <span class="c1"># Mask off any NaN bin/sigma values (resulting from bin masking)</span>
         <span class="n">actual_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
         <span class="n">expected_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
         <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
 
-        <span class="c1"># TODO: How should we handle nan / masked values in the &quot;data&quot;</span>
+        <span class="c1"># TODO: How should we handle nan / masked values in the "data"</span>
         <span class="c1"># (actual_values) distribution? How about negative numbers?</span>
 
-        <span class="c1"># Make sure actual values (aka &quot;data&quot;) are valid -- no infs, no nans,</span>
+        <span class="c1"># Make sure actual values (aka "data") are valid -- no infs, no nans,</span>
         <span class="c1"># etc.</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">actual_values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">actual_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="c1"># Check that new array contains all valid entries</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">expected_values</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-        <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf in log</span>
+        <span class="c1"># Replace 0's with small positive numbers to avoid inf in log</span>
         <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
                 <span class="n">out</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
 
@@ -741,7 +741,7 @@
 <div class="viewcode-block" id="log_poisson">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.log_poisson">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">log_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the log of a poisson pdf</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Calculate the log of a poisson pdf</span>
 
 <span class="sd">    .. math::</span>
 <span class="sd">        p(k,l) = \log\left( l^k \cdot e^{-l}/k! \right)</span>
@@ -756,14 +756,14 @@
 
 <span class="sd">    log of poisson</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">-</span><span class="n">l</span> <span class="o">-</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="log_smear">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.log_smear">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">log_smear</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Calculate the log of a normal pdf</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Calculate the log of a normal pdf</span>
 
 <span class="sd">    .. math::</span>
 <span class="sd">        p(x, \sigma) = \log\left( (\sigma \sqrt{2\pi})^{-1} \exp( -x^2 / 2\sigma^2 ) \right)</span>
@@ -777,7 +777,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    log of gaussian</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="p">(</span>
         <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
     <span class="p">)</span></div>
@@ -786,7 +786,7 @@
 <div class="viewcode-block" id="conv_poisson">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.conv_poisson">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">conv_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Poisson pdf</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Poisson pdf</span>
 
 <span class="sd">    .. math::</span>
 <span class="sd">        p(k,l) = l^k \cdot e^{-l}/k!</span>
@@ -809,8 +809,8 @@
 <span class="sd">    float</span>
 <span class="sd">        convoluted poissson likelihood</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf in log</span>
+<span class="sd">    """</span>
+    <span class="c1"># Replace 0's with small positive numbers to avoid inf in log</span>
     <span class="n">l</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
     <span class="n">k</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
     <span class="n">s</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
@@ -824,12 +824,12 @@
     <span class="n">f_y</span> <span class="o">=</span> <span class="n">log_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">f_x</span><span class="p">[</span><span class="n">idx</span><span class="p">:])</span>
     <span class="c1">#f_y = log_poisson(f_x[idx:], l)</span>
     <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">f_y</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;`NaN values`:&#39;</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;idx = </span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;s = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;l = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;f_x = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">f_x</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;f_y = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">f_y</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">'`NaN values`:'</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">'idx = </span><span class="si">%d</span><span class="s1">'</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">'s = </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">'l = </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">l</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">'f_x = </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">f_x</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">'f_y = </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">f_y</span><span class="p">)</span>
     <span class="n">f_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">f_y</span><span class="p">)</span>
     <span class="n">conv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">conv_y</span><span class="p">[</span><span class="n">idx</span><span class="p">:]</span> <span class="o">+</span> <span class="n">f_y</span><span class="p">)</span>
     <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">conv_y</span><span class="p">))</span>
@@ -839,7 +839,7 @@
 <div class="viewcode-block" id="norm_conv_poisson">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.norm_conv_poisson">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">norm_conv_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convoluted poisson likelihood normalized so that the value at k=l</span>
+<span class="w">    </span><span class="sd">"""Convoluted poisson likelihood normalized so that the value at k=l</span>
 <span class="sd">    (asimov) does not change</span>
 
 <span class="sd">    Parameters</span>
@@ -861,7 +861,7 @@
 <span class="sd">        Convoluted poisson likelihood normalized so that the value at k=l</span>
 <span class="sd">        (asimov) does not change</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cp</span> <span class="o">=</span> <span class="n">conv_poisson</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="n">nsigma</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">steps</span><span class="p">)</span>
     <span class="n">n1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_poisson</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l</span><span class="p">))</span>
     <span class="n">n2</span> <span class="o">=</span> <span class="n">conv_poisson</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">nsigma</span><span class="o">=</span><span class="n">nsigma</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">steps</span><span class="p">)</span>
@@ -871,7 +871,7 @@
 <div class="viewcode-block" id="conv_llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.conv_llh">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">conv_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    This convolution log-likelihood takes into account any uncertainties on the</span>
 <span class="sd">    expected values (from e.g. finite MC statistics), which is achieved by</span>
 <span class="sd">    smearing out the simple Poisson pdf with a normal distribution centered at 0.</span>
@@ -891,7 +891,7 @@
 <span class="sd">            convoluted llh corresponding to each pair of elements in</span>
 <span class="sd">            `actual_values` and `expected_values`.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">in_array_shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
     <span class="n">actual_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="n">sigma</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
@@ -914,7 +914,7 @@
 <div class="viewcode-block" id="barlow_llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.barlow_llh">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">barlow_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the Barlow LLH taking into account finite statistics.</span>
+<span class="w">    </span><span class="sd">"""Compute the Barlow LLH taking into account finite statistics.</span>
 <span class="sd">    The likelihood is described in this paper: https://doi.org/10.1016/0010-4655(93)90005-W</span>
 
 <span class="sd">    Parameters</span>
@@ -925,36 +925,36 @@
 <span class="sd">    -------</span>
 <span class="sd">    barlow_llh: numpy.ndarray</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">actual_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="n">sigmas</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="n">expected_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
 
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
         <span class="c1"># Mask off any nan expected values (these are assumed to be ok)</span>
         <span class="n">actual_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
         <span class="n">expected_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
 
         <span class="c1"># Check that new array contains all valid entries</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">actual_values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`actual_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`actual_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">actual_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
-        <span class="c1"># TODO: How should we handle nan / masked values in the &quot;data&quot;</span>
+        <span class="c1"># TODO: How should we handle nan / masked values in the "data"</span>
         <span class="c1"># (actual_values) distribution? How about negative numbers?</span>
 
-        <span class="c1"># Make sure actual values (aka &quot;data&quot;) are valid -- no infs, no nans,</span>
+        <span class="c1"># Make sure actual values (aka "data") are valid -- no infs, no nans,</span>
         <span class="c1"># etc.</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">((</span><span class="n">actual_values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`actual_values` must be &gt;= 0 and neither inf nor nan...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">actual_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="c1"># Check that new array contains all valid entries</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">expected_values</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">):</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'`expected_values` must all be &gt;= 0...</span><span class="se">\n</span><span class="s1">'</span>
                    <span class="o">+</span> <span class="n">maperror_logmsg</span><span class="p">(</span><span class="n">expected_values</span><span class="p">))</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
@@ -970,8 +970,8 @@
 <div class="viewcode-block" id="mod_chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.mod_chi2">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">mod_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Compute a modified Pearson&#39;s chi-square between each value in `actual_values`</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
+<span class="sd">    Compute a modified Pearson's chi-square between each value in `actual_values`</span>
 <span class="sd">    and `expected_values` taking into account uncertainty terms (incl. e.g. finite stats).</span>
 
 <span class="sd">    .. math::</span>
@@ -991,20 +991,20 @@
 <span class="sd">    * `expected_values` are clipped to the range [SMALL_POS, inf] prior to</span>
 <span class="sd">      the calculation to avoid infinities when dividing</span>
 <span class="sd">    * `actual_values` = 0 are allowed (appear only in numerator)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">in_array_shape</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
     <span class="n">actual_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="n">sigma</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
     <span class="n">expected_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
 
-    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
 
         <span class="c1"># Mask off any NaN bin/sigma values (resulting from bin masking)</span>
         <span class="n">actual_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span>
         <span class="n">expected_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">expected_values</span><span class="p">)</span>
         <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
 
-        <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf when denominator is zero</span>
+        <span class="c1"># Replace 0's with small positive numbers to avoid inf when denominator is zero</span>
         <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
                 <span class="n">out</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
 
@@ -1019,7 +1019,7 @@
 <div class="viewcode-block" id="correct_chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.correct_chi2">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">correct_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Compute -2 times the log-likelihood of a normal approximation of</span>
 <span class="sd">    the Poisson pdf between each value in `actual_values` and `expected_values`</span>
 <span class="sd">    taking into account uncertainty terms (incl. e.g. finite stats) and their</span>
@@ -1040,8 +1040,8 @@
 <span class="sd">        modified chi-squared values corresponding to each pair of elements in</span>
 <span class="sd">        the inputs</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf in log</span>
+<span class="sd">    """</span>
+    <span class="c1"># Replace 0's with small positive numbers to avoid inf in log</span>
     <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
             <span class="n">out</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
     <span class="n">actual_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
@@ -1055,7 +1055,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">weighted_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">,</span> <span class="n">bin_unc2</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the chi-square value for weighted events taking into account</span>
+<span class="w">    </span><span class="sd">"""Compute the chi-square value for weighted events taking into account</span>
 <span class="sd">    uncertainty terms (incl. e.g. finite stats)</span>
 
 <span class="sd">    Parameters</span>
@@ -1068,8 +1068,8 @@
 <span class="sd">        Modified chi-squared values corresponding to each trio of elements in</span>
 <span class="sd">        the inputs</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf in log</span>
+<span class="sd">    """</span>
+    <span class="c1"># Replace 0's with small positive numbers to avoid inf in log</span>
     <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
     <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">bin_unc2</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">bin_unc2</span><span class="p">)</span>
 
@@ -1087,7 +1087,7 @@
 <div class="viewcode-block" id="signed_sqrt_mod_chi2">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.signed_sqrt_mod_chi2">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">signed_sqrt_mod_chi2</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute a (signed) pull value taking into account uncertainty terms</span>
 <span class="sd">    (cf. `mod_chi2`).</span>
 
@@ -1101,8 +1101,8 @@
 <span class="sd">        Pull values corresponding to each pair of elements in</span>
 <span class="sd">        the inputs</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Replace 0&#39;s with small positive numbers to avoid inf in log</span>
+<span class="sd">    """</span>
+    <span class="c1"># Replace 0's with small positive numbers to avoid inf in log</span>
     <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">a_min</span><span class="o">=</span><span class="n">SMALL_POS</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
             <span class="n">out</span><span class="o">=</span><span class="n">expected_values</span><span class="p">)</span>
     <span class="n">actual_values</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">(</span><span class="n">actual_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
@@ -1120,7 +1120,7 @@
 <div class="viewcode-block" id="generalized_poisson_llh">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.stats.generalized_poisson_llh">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">generalized_poisson_llh</span><span class="p">(</span><span class="n">actual_values</span><span class="p">,</span> <span class="n">expected_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">empty_bins</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;Compute the generalized Poisson likelihood as formulated in</span>
+<span class="w">    </span><span class="sd">'''Compute the generalized Poisson likelihood as formulated in</span>
 <span class="sd">    https://arxiv.org/abs/1902.08831</span>
 
 
@@ -1140,14 +1140,14 @@
 <span class="sd">    -------</span>
 <span class="sd">    llh_per_bin : bin-wise llh values, in a numpy array</span>
 
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
 
 
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">),</span> <span class="s1">&#39;ERROR: expected_values must be an OrderedDict of MapSet objects&#39;</span>
-    <span class="k">assert</span> <span class="s1">&#39;weights&#39;</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s1">&#39;ERROR: expected_values need a key named &quot;weights&quot;&#39;</span>
-    <span class="k">assert</span> <span class="s1">&#39;llh_alphas&#39;</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s1">&#39;ERROR: expected_values need a key named &quot;llh_alphas&quot;&#39;</span>
-    <span class="k">assert</span> <span class="s1">&#39;llh_betas&#39;</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s1">&#39;ERROR: expected_values need a key named &quot;llh_betas&quot;&#39;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expected_values</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">),</span> <span class="s1">'ERROR: expected_values must be an OrderedDict of MapSet objects'</span>
+    <span class="k">assert</span> <span class="s1">'weights'</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s1">'ERROR: expected_values need a key named "weights"'</span>
+    <span class="k">assert</span> <span class="s1">'llh_alphas'</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s1">'ERROR: expected_values need a key named "llh_alphas"'</span>
+    <span class="k">assert</span> <span class="s1">'llh_betas'</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s1">'ERROR: expected_values need a key named "llh_betas"'</span>
 
     <span class="n">num_bins</span> <span class="o">=</span> <span class="n">actual_values</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">llh_per_bin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_bins</span><span class="p">)</span>
@@ -1171,19 +1171,19 @@
             <span class="k">continue</span>
 
         <span class="c1"># Make sure that no weight sum is negative. Crash if there are</span>
-        <span class="n">weight_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">bin_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">maps</span><span class="p">])</span>
+        <span class="n">weight_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">bin_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span><span class="o">.</span><span class="n">maps</span><span class="p">])</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">weight_sum</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n\n</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;weights that are causing problem: &#39;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'</span><span class="se">\n\n\n</span><span class="s1">'</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'weights that are causing problem: '</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">weight_sum</span><span class="p">[</span><span class="n">weight_sum</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">((</span><span class="n">weight_sum</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n\n</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">weight_sum</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;ERROR: negative weights detected&#39;</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'</span><span class="se">\n\n\n</span><span class="s1">'</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">weight_sum</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">'ERROR: negative weights detected'</span>
 
         <span class="c1">#</span>
         <span class="c1"># If the number of MC events is high, compute a normal poisson probability</span>
         <span class="c1">#</span>
-        <span class="n">n_mc_events</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">bin_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">[</span><span class="s1">&#39;n_mc_events&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">maps</span><span class="p">])</span>
+        <span class="n">n_mc_events</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">bin_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">[</span><span class="s1">'n_mc_events'</span><span class="p">]</span><span class="o">.</span><span class="n">maps</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">n_mc_events</span><span class="o">&gt;</span><span class="mi">100</span><span class="p">):</span>
 
             <span class="n">logP</span> <span class="o">=</span> <span class="n">data_count</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">weight_sum</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">-</span><span class="n">weight_sum</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">data_count</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">data_count</span><span class="p">)</span><span class="o">-</span><span class="n">data_count</span><span class="p">)</span>
@@ -1192,15 +1192,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.llh_defs.poisson</span><span class="w"> </span><span class="kn">import</span> <span class="n">fast_pgmix</span>
 
-            <span class="n">alphas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">bin_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">[</span><span class="s1">&#39;llh_alphas&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">maps</span><span class="p">])</span>
-            <span class="n">betas</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">bin_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">[</span><span class="s1">&#39;llh_betas&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">maps</span><span class="p">])</span>
+            <span class="n">alphas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">bin_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">[</span><span class="s1">'llh_alphas'</span><span class="p">]</span><span class="o">.</span><span class="n">maps</span><span class="p">])</span>
+            <span class="n">betas</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">m</span><span class="o">.</span><span class="n">hist</span><span class="o">.</span><span class="n">flatten</span><span class="p">()[</span><span class="n">bin_i</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">expected_values</span><span class="p">[</span><span class="s1">'llh_betas'</span><span class="p">]</span><span class="o">.</span><span class="n">maps</span><span class="p">])</span>
 
-            <span class="c1"># Remove the NaN&#39;s</span>
+            <span class="c1"># Remove the NaN's</span>
             <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">alphas</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">betas</span><span class="p">)</span>
 
             <span class="c1"># Check that the alpha and betas make sense</span>
-            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">alphas</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;ERROR: detected alpha values &lt;=0&#39;</span>
-            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">betas</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">),</span> <span class="s1">&#39;ERROR: detected beta values &lt;=0&#39;</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">alphas</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">'ERROR: detected alpha values &lt;=0'</span>
+            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">betas</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">),</span> <span class="s1">'ERROR: detected beta values &lt;=0'</span>
 
 
             <span class="n">llh_of_bin</span> <span class="o">=</span> <span class="n">fast_pgmix</span><span class="p">(</span><span class="n">data_count</span><span class="p">,</span> <span class="n">alphas</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="n">betas</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
@@ -1210,7 +1210,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">approximate_poisson_normal</span><span class="p">(</span><span class="n">data_count</span><span class="p">,</span> <span class="n">alphas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_c</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Compute the likelihood of a marginalized poisson-gamma</span>
 <span class="sd">    function, using a single normal distribution instead of</span>
 <span class="sd">    the convolution of gamma function</span>
@@ -1218,7 +1218,7 @@
 <span class="sd">    This formula can be used when the MC counts are really</span>
 <span class="sd">    high, and where the gamma function throws infinite values</span>
 
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.integrate</span><span class="w"> </span><span class="kn">import</span> <span class="n">quad</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -1240,7 +1240,7 @@
         <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">integrate</span><span class="p">,</span> <span class="n">LowLevelCallable</span>
 
-        <span class="n">lib</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s1">&#39;/groups/icecube/bourdeet/pisa/pisa/utils/poisson_normal.so&#39;</span><span class="p">))</span>
+        <span class="n">lib</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s1">'/groups/icecube/bourdeet/pisa/pisa/utils/poisson_normal.so'</span><span class="p">))</span>
         <span class="n">lib</span><span class="o">.</span><span class="n">approximate_gamma_poisson_integrand</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span>
         <span class="n">lib</span><span class="o">.</span><span class="n">approximate_gamma_poisson_integrand</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_double</span><span class="p">),</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">)</span>
 
@@ -1254,11 +1254,11 @@
         <span class="n">user_data</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">)</span>
         <span class="n">func</span> <span class="o">=</span> <span class="n">LowLevelCallable</span><span class="p">(</span><span class="n">lib</span><span class="o">.</span><span class="n">approximate_gamma_poisson_integrand</span><span class="p">,</span> <span class="n">user_data</span><span class="p">)</span>
         <span class="n">LH</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="c1">#print(&#39;lower &#39;,lower,&#39; upper: &#39;,upper,&#39; LH: &#39;,LH)</span>
+        <span class="c1">#print('lower ',lower,' upper: ',upper,' LH: ',LH)</span>
     <span class="k">else</span><span class="p">:</span>
 
         <span class="n">LH</span> <span class="o">=</span> <span class="n">quad</span><span class="p">(</span><span class="n">approximate_poisson_normal_python</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">data_count</span><span class="p">,</span> <span class="n">gamma_mean</span><span class="p">,</span> <span class="n">gamma_sigma</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="c1">#print(&#39;lower &#39;,lower,&#39; upper: &#39;,upper,&#39; data_count: &#39;,data_count,&#39; mean: &#39;, gamma_mean, &#39; sigma: &#39;,gamma_sigma, &#39; LH: &#39;,LH)</span>
+        <span class="c1">#print('lower ',lower,' upper: ',upper,' data_count: ',data_count,' mean: ', gamma_mean, ' sigma: ',gamma_sigma, ' LH: ',LH)</span>
 
     <span class="n">LH</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">SMALL_POS</span><span class="p">,</span><span class="n">LH</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">LH</span><span class="p">)</span>
@@ -1310,7 +1310,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

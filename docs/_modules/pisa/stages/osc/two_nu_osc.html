@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.osc.two_nu_osc - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.osc.two_nu_osc - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,10 +281,10 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.osc.two_nu_osc</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Stage for the calculation osc. probabilities assuming two-neutrino model</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -296,12 +296,12 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.numba_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">myjit</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;two_nu_osc&#39;</span><span class="p">,</span> <span class="s1">&#39;calc_probs&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_probs_vectorized&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'two_nu_osc'</span><span class="p">,</span> <span class="s1">'calc_probs'</span><span class="p">,</span> <span class="s1">'apply_probs_vectorized'</span><span class="p">,</span> <span class="s1">'init_test'</span><span class="p">]</span>
 
 <div class="viewcode-block" id="two_nu_osc">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.two_nu_osc.two_nu_osc">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">two_nu_osc</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    two neutrino osc class</span>
 
 <span class="sd">    Parameters</span>
@@ -318,25 +318,25 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;true_energy&quot;, &quot;true_coszen&quot;, &quot;nu_flux&quot;, &quot;weights&quot;</span>
+<span class="sd">        "true_energy", "true_coszen", "nu_flux", "weights"</span>
 
 <span class="sd">    For two-neutrino model, there is only one mass-splitting term.</span>
 <span class="sd">    Atmospheric mixing angle is approximated by theta (sin^2(2*theta))</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
                 <span class="p">):</span>
 
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;theta23&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;deltam31&#39;</span><span class="p">,</span>
+            <span class="s1">'theta23'</span><span class="p">,</span>
+            <span class="s1">'deltam31'</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;nu_flux&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;weights&#39;</span>
+            <span class="s1">'true_energy'</span><span class="p">,</span>
+            <span class="s1">'true_coszen'</span><span class="p">,</span>
+            <span class="s1">'nu_flux'</span><span class="p">,</span>
+            <span class="s1">'weights'</span>
         <span class="p">)</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -350,45 +350,45 @@
     <span class="nd">@profile</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="n">theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
-        <span class="n">deltam31</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">deltam31</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;eV**2&#39;</span><span class="p">)</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">theta23</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">'dimensionless'</span><span class="p">)</span>
+        <span class="n">deltam31</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">deltam31</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">'eV**2'</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s1">&#39;numu&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-                <span class="n">apply_probs_vectorized</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;nu_flux&#39;</span><span class="p">],</span>
+            <span class="k">if</span> <span class="s1">'numu'</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                <span class="n">apply_probs_vectorized</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'nu_flux'</span><span class="p">],</span>
                                     <span class="n">FTYPE</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span>
                                     <span class="n">FTYPE</span><span class="p">(</span><span class="n">deltam31</span><span class="p">),</span>
-                                    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">],</span>
-                                    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">],</span>
+                                    <span class="n">container</span><span class="p">[</span><span class="s1">'true_energy'</span><span class="p">],</span>
+                                    <span class="n">container</span><span class="p">[</span><span class="s1">'true_coszen'</span><span class="p">],</span>
                                     <span class="n">ITYPE</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
-                                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">],</span>
+                                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">],</span>
                                    <span class="p">)</span>
 
-            <span class="k">if</span> <span class="s1">&#39;nutau&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-                <span class="n">apply_probs_vectorized</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;nu_flux&#39;</span><span class="p">],</span>
+            <span class="k">if</span> <span class="s1">'nutau'</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                <span class="n">apply_probs_vectorized</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'nu_flux'</span><span class="p">],</span>
                                     <span class="n">FTYPE</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span>
                                     <span class="n">FTYPE</span><span class="p">(</span><span class="n">deltam31</span><span class="p">),</span>
-                                    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">],</span>
-                                    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">],</span>
+                                    <span class="n">container</span><span class="p">[</span><span class="s1">'true_energy'</span><span class="p">],</span>
+                                    <span class="n">container</span><span class="p">[</span><span class="s1">'true_coszen'</span><span class="p">],</span>
                                     <span class="n">ITYPE</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span>
-                                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">],</span>
+                                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">],</span>
                                    <span class="p">)</span>
-            <span class="k">if</span> <span class="s1">&#39;nue&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-                <span class="n">apply_probs_vectorized</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;nu_flux&#39;</span><span class="p">],</span>
+            <span class="k">if</span> <span class="s1">'nue'</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                <span class="n">apply_probs_vectorized</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'nu_flux'</span><span class="p">],</span>
                                     <span class="n">FTYPE</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span>
                                     <span class="n">FTYPE</span><span class="p">(</span><span class="n">deltam31</span><span class="p">),</span>
-                                    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">],</span>
-                                    <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">],</span>
+                                    <span class="n">container</span><span class="p">[</span><span class="s1">'true_energy'</span><span class="p">],</span>
+                                    <span class="n">container</span><span class="p">[</span><span class="s1">'true_coszen'</span><span class="p">],</span>
                                     <span class="n">ITYPE</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
-                                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">],</span>
+                                    <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">],</span>
                                    <span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'weights'</span><span class="p">)</span></div>
 </div>
 
 
 <span class="nd">@myjit</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">calc_probs</span><span class="p">(</span><span class="n">t23</span><span class="p">,</span> <span class="n">dm31</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">):</span> <span class="c1">#</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39; calculate osc prob of numu to nutau &#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">''' calculate osc prob of numu to nutau '''</span>
     <span class="n">L1</span> <span class="o">=</span> <span class="mf">19.</span> <span class="c1"># atmospheric production height</span>
     <span class="n">R</span> <span class="o">=</span> <span class="mf">6378.2</span> <span class="o">+</span> <span class="n">L1</span> <span class="c1"># mean radius of the Earth + L1</span>
     <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">((</span><span class="mi">1</span><span class="o">-</span><span class="n">L1</span><span class="o">/</span><span class="n">R</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">true_coszen</span><span class="p">)))</span>
@@ -400,13 +400,13 @@
 <span class="c1"># vectorized function to apply (flux * prob)</span>
 <span class="c1"># must be outside class</span>
 <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span>
-    <span class="n">FX</span> <span class="o">=</span> <span class="s1">&#39;f8&#39;</span>
-    <span class="n">IX</span> <span class="o">=</span> <span class="s1">&#39;i8&#39;</span>
+    <span class="n">FX</span> <span class="o">=</span> <span class="s1">'f8'</span>
+    <span class="n">IX</span> <span class="o">=</span> <span class="s1">'i8'</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="n">FX</span> <span class="o">=</span> <span class="s1">&#39;f4&#39;</span>
-    <span class="n">IX</span> <span class="o">=</span> <span class="s1">&#39;i4&#39;</span>
-<span class="n">signature</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">IX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span>
-<span class="nd">@guvectorize</span><span class="p">([</span><span class="n">signature</span><span class="p">],</span> <span class="s1">&#39;(d),(),(),(),(),()-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
+    <span class="n">FX</span> <span class="o">=</span> <span class="s1">'f4'</span>
+    <span class="n">IX</span> <span class="o">=</span> <span class="s1">'i4'</span>
+<span class="n">signature</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">IX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])'</span>
+<span class="nd">@guvectorize</span><span class="p">([</span><span class="n">signature</span><span class="p">],</span> <span class="s1">'(d),(),(),(),(),()-&gt;()'</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">apply_probs_vectorized</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">t23</span><span class="p">,</span> <span class="n">dm31</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">,</span> <span class="n">nuflav</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">nuflav</span><span class="o">==</span><span class="mi">1</span><span class="p">:</span> <span class="c1"># numu receive weights dependent on numu survival prob</span>
         <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="n">flux</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">calc_probs</span><span class="p">(</span><span class="n">t23</span><span class="p">,</span> <span class="n">dm31</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">))</span>
@@ -420,10 +420,10 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.two_nu_osc.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;theta23&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">45</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;deltam31&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">2.5e-3</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'theta23'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">45</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">degree</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'deltam31'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">2.5e-3</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
     <span class="p">])</span>
     <span class="k">return</span> <span class="n">two_nu_osc</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
 
@@ -466,7 +466,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

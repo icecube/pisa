@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Installation Guide - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>Installation Guide - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -379,9 +379,9 @@ Miniforge or the venv virtual environment folder into which all Python packages 
 <details>
   <summary>command suggestions</summary>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>MINIFORGE&gt;/miniforge3
-wget<span class="w"> </span><span class="s2">&quot;https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh&quot;</span>
-bash<span class="w"> </span><span class="s2">&quot;Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh&quot;</span><span class="w"> </span>-p<span class="w"> </span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>MINIFORGE&gt;/miniforge3<span class="w"> </span>-u
-rm<span class="w"> </span><span class="s2">&quot;Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh&quot;</span>
+wget<span class="w"> </span><span class="s2">"https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh"</span>
+bash<span class="w"> </span><span class="s2">"Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh"</span><span class="w"> </span>-p<span class="w"> </span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>MINIFORGE&gt;/miniforge3<span class="w"> </span>-u
+rm<span class="w"> </span><span class="s2">"Miniforge3-</span><span class="k">$(</span>uname<span class="k">)</span><span class="s2">-</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">.sh"</span>
 </pre></div>
 </div>
 <p><strong>Notes:</strong></p>
@@ -389,7 +389,7 @@ rm<span class="w"> </span><span class="s2">&quot;Miniforge3-</span><span class="
 <li><p>To perform SHA-256 checksum verification of the Miniforge installer, download the installer (<code class="docutils literal notranslate"><span class="pre">.sh</span></code>) for your platform whose name contains the release version and the corresponding <code class="docutils literal notranslate"><span class="pre">.sha256</span></code> checksum file from <a class="reference external" href="https://github.com/conda-forge/miniforge/releases/latest" rel="noreferer noopener" target="_blank">https://github.com/conda-forge/miniforge/releases/latest</a>, then execute <code class="docutils literal notranslate"><span class="pre">sha256sum</span> <span class="pre">-c</span> <span class="pre">&quot;Miniforge3-&lt;RELEASE</span> <span class="pre">VERSION&gt;-$(uname)-$(uname</span> <span class="pre">-m).sh.sha256&quot;</span></code>.</p></li>
 <li><p>You can decline having your shell profile updated to automatically initialize conda. In this case</p></li>
 </ul>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="nb">eval</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>MINIFORGE&gt;/miniforge3/bin/conda<span class="w"> </span>shell.bash<span class="w"> </span>hook<span class="k">)</span><span class="s2">&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="nb">eval</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>MINIFORGE&gt;/miniforge3/bin/conda<span class="w"> </span>shell.bash<span class="w"> </span>hook<span class="k">)</span><span class="s2">"</span>
 </pre></div>
 </div>
 <p>will activate the base environment as prompted at the end of the Miniforge installation script. Doing so is required to proceed with this installation and whenever PISA is used again. The successful activation is indicated by the shell prompt <code class="docutils literal notranslate"><span class="pre">(base)</span></code>. An overview of the packages in the base environment can be gained via <code class="docutils literal notranslate"><span class="pre">mamba/conda</span> <span class="pre">list</span></code>.</p>
@@ -528,7 +528,6 @@ Support for all of these comes pre-packaged or as <code class="docutils literal 
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://github.com/icecube/leptonweighter" rel="noreferer noopener" target="_blank">LeptonWeighter</a> Required for <code class="docutils literal notranslate"><span class="pre">data.licloader_weighter</span></code> service.</p></li>
 <li><p><a class="reference external" href="https://github.com/tsutsu3/linkify-it-py" rel="noreferer noopener" target="_blank">linkify-it-py</a> MyST-Parser extension for converting bare URLs into hyperlinks. (Required to compile PISA’s documentation.)</p>
 <ul>
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
@@ -682,7 +681,7 @@ If you don’t have a suitable personal access token yet, generate one with a pu
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

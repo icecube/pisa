@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.analysis.manipulate_params - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.analysis.manipulate_params - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.analysis.manipulate_params</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Utilities for manipulating parameters when fitting.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 
@@ -294,12 +294,12 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;get_separate_octant_params&#39;</span><span class="p">,</span> <span class="s1">&#39;update_param_values&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;update_param_values_detector&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'get_separate_octant_params'</span><span class="p">,</span> <span class="s1">'update_param_values'</span><span class="p">,</span>
+           <span class="s1">'update_param_values_detector'</span><span class="p">]</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">BoundedRandomDisplacement</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Add a bounded random displacement of maximum size `stepsize` to each coordinate</span>
 <span class="sd">    Calling this updates `x` in-place.</span>
 
@@ -311,7 +311,7 @@
 <span class="sd">        Bounds on x</span>
 <span class="sd">    random_gen : {None, `np.random.RandomState`, `np.random.Generator`}</span>
 <span class="sd">        The random number generator that generates the displacements</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stepsize</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">random_gen</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">stepsize</span> <span class="o">=</span> <span class="n">stepsize</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">random_gen</span> <span class="o">=</span> <span class="n">check_random_state</span><span class="p">(</span><span class="n">random_gen</span><span class="p">)</span>
@@ -329,7 +329,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">get_separate_octant_params</span><span class="p">(</span>
     <span class="n">hypo_maker</span><span class="p">,</span> <span class="n">angle_name</span><span class="p">,</span> <span class="n">inflection_point</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    This function creates versions of the angle param that are confined to</span>
 <span class="sd">    a single octant. It does this for both octant cases. This is used to allow</span>
 <span class="sd">    fits to be done where only one of the octants is allowed. The fit can then</span>
@@ -355,7 +355,7 @@
 <span class="sd">        angle param confined to first octant</span>
 <span class="sd">    angle_case2 : Param</span>
 <span class="sd">        angle param confined to second octant</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
 
     <span class="c1"># Reset angle before starting</span>
     <span class="n">angle</span> <span class="o">=</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">angle_name</span><span class="p">]</span>
@@ -400,7 +400,7 @@
     <span class="c1"># Also get case 2, e.g. the other octant</span>
     <span class="n">case2_octant_index</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">case1_octant_index</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span>
     <span class="n">angle_case2</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">inflection_point</span> <span class="o">-</span> <span class="n">angle_case2</span><span class="o">.</span><span class="n">value</span>
-    <span class="c1"># Set nominal value so that `reset_free` won&#39;t try to set it out of bounds</span>
+    <span class="c1"># Set nominal value so that `reset_free` won't try to set it out of bounds</span>
     <span class="n">angle_case2</span><span class="o">.</span><span class="n">nominal_value</span> <span class="o">=</span> <span class="n">angle_case2</span><span class="o">.</span><span class="n">value</span>
     <span class="n">angle_case2</span><span class="o">.</span><span class="n">range</span> <span class="o">=</span> <span class="n">octants</span><span class="p">[</span><span class="n">case2_octant_index</span><span class="p">]</span>
 
@@ -417,14 +417,14 @@
     <span class="n">update_range</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">update_is_fixed</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Update just the values of parameters of a DistributionMaker *without* replacing</span>
 <span class="sd">    the memory references inside.</span>
 
 <span class="sd">    This should be used in place of `hypo_maker.update_params(params)` unless one</span>
 <span class="sd">    explicitly wants to replace the memory references to which the parameters in</span>
 <span class="sd">    the DistributionMaker are pointing.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># it is possible that only a single param is given</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">Param</span><span class="p">):</span>
@@ -459,11 +459,11 @@
     <span class="n">update_range</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="n">update_is_fixed</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Modification of the update_param_values function to use with the Detectors class.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;Detectors&quot;</span><span class="p">,</span> \
-    <span class="s2">&quot;hypo_maker is not Detectors class&quot;</span>
+<span class="sd">    """</span>
+    <span class="k">assert</span> <span class="n">hypo_maker</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"Detectors"</span><span class="p">,</span> \
+    <span class="s2">"hypo_maker is not Detectors class"</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">Param</span><span class="p">):</span>
         <span class="n">params</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
@@ -472,7 +472,7 @@
         <span class="n">ps</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">ps</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">distribution_maker</span><span class="o">.</span><span class="n">detector_name</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
-                <span class="n">p_name</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_&#39;</span> <span class="o">+</span><span class="n">distribution_maker</span><span class="o">.</span><span class="n">detector_name</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">p_name</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'_'</span> <span class="o">+</span><span class="n">distribution_maker</span><span class="o">.</span><span class="n">detector_name</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">p_name</span> <span class="ow">in</span> <span class="n">ps</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
                     <span class="n">ps</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">p_name</span><span class="p">)</span>
                 <span class="n">ps</span><span class="p">[</span><span class="n">p</span><span class="p">]</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">p_name</span>
@@ -519,7 +519,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

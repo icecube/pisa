@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.hypersurface package - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.utils.hypersurface package - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -428,13 +428,13 @@ collection with a HypersurfaceInterpolator object for each Map.</p>
 were given. It has the form:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
     <span class="n">interpolation_param_spec</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;param1&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">val1_1</span><span class="p">,</span> <span class="n">val1_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
-        <span class="s1">&#39;param2&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">val2_1</span><span class="p">,</span> <span class="n">val2_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+        <span class="s1">'param1'</span><span class="p">:</span> <span class="p">{</span><span class="s2">"values"</span><span class="p">:</span> <span class="p">[</span><span class="n">val1_1</span><span class="p">,</span> <span class="n">val1_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">"scales_log"</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+        <span class="s1">'param2'</span><span class="p">:</span> <span class="p">{</span><span class="s2">"values"</span><span class="p">:</span> <span class="p">[</span><span class="n">val2_1</span><span class="p">,</span> <span class="n">val2_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">"scales_log"</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
         <span class="o">...</span>
-        <span class="s1">&#39;paramN&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">valN_1</span><span class="p">,</span> <span class="n">valN_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+        <span class="s1">'paramN'</span><span class="p">:</span> <span class="p">{</span><span class="s2">"values"</span><span class="p">:</span> <span class="p">[</span><span class="n">valN_1</span><span class="p">,</span> <span class="n">valN_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">"scales_log"</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
     <span class="p">},</span>
-    <span class="s1">&#39;hs_fits&#39;</span><span class="p">:</span> <span class="p">[</span>
-        <span class="o">&lt;</span><span class="nb">list</span> <span class="n">of</span> <span class="n">dicts</span> <span class="n">where</span> <span class="n">keys</span> <span class="n">are</span> <span class="nb">map</span> <span class="n">names</span> <span class="n">such</span> <span class="k">as</span> <span class="s1">&#39;nue_cc&#39;</span> <span class="ow">and</span> <span class="n">values</span>
+    <span class="s1">'hs_fits'</span><span class="p">:</span> <span class="p">[</span>
+        <span class="o">&lt;</span><span class="nb">list</span> <span class="n">of</span> <span class="n">dicts</span> <span class="n">where</span> <span class="n">keys</span> <span class="n">are</span> <span class="nb">map</span> <span class="n">names</span> <span class="n">such</span> <span class="k">as</span> <span class="s1">'nue_cc'</span> <span class="ow">and</span> <span class="n">values</span>
         <span class="n">are</span> <span class="n">hypersurface</span> <span class="n">states</span><span class="o">&gt;</span>
     <span class="p">]</span>
 <span class="p">}</span>
@@ -500,10 +500,10 @@ combine similar species. Must be something that can be passed to the
 <li><p><strong>interpolation_param_spec</strong> (<a class="reference internal" href="pisa.html#pisa.OrderedDict" title="collections.OrderedDict"><em>collections.OrderedDict</em></a>) – <p>Specification of parameter grid that hypersurfaces should be interpolated over.
 The dict should have the following form:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">interpolation_param_spec</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;param1&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">val1_1</span><span class="p">,</span> <span class="n">val1_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
-    <span class="s1">&#39;param2&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">val2_1</span><span class="p">,</span> <span class="n">val2_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+    <span class="s1">'param1'</span><span class="p">:</span> <span class="p">{</span><span class="s2">"values"</span><span class="p">:</span> <span class="p">[</span><span class="n">val1_1</span><span class="p">,</span> <span class="n">val1_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">"scales_log"</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+    <span class="s1">'param2'</span><span class="p">:</span> <span class="p">{</span><span class="s2">"values"</span><span class="p">:</span> <span class="p">[</span><span class="n">val2_1</span><span class="p">,</span> <span class="n">val2_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">"scales_log"</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
     <span class="o">...</span>
-    <span class="s1">&#39;paramN&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">valN_1</span><span class="p">,</span> <span class="n">valN_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;scales_log&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
+    <span class="s1">'paramN'</span><span class="p">:</span> <span class="p">{</span><span class="s2">"values"</span><span class="p">:</span> <span class="p">[</span><span class="n">valN_1</span><span class="p">,</span> <span class="n">valN_2</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">"scales_log"</span><span class="p">:</span> <span class="kc">True</span><span class="o">/</span><span class="kc">False</span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -1143,7 +1143,7 @@ Plots the following:</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=3344f118"></script>
+</div><script src="_static/documentation_options.js?v=82f492cd"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

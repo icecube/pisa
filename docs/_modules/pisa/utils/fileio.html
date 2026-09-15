@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.fileio - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.utils.fileio - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.utils.fileio</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Generic file I/O, dispatching specific file readers/writers as necessary</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span>
@@ -304,84 +304,84 @@
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s1">&#39;PKL_EXTS&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;CFG_EXTS&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;ZIP_EXTS&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;TXT_EXTS&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;XOR_EXTS&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;NSORT_RE&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;UNSIGNED_FSORT_RE&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;SIGNED_FSORT_RE&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;EVAL_MSG&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;expand&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;mkdir&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;get_valid_filename&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;nsort&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;nsort_key_func&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;fsort&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;find_files&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;from_cfg&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;from_pickle&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;to_pickle&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;from_file&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;to_file&#39;</span><span class="p">,</span>
+    <span class="s1">'PKL_EXTS'</span><span class="p">,</span>
+    <span class="s1">'CFG_EXTS'</span><span class="p">,</span>
+    <span class="s1">'ZIP_EXTS'</span><span class="p">,</span>
+    <span class="s1">'TXT_EXTS'</span><span class="p">,</span>
+    <span class="s1">'XOR_EXTS'</span><span class="p">,</span>
+    <span class="s1">'NSORT_RE'</span><span class="p">,</span>
+    <span class="s1">'UNSIGNED_FSORT_RE'</span><span class="p">,</span>
+    <span class="s1">'SIGNED_FSORT_RE'</span><span class="p">,</span>
+    <span class="s1">'EVAL_MSG'</span><span class="p">,</span>
+    <span class="s1">'expand'</span><span class="p">,</span>
+    <span class="s1">'mkdir'</span><span class="p">,</span>
+    <span class="s1">'get_valid_filename'</span><span class="p">,</span>
+    <span class="s1">'nsort'</span><span class="p">,</span>
+    <span class="s1">'nsort_key_func'</span><span class="p">,</span>
+    <span class="s1">'fsort'</span><span class="p">,</span>
+    <span class="s1">'find_files'</span><span class="p">,</span>
+    <span class="s1">'from_cfg'</span><span class="p">,</span>
+    <span class="s1">'from_pickle'</span><span class="p">,</span>
+    <span class="s1">'to_pickle'</span><span class="p">,</span>
+    <span class="s1">'from_file'</span><span class="p">,</span>
+    <span class="s1">'to_file'</span><span class="p">,</span>
 <span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'J.L. Lanfranchi'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2026, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
-<span class="n">PKL_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;pckl&#39;</span><span class="p">,</span> <span class="s1">&#39;pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;p&#39;</span><span class="p">]</span>
-<span class="n">CFG_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ini&#39;</span><span class="p">,</span> <span class="s1">&#39;cfg&#39;</span><span class="p">]</span>
-<span class="n">ZIP_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;bz2&#39;</span><span class="p">]</span>
-<span class="n">TXT_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;txt&#39;</span><span class="p">,</span> <span class="s1">&#39;dat&#39;</span><span class="p">]</span>
-<span class="n">XOR_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;xor&#39;</span><span class="p">]</span>
+<span class="n">PKL_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'pickle'</span><span class="p">,</span> <span class="s1">'pckl'</span><span class="p">,</span> <span class="s1">'pkl'</span><span class="p">,</span> <span class="s1">'p'</span><span class="p">]</span>
+<span class="n">CFG_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'ini'</span><span class="p">,</span> <span class="s1">'cfg'</span><span class="p">]</span>
+<span class="n">ZIP_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'bz2'</span><span class="p">]</span>
+<span class="n">TXT_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'txt'</span><span class="p">,</span> <span class="s1">'dat'</span><span class="p">]</span>
+<span class="n">XOR_EXTS</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'xor'</span><span class="p">]</span>
 
-<span class="n">NSORT_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(\d+)&#39;</span><span class="p">)</span>
+<span class="n">NSORT_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">'(\d+)'</span><span class="p">)</span>
 <span class="n">UNSIGNED_FSORT_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">'''</span>
 <span class="sd">    (</span>
-<span class="sd">        (?:\d+(?:\.\d*){0,1}) # Digit(s) followed by opt. &quot;.&quot; and opt. digits</span>
-<span class="sd">        |(?:\.\d+)            # Or starts with &quot;.&quot; and must have digits after</span>
+<span class="sd">        (?:\d+(?:\.\d*){0,1}) # Digit(s) followed by opt. "." and opt. digits</span>
+<span class="sd">        |(?:\.\d+)            # Or starts with "." and must have digits after</span>
 <span class="sd">        (?:e[+-]?\d+){0,1}    # Opt.: followed by exponent: e12, e-12, e+0, etc.</span>
 <span class="sd">    )</span>
-<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span>
+<span class="sd">    '''</span><span class="p">,</span>
     <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span>
 <span class="p">)</span>
 <span class="n">SIGNED_FSORT_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">'''</span>
 <span class="sd">    (</span>
 <span class="sd">        [+-]{0,1}             # Optional sign</span>
-<span class="sd">        (?:\d+(?:\.\d*){0,1}) # Digit(s) followed by opt. &quot;.&quot; and opt. digits</span>
-<span class="sd">        |(?:\.\d+)            # Or starts with &quot;.&quot; but must have digits after</span>
+<span class="sd">        (?:\d+(?:\.\d*){0,1}) # Digit(s) followed by opt. "." and opt. digits</span>
+<span class="sd">        |(?:\.\d+)            # Or starts with "." but must have digits after</span>
 <span class="sd">        (?:e[+-]?\d+){0,1}    # Opt.: exponent: e12, e-12, e+0, etc.</span>
 <span class="sd">    )</span>
-<span class="sd">    &#39;&#39;&#39;</span><span class="p">,</span>
+<span class="sd">    '''</span><span class="p">,</span>
     <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">VERBOSE</span>
 <span class="p">)</span>
 
-<span class="n">EVAL_MSG</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Using eval() is potentially dangerous as it can execute &#39;</span>
-            <span class="s1">&#39;arbitrary code! Do not store your config file in a place &#39;</span>
-            <span class="s1">&#39;where others have writing access!&#39;</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;Generic warning about evaluating expressions.&quot;&quot;&quot;</span>
+<span class="n">EVAL_MSG</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'Using eval() is potentially dangerous as it can execute '</span>
+            <span class="s1">'arbitrary code! Do not store your config file in a place '</span>
+            <span class="s1">'where others have writing access!'</span><span class="p">)</span>
+<span class="sd">"""Generic warning about evaluating expressions."""</span>
 
 <div class="viewcode-block" id="expand">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.expand">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">expand</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">exp_user</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exp_vars</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">resolve_symlinks</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convenience function for expanding a path</span>
+<span class="w">    </span><span class="sd">"""Convenience function for expanding a path</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -390,15 +390,15 @@
 
 <span class="sd">    exp_vars : bool</span>
 <span class="sd">        Expand the string using environment variables. E.g.</span>
-<span class="sd">        &quot;$HOME/${vardir}/xyz&quot; will have &quot;$HOME&quot; and &quot;${vardir}$&quot; replaced by</span>
-<span class="sd">        the values stored in &quot;HOME&quot; and &quot;vardir&quot;.</span>
+<span class="sd">        "$HOME/${vardir}/xyz" will have "$HOME" and "${vardir}$" replaced by</span>
+<span class="sd">        the values stored in "HOME" and "vardir".</span>
 
 <span class="sd">    exp_user : bool</span>
-<span class="sd">        Expand special home dir spec character, tilde: &quot;~&quot;.</span>
+<span class="sd">        Expand special home dir spec character, tilde: "~".</span>
 
 <span class="sd">    absolute : bool</span>
-<span class="sd">        Make a relative path (e.g. &quot;../xyz&quot;) absolute, referenced from system</span>
-<span class="sd">        root directory, &quot;/dir/sbudir/xyz&quot;.</span>
+<span class="sd">        Make a relative path (e.g. "../xyz") absolute, referenced from system</span>
+<span class="sd">        root directory, "/dir/sbudir/xyz".</span>
 
 <span class="sd">    resolve_symlinks : bool</span>
 <span class="sd">        Resolve symlinks to the paths they refer to</span>
@@ -408,7 +408,7 @@
 <span class="sd">    exp_path : string</span>
 <span class="sd">        Expanded path</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">exp_vars</span><span class="p">:</span>
         <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">exp_user</span><span class="p">:</span>
@@ -422,7 +422,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">check_file_exists</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;See if a file exists, warning, raising an exception, or doing neither if</span>
+<span class="w">    </span><span class="sd">"""See if a file exists, warning, raising an exception, or doing neither if</span>
 <span class="sd">    it already exists.</span>
 
 <span class="sd">    Note that while this function can warn or raise an exception indicating the</span>
@@ -435,7 +435,7 @@
 <span class="sd">        File name or path to try to find.</span>
 
 <span class="sd">    overwrite : bool</span>
-<span class="sd">        Whether it&#39;s okay for the file to be overwritten if it exists. Note</span>
+<span class="sd">        Whether it's okay for the file to be overwritten if it exists. Note</span>
 <span class="sd">        that this function does not actually overwrite the file.</span>
 
 <span class="sd">    warn : bool</span>
@@ -447,21 +447,21 @@
 <span class="sd">    fpath : string</span>
 <span class="sd">        Expanded path of the `fname` passed in.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">fpath</span> <span class="o">=</span> <span class="n">expand</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">warn</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Overwriting file at &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span> <span class="n">fpath</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Overwriting file at '</span><span class="si">%s</span><span class="s2">'"</span><span class="p">,</span> <span class="n">fpath</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Refusing to overwrite path &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="n">fpath</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">"Refusing to overwrite path '</span><span class="si">%s</span><span class="s2">'"</span> <span class="o">%</span> <span class="n">fpath</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">fpath</span>
 
 
 <div class="viewcode-block" id="mkdir">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.mkdir">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">mkdir</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="mo">0o0750</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple wrapper around os.makedirs to create a directory but not raise an</span>
+<span class="w">    </span><span class="sd">"""Simple wrapper around os.makedirs to create a directory but not raise an</span>
 <span class="sd">    exception if the dir already exists</span>
 
 <span class="sd">    Parameters</span>
@@ -473,24 +473,24 @@
 <span class="sd">    warn : bool</span>
 <span class="sd">        Whether to warn if directory already exists.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">err</span><span class="o">.</span><span class="n">errno</span> <span class="o">==</span> <span class="n">errno</span><span class="o">.</span><span class="n">EEXIST</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">warn</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Directory &quot;</span><span class="si">%s</span><span class="s1">&quot; already exists&#39;</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">'Directory "</span><span class="si">%s</span><span class="s1">" already exists'</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">err</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created directory &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span></div>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Created directory "</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="get_valid_filename">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.get_valid_filename">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_valid_filename</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sanitize string to make it reasonable to use as a filename.</span>
+<span class="w">    </span><span class="sd">"""Sanitize string to make it reasonable to use as a filename.</span>
 
 <span class="sd">    From https://github.com/django/django/blob/master/django/utils/text.py</span>
 
@@ -500,19 +500,19 @@
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; print(get_valid_filename(r&#39;A,bCd $%#^#*!()&quot;\&#39; .ext &#39;))</span>
-<span class="sd">    &#39;a_bcd__.ext&#39;</span>
+<span class="sd">    &gt;&gt;&gt; print(get_valid_filename(r'A,bCd $%#^#*!()"\' .ext '))</span>
+<span class="sd">    'a_bcd__.ext'</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[ ,;\t]&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
-    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(?u)[^-\w.]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span></div>
+<span class="sd">    """</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">'[ ,;\t]'</span><span class="p">,</span> <span class="s1">'_'</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">'(?u)[^-\w.]'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="nsort">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.nsort">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">nsort</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sort a sequence of strings containing integer number fields by the</span>
+<span class="w">    </span><span class="sd">"""Sort a sequence of strings containing integer number fields by the</span>
 <span class="sd">    value of those numbers, rather than by simple alpha order. Useful</span>
 <span class="sd">    for sorting e.g. version strings, etc..</span>
 
@@ -533,16 +533,16 @@
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; l = [&#39;f1.10.0.txt&#39;, &#39;f1.01.2.txt&#39;, &#39;f1.1.1.txt&#39;, &#39;f9.txt&#39;, &#39;f10.txt&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; l = ['f1.10.0.txt', 'f1.01.2.txt', 'f1.1.1.txt', 'f9.txt', 'f10.txt']</span>
 <span class="sd">    &gt;&gt;&gt; nsort(l)</span>
-<span class="sd">    [&#39;f1.1.1.txt&#39;, &#39;f1.01.2.txt&#39;, &#39;f1.10.0.txt&#39;, &#39;f9.txt&#39;, &#39;f10.txt&#39;]</span>
+<span class="sd">    ['f1.1.1.txt', 'f1.01.2.txt', 'f1.10.0.txt', 'f9.txt', 'f10.txt']</span>
 
 <span class="sd">    See Also</span>
 <span class="sd">    --------</span>
 <span class="sd">    fsort</span>
 <span class="sd">        Sort sequence of strings with floating-point numbers in the strings.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_field_splitter</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
         <span class="n">spl</span> <span class="o">=</span> <span class="n">NSORT_RE</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
         <span class="n">non_numbers</span> <span class="o">=</span> <span class="n">spl</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
@@ -556,17 +556,17 @@
 <div class="viewcode-block" id="nsort_key_func">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.nsort_key_func">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">nsort_key_func</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Use as the `key` argument to the `sorted` function or `sort` method.</span>
+<span class="w">    </span><span class="sd">"""Use as the `key` argument to the `sorted` function or `sort` method.</span>
 
 <span class="sd">    Code adapted from nedbatchelder.com/blog/200712/human_sorting.html#comments</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; l = [&#39;f1.10.0.txt&#39;, &#39;f1.01.2.txt&#39;, &#39;f1.1.1.txt&#39;, &#39;f9.txt&#39;, &#39;f10.txt&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; l = ['f1.10.0.txt', 'f1.01.2.txt', 'f1.1.1.txt', 'f9.txt', 'f10.txt']</span>
 <span class="sd">    &gt;&gt;&gt; sorted(l, key=nsort_key_func)</span>
-<span class="sd">    [&#39;f1.1.1.txt&#39;, &#39;f1.01.2.txt&#39;, &#39;f1.10.0.txt&#39;, &#39;f9.txt&#39;, &#39;f10.txt&#39;]</span>
+<span class="sd">    ['f1.1.1.txt', 'f1.01.2.txt', 'f1.10.0.txt', 'f9.txt', 'f10.txt']</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">spl</span> <span class="o">=</span> <span class="n">NSORT_RE</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
     <span class="n">key</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">non_number</span><span class="p">,</span> <span class="n">number</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">spl</span><span class="p">[::</span><span class="mi">2</span><span class="p">],</span> <span class="n">spl</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]):</span>
@@ -579,7 +579,7 @@
 <div class="viewcode-block" id="fsort">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.fsort">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">fsort</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sort a sequence of strings with one or more floating point number fields</span>
+<span class="w">    </span><span class="sd">"""Sort a sequence of strings with one or more floating point number fields</span>
 <span class="sd">    in using the floating point value(s) (and intervening strings are treated</span>
 <span class="sd">    as normally done). Note that + and - preceding a number are included in the</span>
 <span class="sd">    floating point value unless `signed=False`.</span>
@@ -592,8 +592,8 @@
 <span class="sd">        Sequence of strings to be sorted.</span>
 
 <span class="sd">    signed : bool, optional</span>
-<span class="sd">        Whether to include a &quot;+&quot; or &quot;-&quot; preceeding a number in its value to be</span>
-<span class="sd">        sorted. One might specify False if &quot;-&quot; is used exclusively as a</span>
+<span class="sd">        Whether to include a "+" or "-" preceeding a number in its value to be</span>
+<span class="sd">        sorted. One might specify False if "-" is used exclusively as a</span>
 <span class="sd">        separator in the string.</span>
 
 <span class="sd">    reverse : bool, optional</span>
@@ -606,12 +606,12 @@
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; l = [&#39;a-0.1.txt&#39;, &#39;a-0.01.txt&#39;, &#39;a-0.05.txt&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; l = ['a-0.1.txt', 'a-0.01.txt', 'a-0.05.txt']</span>
 <span class="sd">    &gt;&gt;&gt; fsort(l, signed=True)</span>
-<span class="sd">    [&#39;a-0.1.txt&#39;, &#39;a-0.05.txt&#39;, &#39;a-0.01.txt&#39;]</span>
+<span class="sd">    ['a-0.1.txt', 'a-0.05.txt', 'a-0.01.txt']</span>
 
 <span class="sd">    &gt;&gt;&gt; fsort(l, signed=False)</span>
-<span class="sd">    [&#39;a-0.01.txt&#39;, &#39;a-0.05.txt&#39;, &#39;a-0.1.txt&#39;]</span>
+<span class="sd">    ['a-0.01.txt', 'a-0.05.txt', 'a-0.1.txt']</span>
 
 <span class="sd">    See Also</span>
 <span class="sd">    --------</span>
@@ -619,7 +619,7 @@
 <span class="sd">        Sort using integer-only values of numbers; good for e.g. version</span>
 <span class="sd">        numbers, where periods are separators rather than decimal points.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">signed</span><span class="p">:</span>
         <span class="n">fsort_re</span> <span class="o">=</span> <span class="n">SIGNED_FSORT_RE</span>
     <span class="k">else</span><span class="p">:</span>
@@ -640,7 +640,7 @@
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.find_files">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_files</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dir_sorter</span><span class="o">=</span><span class="n">nsort</span><span class="p">,</span>
                <span class="n">file_sorter</span><span class="o">=</span><span class="n">nsort</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find files by re or name recursively w/ ordering.</span>
+<span class="w">    </span><span class="sd">"""Find files by re or name recursively w/ ordering.</span>
 
 <span class="sd">    Code adapted from</span>
 <span class="sd">    stackoverflow.com/questions/18282370/python-os-walk-what-order</span>
@@ -673,7 +673,7 @@
 <span class="sd">    basename : str</span>
 <span class="sd">    match : re.SRE_Match or None</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">root</span> <span class="o">=</span> <span class="n">expand</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">regex</span><span class="p">)</span>
@@ -723,14 +723,14 @@
 <div class="viewcode-block" id="from_cfg">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.from_cfg">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_cfg</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load a PISA config file&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Load a PISA config file"""</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.config_parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">PISAConfigParser</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">PISAConfigParser</span><span class="p">()</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">config</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
     <span class="k">except</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-            <span class="s1">&#39;Failed to read PISA config file, `fname`=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">fname</span>
+            <span class="s1">'Failed to read PISA config file, `fname`="</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span> <span class="n">fname</span>
         <span class="p">)</span>
         <span class="k">raise</span>
     <span class="k">return</span> <span class="n">config</span></div>
@@ -740,11 +740,11 @@
 <div class="viewcode-block" id="from_pickle">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.from_pickle">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_pickle</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load from a Python pickle file&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Load from a Python pickle file"""</span>
     <span class="k">try</span><span class="p">:</span>
 
         <span class="c1"># Open the file (binary)</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span>
 
         <span class="c1"># Try standard pickle load</span>
         <span class="k">try</span><span class="p">:</span>
@@ -753,10 +753,10 @@
         <span class="c1"># Can get encoding errors when using python3 to open pickle files</span>
         <span class="c1"># created with python2 Handle this case</span>
         <span class="k">except</span> <span class="ne">UnicodeDecodeError</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin1&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"latin1"</span><span class="p">)</span>
 
     <span class="k">except</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Failed to load pickle file, `fname`=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">'Failed to load pickle file, `fname`="</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
         <span class="k">raise</span>
 
     <span class="k">finally</span><span class="p">:</span>
@@ -767,40 +767,40 @@
 <div class="viewcode-block" id="to_pickle">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.to_pickle">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">to_pickle</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save object to a pickle file&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Save object to a pickle file"""</span>
     <span class="n">check_file_exists</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">),</span> <span class="n">protocol</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">),</span> <span class="n">protocol</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span></div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">from_txt</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">as_array</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load from a text (txt) file&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Load from a text (txt) file"""</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">as_array</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
-            <span class="n">a</span> <span class="o">=</span> <span class="p">[[</span><span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">l</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\r</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">a</span><span class="p">]</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="p">[[</span><span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">l</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">'</span><span class="se">\n\r</span><span class="s1">'</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">a</span><span class="p">]</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">a</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
     <span class="k">except</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Failed to load txt file, `fname`=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">'Failed to load txt file, `fname`="</span><span class="si">%s</span><span class="s1">"'</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
         <span class="k">raise</span>
     <span class="k">return</span> <span class="n">a</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">to_txt</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save object to a text (txt) file&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Save object to a text (txt) file"""</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="from_file">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.from_file">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_file</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dispatch correct file reader based on `fmt` (if specified) or guess</span>
-<span class="sd">    based on file name&#39;s extension.</span>
+<span class="w">    </span><span class="sd">"""Dispatch correct file reader based on `fmt` (if specified) or guess</span>
+<span class="sd">    based on file name's extension.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -825,17 +825,17 @@
 <span class="sd">    ValueError</span>
 <span class="sd">        If extension is not recognized</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">fmt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">rootname</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
-        <span class="n">ext</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'.'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">rootname</span> <span class="o">=</span> <span class="n">fname</span>
         <span class="n">ext</span> <span class="o">=</span> <span class="n">fmt</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">ZIP_EXTS</span> <span class="ow">or</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">XOR_EXTS</span><span class="p">:</span>
         <span class="n">rootname</span><span class="p">,</span> <span class="n">inner_ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">rootname</span><span class="p">)</span>
-        <span class="n">inner_ext</span> <span class="o">=</span> <span class="n">inner_ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">inner_ext</span> <span class="o">=</span> <span class="n">inner_ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'.'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="n">ext</span> <span class="o">=</span> <span class="n">inner_ext</span>
 
     <span class="n">fname</span> <span class="o">=</span> <span class="n">resources</span><span class="o">.</span><span class="n">find_resource</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
@@ -849,7 +849,7 @@
         <span class="k">return</span> <span class="n">from_cfg</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">TXT_EXTS</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">from_txt</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="n">errmsg</span> <span class="o">=</span> <span class="s1">&#39;File &quot;</span><span class="si">%s</span><span class="s1">&quot;: unrecognized extension &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
+    <span class="n">errmsg</span> <span class="o">=</span> <span class="s1">'File "</span><span class="si">%s</span><span class="s1">": unrecognized extension "</span><span class="si">%s</span><span class="s1">"'</span> <span class="o">%</span> <span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">ext</span><span class="p">)</span>
     <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span></div>
 
@@ -858,23 +858,23 @@
 <div class="viewcode-block" id="to_file">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.fileio.to_file">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">to_file</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dispatch correct file writer based on fmt (if specified) or guess</span>
-<span class="sd">    based on file name&#39;s extension&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Dispatch correct file writer based on fmt (if specified) or guess</span>
+<span class="sd">    based on file name's extension"""</span>
     <span class="k">if</span> <span class="n">fmt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">rootname</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
-        <span class="n">ext</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'.'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">rootname</span> <span class="o">=</span> <span class="n">fname</span>
         <span class="n">ext</span> <span class="o">=</span> <span class="n">fmt</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
     <span class="n">dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">dirname</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">dirname</span> <span class="o">!=</span> <span class="s2">""</span><span class="p">:</span>
         <span class="c1"># would fail with FileNotFoundError otherwise</span>
         <span class="n">mkdir</span><span class="p">(</span><span class="n">dirname</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">ZIP_EXTS</span> <span class="ow">or</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">XOR_EXTS</span><span class="p">:</span>
         <span class="n">rootname</span><span class="p">,</span> <span class="n">inner_ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">rootname</span><span class="p">)</span>
-        <span class="n">inner_ext</span> <span class="o">=</span> <span class="n">inner_ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">inner_ext</span> <span class="o">=</span> <span class="n">inner_ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'.'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="n">ext</span> <span class="o">=</span> <span class="n">inner_ext</span>
 
     <span class="k">if</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">jsons</span><span class="o">.</span><span class="n">JSON_EXTS</span><span class="p">:</span>
@@ -886,12 +886,12 @@
         <span class="k">return</span> <span class="n">to_pickle</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">TXT_EXTS</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Following additional keyword arguments not&#39;</span>
-                             <span class="s1">&#39; accepted when writing to text file: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Following additional keyword arguments not'</span>
+                             <span class="s1">' accepted when writing to text file: </span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span>
                              <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">to_txt</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">errmsg</span> <span class="o">=</span> <span class="s1">&#39;Unrecognized file type/extension: &#39;</span> <span class="o">+</span> <span class="n">ext</span>
+        <span class="n">errmsg</span> <span class="o">=</span> <span class="s1">'Unrecognized file type/extension: '</span> <span class="o">+</span> <span class="n">ext</span>
         <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">errmsg</span><span class="p">)</span></div>
 
@@ -934,7 +934,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

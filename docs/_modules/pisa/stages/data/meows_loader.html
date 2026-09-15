@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.data.meows_loader - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.data.meows_loader - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.data.meows_loader</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">A class to load in the MEOWS hdf5 files</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">time</span>
 
@@ -300,9 +300,9 @@
 <div class="viewcode-block" id="meows_loader">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.meows_loader.meows_loader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">meows_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Docstring incoming... (FIXME)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">n_files</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">output_names</span><span class="p">,</span> <span class="o">**</span><span class="n">std_kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">events_file</span> <span class="o">=</span> <span class="n">events_file</span>
@@ -318,78 +318,78 @@
 <div class="viewcode-block" id="meows_loader.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.meows_loader.meows_loader.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Go over all those input files and load them in.</span>
 
 <span class="sd">        We load the first data in specifically to setup the containers, and afterwards go through appending to the end of those arrays</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Loading MEOWS data...&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Loading MEOWS data..."</span><span class="p">)</span>
         <span class="n">st</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-        <span class="n">raw_data</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">find_resource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="n">raw_data</span> <span class="o">=</span> <span class="n">h5</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">find_resource</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events_file</span><span class="p">),</span> <span class="s2">"r"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_names</span><span class="p">:</span>
             <span class="c1"># make container</span>
             <span class="n">container</span> <span class="o">=</span> <span class="n">Container</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
-            <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s2">&quot;bar&quot;</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="s2">&quot;e&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="s2">"bar"</span> <span class="ow">in</span> <span class="n">name</span> <span class="k">else</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="s2">"e"</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
                 <span class="n">flav</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="s2">&quot;mu&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">"mu"</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
                 <span class="n">flav</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="k">if</span> <span class="s2">&quot;tau&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">"tau"</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
                 <span class="n">flav</span> <span class="o">=</span> <span class="mi">2</span>
 
             <span class="c1"># cut out right part</span>
             <span class="n">pdg</span> <span class="o">=</span> <span class="n">nubar</span> <span class="o">*</span> <span class="p">(</span><span class="mi">12</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">flav</span><span class="p">)</span>
 
-            <span class="n">mask</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="s2">&quot;PrimaryType&quot;</span><span class="p">][:]</span> <span class="o">==</span> <span class="n">pdg</span>
-            <span class="c1"># there&#39;s no interaction key in this MC, so we put this in so only the CC are used</span>
-            <span class="k">if</span> <span class="s2">&quot;cc&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s2">&quot;PrimaryType&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">raw_data</span><span class="p">[</span><span class="s2">"PrimaryType"</span><span class="p">][:]</span> <span class="o">==</span> <span class="n">pdg</span>
+            <span class="c1"># there's no interaction key in this MC, so we put this in so only the CC are used</span>
+            <span class="k">if</span> <span class="s2">"cc"</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s2">"PrimaryType"</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s2">&quot;PrimaryType&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">raw_data</span><span class="p">[</span><span class="s2">"PrimaryType"</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
 
             <span class="n">events</span> <span class="o">=</span> <span class="n">raw_data</span>
 
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weighted_aeff&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">events</span><span class="p">[</span><span class="s2">&quot;oneweight&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1e-4</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">98000</span> <span class="o">/</span> <span class="mf">5.0</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"weighted_aeff"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">events</span><span class="p">[</span><span class="s2">"oneweight"</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1e-4</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">98000</span> <span class="o">/</span> <span class="mf">5.0</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;initial_weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"initial_weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;total_column_depth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">&quot;TotalColumnDepth&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">][</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"total_column_depth"</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">"TotalColumnDepth"</span><span class="p">][</span><span class="n">mask</span><span class="p">][</span>
                 <span class="p">:</span>
             <span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_bjorkenx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">&quot;FinalStateX&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_bjorkeny&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">&quot;FinalStateY&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"true_bjorkenx"</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">"FinalStateX"</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"true_bjorkeny"</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">"FinalStateY"</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
 
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">&quot;NuEnergy&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="s2">&quot;NuZenith&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">))</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;reco_energy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">&quot;MuExEnergy&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;reco_coszen&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span>
-                <span class="n">events</span><span class="p">[</span><span class="s2">&quot;MuExZenith&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"true_energy"</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">"NuEnergy"</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"true_coszen"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="s2">"NuZenith"</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">))</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"reco_energy"</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">"MuExEnergy"</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"reco_coszen"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span>
+                <span class="n">events</span><span class="p">[</span><span class="s2">"MuExZenith"</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;pid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">&quot;pid&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">&quot;nubar&quot;</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">&quot;flav&quot;</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"pid"</span><span class="p">]</span> <span class="o">=</span> <span class="n">events</span><span class="p">[</span><span class="s2">"pid"</span><span class="p">][</span><span class="n">mask</span><span class="p">][:]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">"nubar"</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">"flav"</span><span class="p">,</span> <span class="n">flav</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">add_container</span><span class="p">(</span><span class="n">container</span><span class="p">)</span>
 
         <span class="n">ed</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Done! Took </span><span class="si">{}</span><span class="s2"> minutes&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">((</span><span class="n">ed</span> <span class="o">-</span> <span class="n">st</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Done! Took </span><span class="si">{}</span><span class="s2"> minutes"</span><span class="o">.</span><span class="n">format</span><span class="p">((</span><span class="n">ed</span> <span class="o">-</span> <span class="n">st</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span><span class="p">))</span>
         <span class="n">raw_data</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="meows_loader.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.meows_loader.meows_loader.apply_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resets all the weights to the initial weights</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;initial_weights&quot;</span><span class="p">])</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;astro_weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;initial_weights&quot;</span><span class="p">])</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">"initial_weights"</span><span class="p">])</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"astro_weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">"initial_weights"</span><span class="p">])</span></div>
 </div>
 
 
@@ -397,15 +397,15 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.meows_loader.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">CACHE_DIR</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_file</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.random_numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_random_state</span>
 
     <span class="n">expected_events_keys</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s1">&#39;oneweight&#39;</span><span class="p">,</span> <span class="s1">&#39;TotalColumnDepth&#39;</span><span class="p">,</span> <span class="s1">&#39;FinalStateX&#39;</span><span class="p">,</span> <span class="s1">&#39;FinalStateY&#39;</span><span class="p">,</span>
-        <span class="s1">&#39;NuEnergy&#39;</span><span class="p">,</span> <span class="s1">&#39;NuZenith&#39;</span><span class="p">,</span> <span class="s1">&#39;MuExEnergy&#39;</span><span class="p">,</span> <span class="s1">&#39;MuExZenith&#39;</span><span class="p">,</span> <span class="s1">&#39;pid&#39;</span><span class="p">,</span> <span class="s1">&#39;PrimaryType&#39;</span>
+        <span class="s1">'oneweight'</span><span class="p">,</span> <span class="s1">'TotalColumnDepth'</span><span class="p">,</span> <span class="s1">'FinalStateX'</span><span class="p">,</span> <span class="s1">'FinalStateY'</span><span class="p">,</span>
+        <span class="s1">'NuEnergy'</span><span class="p">,</span> <span class="s1">'NuZenith'</span><span class="p">,</span> <span class="s1">'MuExEnergy'</span><span class="p">,</span> <span class="s1">'MuExZenith'</span><span class="p">,</span> <span class="s1">'pid'</span><span class="p">,</span> <span class="s1">'PrimaryType'</span>
     <span class="p">]</span>
     <span class="c1"># note: n_files seems to be completely irrelevant to the service</span>
     <span class="n">n_files</span> <span class="o">=</span> <span class="mi">2024</span>
@@ -413,17 +413,17 @@
     <span class="n">n_evts</span> <span class="o">=</span> <span class="mi">48</span>
     <span class="n">raw_data</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">expected_events_keys</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;PrimaryType&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">'PrimaryType'</span><span class="p">:</span>
             <span class="c1"># make valid PDG nu type/flavour codes</span>
             <span class="n">raw_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">12</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="o">-</span><span class="mi">14</span><span class="p">,</span> <span class="o">-</span><span class="mi">16</span><span class="p">]</span> <span class="o">*</span> <span class="mi">8</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">raw_data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">random_state</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">n_evts</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
 
-    <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">&#39;meows_loader_test_file.hdf5&#39;</span><span class="p">)</span>
+    <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">'meows_loader_test_file.hdf5'</span><span class="p">)</span>
     <span class="n">to_file</span><span class="p">(</span><span class="n">raw_data</span><span class="p">,</span> <span class="n">fpath</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">meows_loader</span><span class="p">(</span>
-        <span class="n">events_file</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span> <span class="n">n_files</span><span class="o">=</span><span class="n">n_files</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;nue&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_bar&#39;</span><span class="p">]</span>
+        <span class="n">events_file</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span> <span class="n">n_files</span><span class="o">=</span><span class="n">n_files</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">'nue'</span><span class="p">,</span> <span class="s1">'nutau_bar'</span><span class="p">]</span>
     <span class="p">)</span></div>
 
 </pre></div>
@@ -465,7 +465,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

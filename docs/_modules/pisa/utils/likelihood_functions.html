@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.likelihood_functions - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.utils.likelihood_functions - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,7 +281,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.utils.likelihood_functions</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">This script contains functions to compute Barlow-Beeston Likelihood, as well as</span>
 <span class="sd">an implementation of the Poisson-Gamma mixture.</span>
 
@@ -291,21 +291,21 @@
 <span class="sd">The functions are called in stats.py to apply them to histograms.</span>
 
 <span class="sd">Note that these likelihoods are NOT centered around 0 (i.e. if data == expectation, LLH != 0)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">print_function</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">special</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">optimize</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Ahnaf Tahmid&quot;</span>
-<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;tahmid@ualberta.ca&quot;</span>
-<span class="n">__date__</span> <span class="o">=</span> <span class="s2">&quot;2019-08-15&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">"Ahnaf Tahmid"</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">"tahmid@ualberta.ca"</span>
+<span class="n">__date__</span> <span class="o">=</span> <span class="s2">"2019-08-15"</span>
 
 <div class="viewcode-block" id="poisson_gamma">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.likelihood_functions.poisson_gamma">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">poisson_gamma</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sum_w</span><span class="p">,</span> <span class="n">sum_w2</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Log-likelihood based on the poisson-gamma mixture. This is a Poisson likelihood using a Gamma prior.</span>
 <span class="sd">    This implementation is based on the implementation of Austin Schneider (aschneider@icecube.wisc.edu)</span>
 <span class="sd">    -- Input variables --</span>
@@ -320,7 +320,7 @@
 
 <span class="sd">    -- Notes --</span>
 <span class="sd">    Shape of data, sum_w, sum_w2 and llh are identical</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">llh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="c1"># Binwise LLH values</span>
 
@@ -351,7 +351,7 @@
 <div class="viewcode-block" id="poissonLLH">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.likelihood_functions.poissonLLH">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">poissonLLH</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mc</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Standard poisson likelihood</span>
 <span class="sd">    -- Input variables --</span>
 <span class="sd">    data = data histogram</span>
@@ -362,14 +362,14 @@
 
 <span class="sd">    -- Notes --</span>
 <span class="sd">    Shape of data, mc are identical</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">data</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">mc</span><span class="p">)</span> <span class="o">-</span> <span class="n">mc</span> <span class="o">-</span> <span class="n">special</span><span class="o">.</span><span class="n">loggamma</span><span class="p">(</span><span class="n">data</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="barlowLLH">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.likelihood_functions.barlowLLH">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">barlowLLH</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">unweighted_mc</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Barlow-Beeston log-likelihood (constant terms not omitted)</span>
 <span class="sd">    Link to paper: https://doi.org/10.1016/0010-4655(93)90005-W</span>
 <span class="sd">    -- Input variables --</span>
@@ -383,7 +383,7 @@
 
 <span class="sd">    -- Notes --</span>
 <span class="sd">    Shape of data, mc, unweighted_mc, weights and llh must be identical</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># The actual barlow LLH</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">llh</span><span class="p">(</span><span class="n">A_</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">a</span><span class="p">):</span>
@@ -400,8 +400,8 @@
         <span class="k">return</span> <span class="o">-</span><span class="mf">1.</span><span class="o">*</span><span class="p">(</span><span class="n">k</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">-</span> <span class="n">f</span> <span class="o">+</span> <span class="n">a</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">A_</span><span class="p">)</span> <span class="o">-</span> <span class="n">A_</span> <span class="o">-</span> <span class="n">special</span><span class="o">.</span><span class="n">loggamma</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">special</span><span class="o">.</span><span class="n">loggamma</span><span class="p">(</span><span class="n">a</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
 
     <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">unweighted_mc</span><span class="p">)</span> <span class="c1"># Expected unweighted counts in a bin</span>
-    <span class="c1"># For each bin the appropriate &#39;A&#39; will now be found using the current counts as a seed</span>
-    <span class="c1"># This will be done by using a minimiser to ensure that the value of &#39;A&#39; found minimises the -LLH</span>
+    <span class="c1"># For each bin the appropriate 'A' will now be found using the current counts as a seed</span>
+    <span class="c1"># This will be done by using a minimiser to ensure that the value of 'A' found minimises the -LLH</span>
 
     <span class="c1"># Find values of A such that llh in each bin is a maximum</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
@@ -411,15 +411,15 @@
         <span class="c1"># Otherwise, find the value of A</span>
         <span class="n">arg</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">unweighted_mc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
         <span class="c1"># Powell works fast and is fine for our purposes</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">fun</span><span class="o">=</span><span class="n">llh</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">val</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">arg</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;Powell&#39;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">optimize</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">fun</span><span class="o">=</span><span class="n">llh</span><span class="p">,</span> <span class="n">x0</span><span class="o">=</span><span class="n">val</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">arg</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">'Powell'</span><span class="p">)</span>
 
         <span class="c1"># Check that the minimisation ran properly</span>
         <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
             <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">x</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Something went wrong...&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Minimiser message: &quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;------------------&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Something went wrong..."</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Minimiser message: "</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"------------------"</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
             <span class="k">return</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
 
@@ -468,7 +468,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

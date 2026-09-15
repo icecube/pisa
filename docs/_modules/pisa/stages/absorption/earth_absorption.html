@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.absorption.earth_absorption - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.absorption.earth_absorption - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,7 +281,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.absorption.earth_absorption</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Stage for the calculation of earth layers and survival probabilities.</span>
 
 <span class="sd">The stage calculates first the depth of a water column that is mass-equivalent</span>
@@ -289,7 +289,7 @@
 <span class="sd">using the same Layers module that is also used for oscillation.</span>
 <span class="sd">The survival probability is then calculated from the average cross-section</span>
 <span class="sd">with protons and neutrons.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
@@ -304,40 +304,40 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.stages.osc.layers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Layers</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;A. Trettin&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'A. Trettin'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2020, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2020, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 <span class="n">FLAV_BAR_STR_MAPPING</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="s2">&quot;e_bar&quot;</span><span class="p">,</span>
-    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span> <span class="s2">&quot;e&quot;</span><span class="p">,</span>
-    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="s2">&quot;mu_bar&quot;</span><span class="p">,</span>
-    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span> <span class="s2">&quot;mu&quot;</span><span class="p">,</span>
-    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="s2">&quot;tau_bar&quot;</span><span class="p">,</span>
-    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span> <span class="s2">&quot;tau&quot;</span><span class="p">,</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="s2">"e_bar"</span><span class="p">,</span>
+    <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span> <span class="s2">"e"</span><span class="p">,</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="s2">"mu_bar"</span><span class="p">,</span>
+    <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span> <span class="s2">"mu"</span><span class="p">,</span>
+    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span> <span class="s2">"tau_bar"</span><span class="p">,</span>
+    <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">+</span><span class="mi">1</span><span class="p">):</span> <span class="s2">"tau"</span><span class="p">,</span>
 <span class="p">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Mapping from flav and nubar container content to</span>
 <span class="sd">the string for this neutrino in the ROOT file.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <div class="viewcode-block" id="earth_absorption">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">earth_absorption</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    earth absorption stage</span>
 
 <span class="sd">    Parameters</span>
@@ -356,8 +356,8 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;true_coszen&quot;, &quot;true_energy&quot;, &quot;flav&quot;, &quot;nubar&quot;, &quot;weights&quot;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "true_coszen", "true_energy", "flav", "nubar", "weights"</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">earth_model</span><span class="p">,</span>
@@ -368,11 +368,11 @@
     <span class="p">):</span>
 
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;true_coszen&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;flav&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;nubar&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+            <span class="s1">'true_coszen'</span><span class="p">,</span>
+            <span class="s1">'true_energy'</span><span class="p">,</span>
+            <span class="s1">'flav'</span><span class="p">,</span>
+            <span class="s1">'nubar'</span><span class="p">,</span>
+            <span class="s1">'weights'</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># init base class</span>
@@ -387,8 +387,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">xsroot</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">earth_model</span> <span class="o">=</span> <span class="n">earth_model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xsec_file</span> <span class="o">=</span> <span class="n">xsec_file</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">detector_depth</span> <span class="o">=</span> <span class="n">detector_depth</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">prop_height</span> <span class="o">=</span> <span class="n">prop_height</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;km&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector_depth</span> <span class="o">=</span> <span class="n">detector_depth</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">'km'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prop_height</span> <span class="o">=</span> <span class="n">prop_height</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">'km'</span><span class="p">)</span>
         <span class="c1"># this does nothing for speed, but makes for convenient numpy style broadcasting</span>
         <span class="c1"># TODO: Use numba vectorization (not sure how that works with splines)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">calculate_xsections</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calculate_xsections</span><span class="p">)</span>
@@ -411,36 +411,36 @@
 
         <span class="c1"># --- calculate the layers ---</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
-            <span class="c1"># layers don&#39;t care about flavor</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span>
-                                             <span class="s1">&#39;nue_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">,</span>
-                                             <span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span>
-                                             <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">])</span>
+            <span class="c1"># layers don't care about flavor</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'nu'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'nue_cc'</span><span class="p">,</span> <span class="s1">'numu_cc'</span><span class="p">,</span> <span class="s1">'nutau_cc'</span><span class="p">,</span>
+                                             <span class="s1">'nue_nc'</span><span class="p">,</span> <span class="s1">'numu_nc'</span><span class="p">,</span> <span class="s1">'nutau_nc'</span><span class="p">,</span>
+                                             <span class="s1">'nuebar_cc'</span><span class="p">,</span> <span class="s1">'numubar_cc'</span><span class="p">,</span> <span class="s1">'nutaubar_cc'</span><span class="p">,</span>
+                                             <span class="s1">'nuebar_nc'</span><span class="p">,</span> <span class="s1">'numubar_nc'</span><span class="p">,</span> <span class="s1">'nutaubar_nc'</span><span class="p">])</span>
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">calcLayers</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">])</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;densities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">max_layers</span><span class="p">))</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;distances&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">max_layers</span><span class="p">))</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;rho_int&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">calcLayers</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'true_coszen'</span><span class="p">])</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'densities'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">density</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">max_layers</span><span class="p">))</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'distances'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">max_layers</span><span class="p">))</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'rho_int'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;densities&#39;</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;distances&#39;</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;rho_int&#39;</span><span class="p">)</span>
-        <span class="c1"># don&#39;t forget to un-link everything again</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'densities'</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'distances'</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'rho_int'</span><span class="p">)</span>
+        <span class="c1"># don't forget to un-link everything again</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span>
 
         <span class="c1"># --- setup cross section and survival probability ---</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
             <span class="c1"># The cross-sections do not depend on nc/cc, so we can at least link those containers</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nue&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nue_nc&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nuebar&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;numu&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;numubar&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nutau&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nutaubar&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'nue'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'nue_cc'</span><span class="p">,</span> <span class="s1">'nue_nc'</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'nuebar'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'nuebar_cc'</span><span class="p">,</span> <span class="s1">'nuebar_nc'</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'numu'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'numu_cc'</span><span class="p">,</span> <span class="s1">'numu_nc'</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'numubar'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'numubar_cc'</span><span class="p">,</span> <span class="s1">'numubar_nc'</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'nutau'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'nutau_cc'</span><span class="p">,</span> <span class="s1">'nutau_nc'</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'nutaubar'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'nutaubar_cc'</span><span class="p">,</span> <span class="s1">'nutaubar_nc'</span><span class="p">])</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;xsection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;survival_prob&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'xsection'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'survival_prob'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
 
 
@@ -450,41 +450,41 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># --- calculate the integrated density in the layers ---</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span>
-                                             <span class="s1">&#39;nue_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">,</span>
-                                             <span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span>
-                                             <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'nu'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'nue_cc'</span><span class="p">,</span> <span class="s1">'numu_cc'</span><span class="p">,</span> <span class="s1">'nutau_cc'</span><span class="p">,</span>
+                                             <span class="s1">'nue_nc'</span><span class="p">,</span> <span class="s1">'numu_nc'</span><span class="p">,</span> <span class="s1">'nutau_nc'</span><span class="p">,</span>
+                                             <span class="s1">'nuebar_cc'</span><span class="p">,</span> <span class="s1">'numubar_cc'</span><span class="p">,</span> <span class="s1">'nutaubar_cc'</span><span class="p">,</span>
+                                             <span class="s1">'nuebar_nc'</span><span class="p">,</span> <span class="s1">'numubar_nc'</span><span class="p">,</span> <span class="s1">'nutaubar_nc'</span><span class="p">])</span>
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">calculate_integrated_rho</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;distances&#39;</span><span class="p">],</span>
-                                     <span class="n">container</span><span class="p">[</span><span class="s1">&#39;densities&#39;</span><span class="p">],</span>
-                                     <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;rho_int&#39;</span><span class="p">]</span>
+            <span class="n">calculate_integrated_rho</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'distances'</span><span class="p">],</span>
+                                     <span class="n">container</span><span class="p">[</span><span class="s1">'densities'</span><span class="p">],</span>
+                                     <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">'rho_int'</span><span class="p">]</span>
                                     <span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;rho_int&#39;</span><span class="p">)</span>
-        <span class="c1"># don&#39;t forget to un-link everything again</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'rho_int'</span><span class="p">)</span>
+        <span class="c1"># don't forget to un-link everything again</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span>
 
         <span class="c1"># --- calculate survival probability ---</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">is_map</span><span class="p">:</span>
             <span class="c1"># The cross-sections do not depend on nc/cc, so we can at least link those containers</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nue&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nue_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nue_nc&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nuebar&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nuebar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nuebar_nc&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;numu&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;numu_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numu_nc&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;numubar&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;numubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;numubar_nc&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nutau&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nutau_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutau_nc&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">&#39;nutaubar&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;nutaubar_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;nutaubar_nc&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'nue'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'nue_cc'</span><span class="p">,</span> <span class="s1">'nue_nc'</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'nuebar'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'nuebar_cc'</span><span class="p">,</span> <span class="s1">'nuebar_nc'</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'numu'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'numu_cc'</span><span class="p">,</span> <span class="s1">'numu_nc'</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'numubar'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'numubar_cc'</span><span class="p">,</span> <span class="s1">'numubar_nc'</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'nutau'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'nutau_cc'</span><span class="p">,</span> <span class="s1">'nutau_nc'</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">link_containers</span><span class="p">(</span><span class="s1">'nutaubar'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'nutaubar_cc'</span><span class="p">,</span> <span class="s1">'nutaubar_nc'</span><span class="p">])</span>
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;xsection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_xsections</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;flav&#39;</span><span class="p">],</span>
-                                                             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar&#39;</span><span class="p">],</span>
-                                                             <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">]</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'xsection'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_xsections</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'flav'</span><span class="p">],</span>
+                                                             <span class="n">container</span><span class="p">[</span><span class="s1">'nubar'</span><span class="p">],</span>
+                                                             <span class="n">container</span><span class="p">[</span><span class="s1">'true_energy'</span><span class="p">]</span>
                                                             <span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;xsection&#39;</span><span class="p">)</span>
-            <span class="n">calculate_survivalprob</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;rho_int&#39;</span><span class="p">],</span>
-                                   <span class="n">container</span><span class="p">[</span><span class="s1">&#39;xsection&#39;</span><span class="p">],</span>
-                                   <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;survival_prob&#39;</span><span class="p">]</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'xsection'</span><span class="p">)</span>
+            <span class="n">calculate_survivalprob</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'rho_int'</span><span class="p">],</span>
+                                   <span class="n">container</span><span class="p">[</span><span class="s1">'xsection'</span><span class="p">],</span>
+                                   <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">'survival_prob'</span><span class="p">]</span>
                                   <span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;survival_prob&#39;</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'survival_prob'</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
 
 
@@ -492,34 +492,34 @@
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption.apply_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;survival_prob&#39;</span><span class="p">]</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'survival_prob'</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="earth_absorption.calculate_xsections">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.earth_absorption.calculate_xsections">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_xsections</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flav</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">energy</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;Calculates the cross-sections on isoscalar targets.</span>
+<span class="w">        </span><span class="sd">'''Calculates the cross-sections on isoscalar targets.</span>
 <span class="sd">        The result is returned in cm^2. The xsection on one</span>
 <span class="sd">        target is calculated by taking the xsection for O16</span>
 <span class="sd">        and dividing it by 16.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        '''</span>
         <span class="n">flavor</span> <span class="o">=</span> <span class="n">FLAV_BAR_STR_MAPPING</span><span class="p">[(</span><span class="n">flav</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)]</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xsroot</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s1">&#39;nu_&#39;</span><span class="o">+</span><span class="n">flavor</span><span class="o">+</span><span class="s1">&#39;_O16&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s1">&#39;tot_cc&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">Eval</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span><span class="o">+</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">xsroot</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s1">&#39;nu_&#39;</span><span class="o">+</span><span class="n">flavor</span><span class="o">+</span><span class="s1">&#39;_O16&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s1">&#39;tot_nc&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">Eval</span><span class="p">(</span><span class="n">energy</span><span class="p">))</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">38</span><span class="p">)</span><span class="o">/</span><span class="mf">16.</span> <span class="c1"># this gives cm^2</span></div>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xsroot</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s1">'nu_'</span><span class="o">+</span><span class="n">flavor</span><span class="o">+</span><span class="s1">'_O16'</span><span class="p">)</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s1">'tot_cc'</span><span class="p">)</span><span class="o">.</span><span class="n">Eval</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span><span class="o">+</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xsroot</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s1">'nu_'</span><span class="o">+</span><span class="n">flavor</span><span class="o">+</span><span class="s1">'_O16'</span><span class="p">)</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s1">'tot_nc'</span><span class="p">)</span><span class="o">.</span><span class="n">Eval</span><span class="p">(</span><span class="n">energy</span><span class="p">))</span><span class="o">*</span><span class="mi">10</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mi">38</span><span class="p">)</span><span class="o">/</span><span class="mf">16.</span> <span class="c1"># this gives cm^2</span></div>
 </div>
 
 
 
 <span class="n">signatures</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s1">&#39;(f4[::1], f4[::1], f4[::1])&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;(f8[::1], f8[::1], f8[::1])&#39;</span>
+    <span class="s1">'(f4[::1], f4[::1], f4[::1])'</span><span class="p">,</span>
+    <span class="s1">'(f8[::1], f8[::1], f8[::1])'</span>
 <span class="p">]</span>
 
-<span class="c1"># TODO: make this work with the &#39;cuda&#39; target. Right now, it seems like np.dot</span>
+<span class="c1"># TODO: make this work with the 'cuda' target. Right now, it seems like np.dot</span>
 <span class="c1"># does not work or is used incorrectly.</span>
-<span class="nd">@guvectorize</span><span class="p">(</span><span class="n">signatures</span><span class="p">,</span> <span class="s1">&#39;(n),(n)-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
+<span class="nd">@guvectorize</span><span class="p">(</span><span class="n">signatures</span><span class="p">,</span> <span class="s1">'(n),(n)-&gt;()'</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_integrated_rho</span><span class="p">(</span><span class="n">layer_dists</span><span class="p">,</span> <span class="n">layer_densities</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate density integrated over the path through all layers.</span>
+<span class="w">    </span><span class="sd">"""Calculate density integrated over the path through all layers.</span>
 <span class="sd">    Gives the length of a matter-equivalent water column in cm.</span>
 
 <span class="sd">    Parameters</span>
@@ -531,7 +531,7 @@
 <span class="sd">    out : scalar</span>
 <span class="sd">        Result is stored here</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">layer_dists</span><span class="p">)):</span>
         <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">layer_dists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">layer_densities</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -540,7 +540,7 @@
 <div class="viewcode-block" id="calculate_survivalprob">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.calculate_survivalprob">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_survivalprob</span><span class="p">(</span><span class="n">int_rho</span><span class="p">,</span> <span class="n">xsection</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate survival probability given layer distances,</span>
+<span class="w">    </span><span class="sd">"""Calculate survival probability given layer distances,</span>
 <span class="sd">    layer densities and (pre-computed) cross-sections.</span>
 
 <span class="sd">    Parameters</span>
@@ -552,7 +552,7 @@
 <span class="sd">    out : scalar</span>
 <span class="sd">        Result is stored here</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">Na</span> <span class="o">=</span> <span class="mf">6.022E23</span> <span class="c1"># nuclei per cm^(-3)</span>
     <span class="c1"># The molar mass is 1 g for pure nuclei, so there is a hidden division</span>
     <span class="c1"># here by 1 g/mol. Also, int_rho is the depth of a mass equivalent</span>
@@ -566,10 +566,10 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.absorption.html#pisa.stages.absorption.earth_absorption.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="k">return</span> <span class="n">earth_absorption</span><span class="p">(</span>
-        <span class="n">earth_model</span><span class="o">=</span><span class="s1">&#39;osc/PREM_4layer.dat&#39;</span><span class="p">,</span>
-        <span class="n">xsec_file</span><span class="o">=</span><span class="s1">&#39;cross_sections/genie_xsec_H2O.root&#39;</span>
+        <span class="n">earth_model</span><span class="o">=</span><span class="s1">'osc/PREM_4layer.dat'</span><span class="p">,</span>
+        <span class="n">xsec_file</span><span class="o">=</span><span class="s1">'cross_sections/genie_xsec_H2O.root'</span>
     <span class="p">)</span></div>
 
 </pre></div>
@@ -611,7 +611,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

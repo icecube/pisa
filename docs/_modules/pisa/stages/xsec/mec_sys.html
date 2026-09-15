@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.xsec.mec_sys - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.xsec.mec_sys - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,22 +281,22 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.xsec.mec_sys</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Systematic uncertainty model for Meson Exchange Current (MEC) events.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.param</span><span class="w"> </span><span class="kn">import</span> <span class="n">Param</span><span class="p">,</span> <span class="n">ParamSet</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mec_sys&quot;</span><span class="p">,</span> <span class="s2">&quot;init_test&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"mec_sys"</span><span class="p">,</span> <span class="s2">"init_test"</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="mec_sys">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.mec_sys.mec_sys">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">mec_sys</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stage to apply MEC event systematic uncertainties</span>
 
 <span class="sd">    This is currently just a normalization parameter.</span>
@@ -314,19 +314,19 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;mec&quot; - a boolean flag indicating if the event is an MEC interaction</span>
-<span class="sd">        &quot;weights&quot; - the event weight that will be modified by this stage</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "mec" - a boolean flag indicating if the event is an MEC interaction</span>
+<span class="sd">        "weights" - the event weight that will be modified by this stage</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;mec_scale&quot;</span><span class="p">,)</span>
+        <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"mec_scale"</span><span class="p">,)</span>
 
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;weights&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;mec&quot;</span><span class="p">,</span>
+            <span class="s2">"weights"</span><span class="p">,</span>
+            <span class="s2">"mec"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># init base class</span>
@@ -342,15 +342,15 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># Get the normalization parameter, and use it to scale the weights of all events that</span>
-        <span class="c1"># are marked by the &quot;mec&quot; flag.</span>
+        <span class="c1"># are marked by the "mec" flag.</span>
 
-        <span class="n">mec_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">mec_scale</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">)</span>
+        <span class="n">mec_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">mec_scale</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">"dimensionless"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">mec</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;mec&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+            <span class="n">mec</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"mec"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">mec</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">][</span><span class="n">mec</span><span class="p">]</span> <span class="o">*=</span> <span class="n">mec_scale</span>
-                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">)</span></div>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">][</span><span class="n">mec</span><span class="p">]</span> <span class="o">*=</span> <span class="n">mec_scale</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">"weights"</span><span class="p">)</span></div>
 </div>
 
 
@@ -358,8 +358,8 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.mec_sys.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
-    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span><span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;mec_scale&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)])</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
+    <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span><span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"mec_scale"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)])</span>
 
     <span class="k">return</span> <span class="n">mec_sys</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
 
@@ -402,7 +402,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

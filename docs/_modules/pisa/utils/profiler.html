@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.profiler - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.utils.profiler - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.utils.profiler</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Tools for profiling code</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span>
@@ -297,27 +297,27 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">log</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;line_profile&#39;</span><span class="p">,</span> <span class="s1">&#39;test_line_profile&#39;</span><span class="p">,</span> <span class="s1">&#39;profile&#39;</span><span class="p">,</span> <span class="s1">&#39;test_profile&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'line_profile'</span><span class="p">,</span> <span class="s1">'test_line_profile'</span><span class="p">,</span> <span class="s1">'profile'</span><span class="p">,</span> <span class="s1">'test_profile'</span><span class="p">]</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2017, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Log</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class to redirect output into our logging stream.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Class to redirect output into our logging stream."""</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
-        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">string</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -325,16 +325,16 @@
 
 
 <span class="n">TLOG</span> <span class="o">=</span> <span class="n">Log</span><span class="p">()</span>
-<span class="sd">&quot;&quot;&quot;Instance of a global timing logger&quot;&quot;&quot;</span>
+<span class="sd">"""Instance of a global timing logger"""</span>
 
 <span class="n">LINE_PROFILER</span> <span class="o">=</span> <span class="n">LineProfiler</span><span class="p">()</span>
-<span class="sd">&quot;&quot;&quot;Instance of a global LineProfiler&quot;&quot;&quot;</span>
+<span class="sd">"""Instance of a global LineProfiler"""</span>
 
 
 <div class="viewcode-block" id="line_profile">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.profiler.line_profile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">line_profile</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Use as `@line_profile` decorator for a function or class method to log</span>
+<span class="w">    </span><span class="sd">"""Use as `@line_profile` decorator for a function or class method to log</span>
 <span class="sd">    how long each line in the function/method takes to run.</span>
 
 <span class="sd">    Note that timings can be skewed by overhead from the line_profiler module,</span>
@@ -351,10 +351,10 @@
 <span class="sd">        New version of `func` that is callable just like `func` but that logs</span>
 <span class="sd">        the time spent in each line of code in `func`.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">profiled_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;&lt;&lt; docstring will be inherited from wrapped `func` &gt;&gt;&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""&lt;&lt; docstring will be inherited from wrapped `func` &gt;&gt;"""</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">LINE_PROFILER</span><span class="o">.</span><span class="n">enable_by_count</span><span class="p">()</span>
             <span class="n">LINE_PROFILER</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
@@ -371,29 +371,29 @@
 <div class="viewcode-block" id="test_line_profile">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.profiler.test_line_profile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_line_profile</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `line_profile` functional (decorator)&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Unit tests for `line_profile` functional (decorator)"""</span>
     <span class="nd">@line_profile</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_number</span><span class="p">():</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;hello, i am get_number&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'hello, i am get_number'</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500000</span><span class="p">):</span>
             <span class="k">yield</span> <span class="n">x</span>
 
     <span class="nd">@line_profile</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">expensive_function</span><span class="p">():</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;hello, i am expensive fun&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'hello, i am expensive fun'</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">get_number</span><span class="p">():</span>
             <span class="n">_</span> <span class="o">=</span> <span class="n">x</span> <span class="o">^</span> <span class="n">x</span> <span class="o">^</span> <span class="n">x</span>
-        <span class="k">return</span> <span class="s1">&#39;some result!&#39;</span>
+        <span class="k">return</span> <span class="s1">'some result!'</span>
 
     <span class="n">_</span> <span class="o">=</span> <span class="n">expensive_function</span><span class="p">()</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; ??? : test_line_profile &gt;&gt; Inspect above outputs&#39;</span><span class="p">)</span></div>
+    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'&lt;&lt; ??? : test_line_profile &gt;&gt; Inspect above outputs'</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="profile">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.profiler.profile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">profile</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Use as `@profile` decorator for a function or class method to log the</span>
+<span class="w">    </span><span class="sd">"""Use as `@profile` decorator for a function or class method to log the</span>
 <span class="sd">    time that it takes to complete.</span>
 
 <span class="sd">    Parameters</span>
@@ -407,17 +407,17 @@
 <span class="sd">        New version of `func` that is callable just like `func` but that logs</span>
 <span class="sd">        the total time spent in `func`.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">profiled_func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;&lt;&lt; docstring will be inherited from wrapped `func` &gt;&gt;&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""&lt;&lt; docstring will be inherited from wrapped `func` &gt;&gt;"""</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">start_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
             <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">end_t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
             <span class="n">log</span><span class="o">.</span><span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="s1">&#39;module </span><span class="si">%s</span><span class="s1">, function </span><span class="si">%s</span><span class="s1">: </span><span class="si">%.4f</span><span class="s1"> ms&#39;</span><span class="p">,</span>
+                <span class="s1">'module </span><span class="si">%s</span><span class="s1">, function </span><span class="si">%s</span><span class="s1">: </span><span class="si">%.4f</span><span class="s1"> ms'</span><span class="p">,</span>
                 <span class="n">func</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">(</span><span class="n">end_t</span> <span class="o">-</span> <span class="n">start_t</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span>
             <span class="p">)</span>
     <span class="k">return</span> <span class="n">profiled_func</span></div>
@@ -427,26 +427,26 @@
 <div class="viewcode-block" id="test_profile">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.profiler.test_profile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_profile</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unit tests for `profile` functional (decorator)&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Unit tests for `profile` functional (decorator)"""</span>
     <span class="nd">@profile</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_number</span><span class="p">():</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;hello, i am get_number&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'hello, i am get_number'</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">500000</span><span class="p">):</span>
             <span class="k">yield</span> <span class="n">x</span>
 
     <span class="nd">@profile</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">expensive_function</span><span class="p">():</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;hello, i am expensive fun&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'hello, i am expensive fun'</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">get_number</span><span class="p">():</span>
             <span class="n">_</span> <span class="o">=</span> <span class="n">x</span> <span class="o">^</span> <span class="n">x</span> <span class="o">^</span> <span class="n">x</span>
-        <span class="k">return</span> <span class="s1">&#39;some result!&#39;</span>
+        <span class="k">return</span> <span class="s1">'some result!'</span>
 
     <span class="n">_</span> <span class="o">=</span> <span class="n">expensive_function</span><span class="p">()</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; ??? : test_profile &gt;&gt; inspect above outputs&#39;</span><span class="p">)</span></div>
+    <span class="n">log</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'&lt;&lt; ??? : test_profile &gt;&gt; inspect above outputs'</span><span class="p">)</span></div>
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
     <span class="n">log</span><span class="o">.</span><span class="n">set_verbosity</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
     <span class="n">test_line_profile</span><span class="p">()</span>
     <span class="n">test_profile</span><span class="p">()</span>
@@ -489,7 +489,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.discr_sys.csv_hypersurfaces - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.discr_sys.csv_hypersurfaces - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.discr_sys.csv_hypersurfaces</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Stage to apply hypersurface fits from discrete systematics parameterizations</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
@@ -302,29 +302,29 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.format</span><span class="w"> </span><span class="kn">import</span> <span class="n">split</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_resource</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;csv_hypersurfaces&quot;</span><span class="p">,]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"csv_hypersurfaces"</span><span class="p">,]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;B. Benkel, J. Weldert&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">"B. Benkel, J. Weldert"</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2026, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">"""Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
-<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s2"> you may not use this file except in compliance with the License.</span>
 <span class="s2"> You may obtain a copy of the License at</span>
 
 <span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s2"> See the License for the specific language governing permissions and</span>
-<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+<span class="s2"> limitations under the License."""</span>
 
 
 <div class="viewcode-block" id="csv_hypersurfaces">
 <a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">csv_hypersurfaces</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Service to apply hypersurface parameterisation for hypersurfaces stored in csv files,</span>
 <span class="sd">    which are used for data releases.</span>
 
@@ -353,8 +353,8 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;weights&quot; and, if &quot;error_method&quot; is set, &quot;errors&quot;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "weights" and, if "error_method" is set, "errors"</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -376,21 +376,21 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">nominal_systematics</span> <span class="o">=</span> <span class="n">nominal_systematics</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Unsupported type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">nominal_systematics</span><span class="p">)</span><span class="si">}</span><span class="s2"> for nominal_systematics.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Unsupported type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">nominal_systematics</span><span class="p">)</span><span class="si">}</span><span class="s2"> for nominal_systematics."</span>
             <span class="p">)</span>
         
         <span class="bp">self</span><span class="o">.</span><span class="n">inter_param</span> <span class="o">=</span> <span class="n">inter_param</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">propagate_uncertainty</span> <span class="o">=</span> <span class="n">propagate_uncertainty</span>
 
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+            <span class="s1">'weights'</span><span class="p">,</span>
         <span class="p">]</span>
-        <span class="k">if</span> <span class="s1">&#39;error_method&#39;</span> <span class="ow">in</span> <span class="n">std_kwargs</span> <span class="ow">and</span> <span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;error_method&#39;</span><span class="p">]:</span>
-            <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">'error_method'</span> <span class="ow">in</span> <span class="n">std_kwargs</span> <span class="ow">and</span> <span class="n">std_kwargs</span><span class="p">[</span><span class="s1">'error_method'</span><span class="p">]:</span>
+            <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'errors'</span><span class="p">)</span>
 
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span>  <span class="n">MultiDimBinning</span><span class="p">,</span>
-            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">,</span> <span class="s1">&#39;events&#39;</span><span class="p">],</span>
+            <span class="s1">'calc_mode'</span><span class="p">:</span>  <span class="n">MultiDimBinning</span><span class="p">,</span>
+            <span class="s1">'apply_mode'</span><span class="p">:</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">,</span> <span class="s1">'events'</span><span class="p">],</span>
         <span class="p">}</span>
 
         <span class="c1"># -- Initialize base class -- #</span>
@@ -412,13 +412,13 @@
 <div class="viewcode-block" id="csv_hypersurfaces.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the fit results from the file and check compatibility with container names&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Load the fit results from the file and check compatibility with container names"""</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_results_file</span><span class="p">:</span>
             <span class="n">k</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;hs_&#39;</span><span class="p">):</span> <span class="c1"># naming convention</span>
+            <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">'hs_'</span><span class="p">):</span> <span class="c1"># naming convention</span>
                 <span class="n">k</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="mi">3</span><span class="p">:]</span>
             <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hs</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> already exists in HS dict.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> already exists in HS dict."</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">hs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">find_resource</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -428,9 +428,9 @@
         <span class="c1"># create containers for scale factors</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
              <span class="c1"># Check if hypersurface exists for this container</span>
-            <span class="k">assert</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hs</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No match for </span><span class="si">{</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> found in the hypersurfaces.&quot;</span>
+            <span class="k">assert</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hs</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"No match for </span><span class="si">{</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> found in the hypersurfaces."</span>
 
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"hs_scales"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagate_uncertainty</span><span class="p">:</span>
                 <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hs</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
 
@@ -440,8 +440,8 @@
                 <span class="n">_</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">hs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_param</span><span class="p">],</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">stop_idx</span> <span class="o">=</span> <span class="n">start_idx</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-                <span class="n">hs_scales_uncertainty</span> <span class="o">=</span> <span class="n">hs</span><span class="p">[</span><span class="s1">&#39;intercept_sigma&#39;</span><span class="p">][</span><span class="n">start_idx</span><span class="p">:</span><span class="n">stop_idx</span><span class="p">]</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales_uncertainty&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hs_scales_uncertainty</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+                <span class="n">hs_scales_uncertainty</span> <span class="o">=</span> <span class="n">hs</span><span class="p">[</span><span class="s1">'intercept_sigma'</span><span class="p">][</span><span class="n">start_idx</span><span class="p">:</span><span class="n">stop_idx</span><span class="p">]</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"hs_scales_uncertainty"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hs_scales_uncertainty</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
 
@@ -449,12 +449,12 @@
 <div class="viewcode-block" id="csv_hypersurfaces.get_corr_factors">
 <a class="viewcode-back" href="../../../../pisa.stages.discr_sys.html#pisa.stages.discr_sys.csv_hypersurfaces.csv_hypersurfaces.get_corr_factors">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_corr_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hs</span><span class="p">,</span> <span class="n">param_values</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get hypersurface correction factors. These are the scaling factors for each bin </span>
-<span class="sd">        and depend on the shift in each systematic parameter.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get hypersurface correction factors. These are the scaling factors for each bin </span>
+<span class="sd">        and depend on the shift in each systematic parameter."""</span>
         <span class="c1"># Get differences between (current) param_values and nominal values.</span>
         <span class="n">diffs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">nominal_systematics</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">param_values</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
-        <span class="k">return</span> <span class="n">hs</span><span class="p">[</span><span class="s2">&quot;intercept&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">([</span><span class="n">hs</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">*</span> <span class="n">d</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">diffs</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span></div>
+        <span class="k">return</span> <span class="n">hs</span><span class="p">[</span><span class="s2">"intercept"</span><span class="p">]</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">([</span><span class="n">hs</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">*</span> <span class="n">d</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">diffs</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span></div>
 
 
     <span class="c1"># pylint: disable=line-too-long</span>
@@ -476,7 +476,7 @@
             <span class="c1"># Get the hypersurfaces</span>
             <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hs</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">inter_param_value</span> <span class="o">&lt;</span> <span class="n">hs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_param</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="ow">or</span> <span class="n">hs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_param</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">inter_param_value</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> of </span><span class="si">%f</span><span class="s2"> is outside of interpolation range.&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_param</span><span class="p">,</span> <span class="n">inter_param_value</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"</span><span class="si">%s</span><span class="s2"> of </span><span class="si">%f</span><span class="s2"> is outside of interpolation range."</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_param</span><span class="p">,</span> <span class="n">inter_param_value</span><span class="p">))</span>
                 
             <span class="c1"># Get the values of the inter_param where we have hypersurfaces.</span>
             <span class="n">inter_param_bins</span> <span class="o">=</span> <span class="n">hs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_param</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
@@ -490,7 +490,7 @@
 
             <span class="c1"># Create the interpolated hypersurface.</span>
             <span class="n">hs_interpolated</span> <span class="o">=</span> <span class="n">hs_lower</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;intercept&#39;</span><span class="p">]</span><span class="o">+</span><span class="nb">list</span><span class="p">(</span><span class="n">param_values</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'intercept'</span><span class="p">]</span><span class="o">+</span><span class="nb">list</span><span class="p">(</span><span class="n">param_values</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
                 <span class="n">binlen</span> <span class="o">=</span> <span class="n">hs_upper</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_param</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">hs_lower</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_param</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">grad</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hs_upper</span><span class="p">[</span><span class="n">p</span><span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">hs_lower</span><span class="p">[</span><span class="n">p</span><span class="p">]))</span> <span class="o">/</span> <span class="n">binlen</span>
                 <span class="n">hs_interpolated</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad</span> <span class="o">*</span> <span class="p">(</span><span class="n">inter_param_value</span> <span class="o">-</span> <span class="n">hs_lower</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_param</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">hs_lower</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
@@ -503,12 +503,12 @@
             <span class="n">empty_bins_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">scales</span><span class="p">)</span>
             <span class="n">num_empty_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">empty_bins_mask</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">num_empty_bins</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%i</span><span class="s2"> empty bins found in hypersurface for </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">num_empty_bins</span><span class="p">,</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"</span><span class="si">%i</span><span class="s2"> empty bins found in hypersurface for </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">num_empty_bins</span><span class="p">,</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
             <span class="n">scales</span><span class="p">[</span><span class="n">empty_bins_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.</span>
 
             <span class="c1"># Add to container</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">scales</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">])</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">scales</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"hs_scales"</span><span class="p">])</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">"hs_scales"</span><span class="p">)</span>
 
         <span class="c1"># Unlink the containers again</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">unlink_containers</span><span class="p">()</span></div>
@@ -520,60 +520,60 @@
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="c1"># update uncertainty first, before the weights are changed. This step is skipped in event mode</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">&quot;sumw2&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">"sumw2"</span><span class="p">:</span>
 
                 <span class="c1"># If computing uncertainties in events mode, warn that</span>
                 <span class="c1"># hs error propagation will be skipped</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">==</span> <span class="s1">&#39;events&#39;</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;WARNING: running stage in events mode. Hypersurface error propagation will be IGNORED.&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">==</span> <span class="s1">'events'</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">'WARNING: running stage in events mode. Hypersurface error propagation will be IGNORED.'</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagate_uncertainty</span><span class="p">:</span>
-                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales_uncertainty&quot;</span><span class="p">]</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">"errors"</span><span class="p">]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">"hs_scales_uncertainty"</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">]</span>
-                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">)</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">"errors"</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"hs_scales"</span><span class="p">]</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'errors'</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="s2">&quot;bin_unc2&quot;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
-                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;bin_unc2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;bin_unc2&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
-                    <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;bin_unc2&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">"bin_unc2"</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">"bin_unc2"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">"bin_unc2"</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">"hs_scales"</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+                    <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">"bin_unc2"</span><span class="p">)</span>
 
             <span class="c1"># Update weights according to hypersurfaces</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hs_scales&quot;</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">*</span> <span class="n">container</span><span class="p">[</span><span class="s2">"hs_scales"</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span></div>
 </div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;dom_eff&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;hole_ice_p0&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;hole_ice_p1&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=-</span><span class="mf">0.05</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bulk_ice_scatter&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;bulk_ice_abs&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;dm31&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">3e-3</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'dom_eff'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'hole_ice_p0'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'hole_ice_p1'</span><span class="p">,</span> <span class="n">value</span><span class="o">=-</span><span class="mf">0.05</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'bulk_ice_scatter'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'bulk_ice_abs'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'dm31'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">3e-3</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
     <span class="p">])</span>
-    <span class="n">nominal_systematics</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;dom_eff&quot;</span>          <span class="p">:</span>  <span class="mf">1.00</span><span class="p">,</span>
-                           <span class="s2">&quot;hole_ice_p0&quot;</span>      <span class="p">:</span>  <span class="mf">0.10</span><span class="p">,</span>
-                           <span class="s2">&quot;hole_ice_p1&quot;</span>      <span class="p">:</span> <span class="o">-</span><span class="mf">0.05</span><span class="p">,</span>
-                           <span class="s2">&quot;bulk_ice_abs&quot;</span>     <span class="p">:</span>  <span class="mf">1.00</span><span class="p">,</span>
-                           <span class="s2">&quot;bulk_ice_scatter&quot;</span> <span class="p">:</span>  <span class="mf">1.00</span><span class="p">}</span>
+    <span class="n">nominal_systematics</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"dom_eff"</span>          <span class="p">:</span>  <span class="mf">1.00</span><span class="p">,</span>
+                           <span class="s2">"hole_ice_p0"</span>      <span class="p">:</span>  <span class="mf">0.10</span><span class="p">,</span>
+                           <span class="s2">"hole_ice_p1"</span>      <span class="p">:</span> <span class="o">-</span><span class="mf">0.05</span><span class="p">,</span>
+                           <span class="s2">"bulk_ice_abs"</span>     <span class="p">:</span>  <span class="mf">1.00</span><span class="p">,</span>
+                           <span class="s2">"bulk_ice_scatter"</span> <span class="p">:</span>  <span class="mf">1.00</span><span class="p">}</span>
     <span class="n">dd_en</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
-        <span class="s1">&#39;reco_energy&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="s1">'reco_energy'</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_log</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">bin_edges</span><span class="o">=</span><span class="p">[</span><span class="mf">6.31</span><span class="p">,</span> <span class="mf">8.46</span><span class="p">,</span> <span class="mf">11.34</span><span class="p">,</span> <span class="mf">15.20</span><span class="p">,</span> <span class="mf">20.38</span><span class="p">,</span> <span class="mf">27.31</span><span class="p">,</span> <span class="mf">36.61</span><span class="p">,</span> <span class="mf">49.08</span><span class="p">,</span> <span class="mf">65.79</span><span class="p">,</span> <span class="mf">88.20</span><span class="p">,</span> <span class="mf">158.49</span><span class="p">]</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">GeV</span><span class="p">,</span>
-        <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;E_{\rm reco}&#39;</span>
+        <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">'E_{\rm reco}'</span>
     <span class="p">)</span>
     <span class="n">dd_cz</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
-        <span class="s1">&#39;reco_coszen&#39;</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;\cos{\theta}_{\rm reco}&#39;</span>
+        <span class="s1">'reco_coszen'</span><span class="p">,</span> <span class="n">num_bins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">is_lin</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">'\cos{\theta}_{\rm reco}'</span>
     <span class="p">)</span>
-    <span class="n">dd_pid</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="s1">&#39;pid&#39;</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">=</span><span class="p">[</span><span class="mf">0.55</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;{\rm PID}&#39;</span><span class="p">)</span>
-    <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">dd_en</span><span class="p">,</span> <span class="n">dd_cz</span><span class="p">,</span> <span class="n">dd_pid</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;oscNext_verification&#39;</span><span class="p">)</span>
+    <span class="n">dd_pid</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span><span class="s1">'pid'</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">=</span><span class="p">[</span><span class="mf">0.55</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.</span><span class="p">],</span> <span class="n">tex</span><span class="o">=</span><span class="sa">r</span><span class="s1">'{\rm PID}'</span><span class="p">)</span>
+    <span class="n">binning</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">([</span><span class="n">dd_en</span><span class="p">,</span> <span class="n">dd_cz</span><span class="p">,</span> <span class="n">dd_pid</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s1">'oscNext_verification'</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">csv_hypersurfaces</span><span class="p">(</span>
-        <span class="n">fit_results_file</span><span class="o">=</span><span class="s1">&#39;events/hs_test.csv&#39;</span><span class="p">,</span>
+        <span class="n">fit_results_file</span><span class="o">=</span><span class="s1">'events/hs_test.csv'</span><span class="p">,</span>
         <span class="n">nominal_systematics</span><span class="o">=</span><span class="n">nominal_systematics</span><span class="p">,</span>
-        <span class="n">inter_param</span><span class="o">=</span><span class="s1">&#39;dm31&#39;</span><span class="p">,</span>
-        <span class="n">links</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;test&#39;</span><span class="p">:[</span><span class="s1">&#39;test1_cc&#39;</span><span class="p">,</span> <span class="s1">&#39;test2_nc&#39;</span><span class="p">]},</span>
+        <span class="n">inter_param</span><span class="o">=</span><span class="s1">'dm31'</span><span class="p">,</span>
+        <span class="n">links</span><span class="o">=</span><span class="p">{</span><span class="s1">'test'</span><span class="p">:[</span><span class="s1">'test1_cc'</span><span class="p">,</span> <span class="s1">'test2_nc'</span><span class="p">]},</span>
         <span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">,</span>
         <span class="n">calc_mode</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span>
         <span class="n">apply_mode</span><span class="o">=</span><span class="n">binning</span><span class="p">,</span>
@@ -617,7 +617,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

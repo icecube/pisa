@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pint - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pint - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,7 +281,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pint</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">pint</span>
 <span class="sd">~~~~</span>
 
@@ -292,11 +292,12 @@
 
 <span class="sd">:copyright: 2016 by Pint Authors, see AUTHORS for more details.</span>
 <span class="sd">:license: BSD, see LICENSE for more details.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">TypeAlias</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.delegates.formatter._format_helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">formatter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.errors</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F401</span>
@@ -315,18 +316,25 @@
 
 <span class="c1"># Default Quantity, Unit and Measurement are the ones</span>
 <span class="c1"># build in the default registry.</span>
-<span class="n">Quantity</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="o">.</span><span class="n">Quantity</span>
-<span class="n">Unit</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="o">.</span><span class="n">Unit</span>
-<span class="n">Measurement</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="o">.</span><span class="n">Measurement</span>
-<span class="n">Context</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="o">.</span><span class="n">Context</span>
-<span class="n">Group</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="o">.</span><span class="n">Group</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="c1"># This is a workaround for https://github.com/hgrecco/pint/issues/2306</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.facets.context.objects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Context</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.facets.group.objects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Group</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.facets.measurement.objects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Measurement</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">Quantity</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="o">.</span><span class="n">Quantity</span>
+    <span class="n">Measurement</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="o">.</span><span class="n">Measurement</span>
+    <span class="n">Context</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="o">.</span><span class="n">Context</span>
+    <span class="n">Group</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="o">.</span><span class="n">Group</span>
+<span class="n">Unit</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">UnitRegistry</span><span class="o">.</span><span class="n">Unit</span>
 
 <span class="k">try</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
-    <span class="n">__version__</span> <span class="o">=</span> <span class="n">version</span><span class="p">(</span><span class="s2">&quot;pint&quot;</span><span class="p">)</span>
+    <span class="n">__version__</span> <span class="o">=</span> <span class="n">version</span><span class="p">(</span><span class="s2">"pint"</span><span class="p">)</span>
 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
     <span class="c1"># we seem to have a local copy not installed without setuptools</span>
     <span class="c1"># so the reported version will be unknown</span>
-    <span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+    <span class="n">__version__</span> <span class="o">=</span> <span class="s2">"unknown"</span>
 
 
 <span class="c1">#: A Registry with the default units and constants.</span>
@@ -337,7 +345,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_unpickle</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rebuild object upon unpickling.</span>
+<span class="w">    </span><span class="sd">"""Rebuild object upon unpickling.</span>
 <span class="sd">    All units must exist in the application registry.</span>
 
 <span class="sd">    Parameters</span>
@@ -349,7 +357,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    object of type cls</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pint.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">UnitsContainer</span>
 
     <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
@@ -364,40 +372,40 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_unpickle_quantity</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rebuild quantity upon unpickling using the application registry.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Rebuild quantity upon unpickling using the application registry."""</span>
     <span class="k">return</span> <span class="n">_unpickle</span><span class="p">(</span><span class="n">application_registry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_unpickle_unit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rebuild unit upon unpickling using the application registry.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Rebuild unit upon unpickling using the application registry."""</span>
     <span class="k">return</span> <span class="n">_unpickle</span><span class="p">(</span><span class="n">application_registry</span><span class="o">.</span><span class="n">Unit</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_unpickle_measurement</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rebuild measurement upon unpickling using the application registry.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Rebuild measurement upon unpickling using the application registry."""</span>
     <span class="k">return</span> <span class="n">_unpickle</span><span class="p">(</span><span class="n">application_registry</span><span class="o">.</span><span class="n">Measurement</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">set_application_registry</span><span class="p">(</span><span class="n">registry</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the application registry, which is used for unpickling operations</span>
+<span class="w">    </span><span class="sd">"""Set the application registry, which is used for unpickling operations</span>
 <span class="sd">    and when invoking pint.Quantity or pint.Unit directly.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    registry : pint.UnitRegistry</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">application_registry</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">registry</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_application_registry</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the application registry. If :func:`set_application_registry` was never</span>
+<span class="w">    </span><span class="sd">"""Return the application registry. If :func:`set_application_registry` was never</span>
 <span class="sd">    invoked, return a registry built using :file:`defaults_en.txt` embedded in the pint</span>
 <span class="sd">    package.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    pint.UnitRegistry</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">application_registry</span>
 
 
@@ -405,25 +413,26 @@
 <span class="c1"># Hint to intersphinx that, when building objects.inv, these objects must be registered</span>
 <span class="c1"># under the top-level module and not in their original submodules</span>
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">&quot;Measurement&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Quantity&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Unit&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;UnitRegistry&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;PintError&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;DefinitionSyntaxError&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;LogarithmicUnitCalculusError&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;DimensionalityError&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;OffsetUnitCalculusError&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;RedefinitionError&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;UndefinedUnitError&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;UnitStrippedWarning&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;formatter&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;get_application_registry&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;set_application_registry&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;register_unit_format&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;pi_theorem&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;__version__&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Context&quot;</span><span class="p">,</span>
+    <span class="s2">"Measurement"</span><span class="p">,</span>
+    <span class="s2">"Quantity"</span><span class="p">,</span>
+    <span class="s2">"Unit"</span><span class="p">,</span>
+    <span class="s2">"UnitRegistry"</span><span class="p">,</span>
+    <span class="s2">"Group"</span><span class="p">,</span>
+    <span class="s2">"PintError"</span><span class="p">,</span>
+    <span class="s2">"DefinitionSyntaxError"</span><span class="p">,</span>
+    <span class="s2">"LogarithmicUnitCalculusError"</span><span class="p">,</span>
+    <span class="s2">"DimensionalityError"</span><span class="p">,</span>
+    <span class="s2">"OffsetUnitCalculusError"</span><span class="p">,</span>
+    <span class="s2">"RedefinitionError"</span><span class="p">,</span>
+    <span class="s2">"UndefinedUnitError"</span><span class="p">,</span>
+    <span class="s2">"UnitStrippedWarning"</span><span class="p">,</span>
+    <span class="s2">"formatter"</span><span class="p">,</span>
+    <span class="s2">"get_application_registry"</span><span class="p">,</span>
+    <span class="s2">"set_application_registry"</span><span class="p">,</span>
+    <span class="s2">"register_unit_format"</span><span class="p">,</span>
+    <span class="s2">"pi_theorem"</span><span class="p">,</span>
+    <span class="s2">"__version__"</span><span class="p">,</span>
+    <span class="s2">"Context"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
         </article>
@@ -464,7 +473,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

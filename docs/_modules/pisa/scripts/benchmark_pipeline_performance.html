@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.scripts.benchmark_pipeline_performance - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.scripts.benchmark_pipeline_performance - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -282,7 +282,7 @@
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.scripts.benchmark_pipeline_performance</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
-<span class="sd">&#39;&#39;&#39;Benchmark pipeline execution times, either for preset or custom ones&#39;&#39;&#39;</span>
+<span class="sd">'''Benchmark pipeline execution times, either for preset or custom ones'''</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">argparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArgumentParser</span><span class="p">,</span> <span class="n">ArgumentDefaultsHelpFormatter</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
@@ -298,40 +298,40 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_file</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">Levels</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;PIPELINE_CFGS_TO_TEST&#39;</span><span class="p">,</span> <span class="s1">&#39;NTEMPLATES&#39;</span><span class="p">,</span> <span class="s1">&#39;PFX&#39;</span><span class="p">,</span> <span class="s1">&#39;get_get_outputs_time&#39;</span><span class="p">,</span>
-           <span class="s1">&#39;create_benchmark_result&#39;</span><span class="p">,</span> <span class="s1">&#39;write_benchmark_json&#39;</span><span class="p">,</span> <span class="s1">&#39;parse_args&#39;</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'PIPELINE_CFGS_TO_TEST'</span><span class="p">,</span> <span class="s1">'NTEMPLATES'</span><span class="p">,</span> <span class="s1">'PFX'</span><span class="p">,</span> <span class="s1">'get_get_outputs_time'</span><span class="p">,</span>
+           <span class="s1">'create_benchmark_result'</span><span class="p">,</span> <span class="s1">'write_benchmark_json'</span><span class="p">,</span> <span class="s1">'parse_args'</span><span class="p">,</span> <span class="s1">'main'</span><span class="p">]</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2026, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
-<span class="n">PIPELINE_CFGS_TO_TEST</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos_daemon.cfg&quot;</span><span class="p">,</span>
-<span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos.cfg&quot;</span><span class="p">,</span> <span class="s2">&quot;settings/pipeline/IceCube_3y_muons.cfg&quot;</span>
+<span class="n">PIPELINE_CFGS_TO_TEST</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"settings/pipeline/IceCube_3y_neutrinos_daemon.cfg"</span><span class="p">,</span>
+<span class="s2">"settings/pipeline/IceCube_3y_neutrinos.cfg"</span><span class="p">,</span> <span class="s2">"settings/pipeline/IceCube_3y_muons.cfg"</span>
 <span class="p">]</span>
-<span class="sd">&quot;&quot;&quot;Pipeline config files in PISA package to test by default&quot;&quot;&quot;</span>
+<span class="sd">"""Pipeline config files in PISA package to test by default"""</span>
 
 <span class="n">NTEMPLATES</span> <span class="o">=</span> <span class="mi">50</span>
-<span class="sd">&quot;&quot;&quot;Number of random Asimov templates to produce by default (no caching)&quot;&quot;&quot;</span>
+<span class="sd">"""Number of random Asimov templates to produce by default (no caching)"""</span>
 
-<span class="n">PFX</span> <span class="o">=</span> <span class="s2">&quot;[B] &quot;</span>
-<span class="sd">&quot;&quot;&quot;Prefix each line output by this script to clearly delineate output from this</span>
-<span class="sd">script vs. output from test functions being run&quot;&quot;&quot;</span>
+<span class="n">PFX</span> <span class="o">=</span> <span class="s2">"[B] "</span>
+<span class="sd">"""Prefix each line output by this script to clearly delineate output from this</span>
+<span class="sd">script vs. output from test functions being run"""</span>
 
 
 <div class="viewcode-block" id="get_get_outputs_time">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.benchmark_pipeline_performance.get_get_outputs_time">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_get_outputs_time</span><span class="p">(</span><span class="n">pipeline</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Just extract minimum+average :py:meth:`~.pipeline.Pipeline.get_outputs()` execution</span>
 <span class="sd">    time from a profiled pipeline.</span>
 
@@ -352,13 +352,13 @@
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        If the pipeline has no recorded `get_outputs()` times</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">times</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">_get_outputs_times</span> <span class="c1"># pylint: disable=protected-access</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">times</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;No get_outputs() times recorded. Ensure pipeline was created with &quot;</span>
-            <span class="s2">&quot;profile=True and get_outputs() was called.&quot;</span>
+            <span class="s2">"No get_outputs() times recorded. Ensure pipeline was created with "</span>
+            <span class="s2">"profile=True and get_outputs() was called."</span>
         <span class="p">)</span>
 
     <span class="c1"># Return minimum and average time across all calls (skip first if multiple</span>
@@ -376,7 +376,7 @@
 <div class="viewcode-block" id="create_benchmark_result">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.benchmark_pipeline_performance.create_benchmark_result">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_benchmark_result</span><span class="p">(</span><span class="n">pipeline_config_name</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">nthreads</span><span class="p">,</span> <span class="n">time_s</span><span class="p">,</span> <span class="n">range_s</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Create a single benchmark result entry in github-action-benchmark format.</span>
 
 <span class="sd">    Parameters</span>
@@ -396,16 +396,16 @@
 <span class="sd">    -------</span>
 <span class="sd">    dict</span>
 <span class="sd">        Benchmark entry suitable for github-action-benchmark JSON output</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cfg_basename</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">pipeline_config_name</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">cfg_basename</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">, nthreads=</span><span class="si">{</span><span class="n">nthreads</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">cfg_basename</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">, nthreads=</span><span class="si">{</span><span class="n">nthreads</span><span class="si">}</span><span class="s2">)"</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
-        <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">time_s</span><span class="p">,</span>
-        <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;range&quot;</span><span class="p">:</span> <span class="n">range_s</span><span class="p">,</span>
-        <span class="s2">&quot;extra&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;target=</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">, nthreads=</span><span class="si">{</span><span class="n">nthreads</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="s2">"name"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+        <span class="s2">"value"</span><span class="p">:</span> <span class="n">time_s</span><span class="p">,</span>
+        <span class="s2">"unit"</span><span class="p">:</span> <span class="s2">"s"</span><span class="p">,</span>
+        <span class="s2">"range"</span><span class="p">:</span> <span class="n">range_s</span><span class="p">,</span>
+        <span class="s2">"extra"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"target=</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">, nthreads=</span><span class="si">{</span><span class="n">nthreads</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">}</span></div>
 
 
@@ -413,7 +413,7 @@
 <div class="viewcode-block" id="write_benchmark_json">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.benchmark_pipeline_performance.write_benchmark_json">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">write_benchmark_json</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">commit_sha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">commit_msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Write benchmark results to JSON file in github-action-benchmark format.</span>
 <span class="sd">    Adds timestamp and possibly commit information for improved manual tracking.</span>
 
@@ -439,11 +439,11 @@
 <span class="sd">    only the array of results, not a wrapper object. Timestamp and commit</span>
 <span class="sd">    information are not included in the output file but can be added back</span>
 <span class="sd">    if needed for other purposes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
     <span class="n">output_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">UTC</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;Z&quot;</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">UTC</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"Z"</span>
 
     <span class="c1"># Write only the results array, as expected by github-action-benchmark</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">results</span>
@@ -456,19 +456,19 @@
 <div class="viewcode-block" id="parse_args">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.benchmark_pipeline_performance.parse_args">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command-line arguments&quot;&quot;&quot;</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Benchmark time it takes to run preset &#39;&#39;&#39;</span>
-        <span class="sa">f</span><span class="s1">&#39;&#39;&#39;pipeline configurations (</span><span class="si">{</span><span class="n">PIPELINE_CFGS_TO_TEST</span><span class="si">}</span><span class="s1">) or custom ones.&#39;&#39;&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="sd">"""Parse command-line arguments"""</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">'''Benchmark time it takes to run preset '''</span>
+        <span class="sa">f</span><span class="s1">'''pipeline configurations (</span><span class="si">{</span><span class="n">PIPELINE_CFGS_TO_TEST</span><span class="si">}</span><span class="s1">) or custom ones.'''</span><span class="p">,</span>
         <span class="n">formatter_class</span><span class="o">=</span><span class="n">ArgumentDefaultsHelpFormatter</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;-n&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">NTEMPLATES</span><span class="p">,</span>
-         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;No. of random (=no caching) Asimov templates to produce.&#39;</span>
+        <span class="s1">'-n'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">NTEMPLATES</span><span class="p">,</span>
+         <span class="n">help</span><span class="o">=</span><span class="s1">'No. of random (=no caching) Asimov templates to produce.'</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;&#39;Custom pipelines to benchmark instead of the preset ones. &#39;&#39;&#39;</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;Repeat for multiple.&#39;&#39;&#39;</span>
+        <span class="s1">'-p'</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">'append'</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">'''Custom pipelines to benchmark instead of the preset ones. '''</span>
+<span class="w">        </span><span class="sd">'''Repeat for multiple.'''</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
 
@@ -477,13 +477,13 @@
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../pisa.scripts.html#pisa.scripts.benchmark_pipeline_performance.main">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function to run when script is executed&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Function to run when script is executed"""</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
 
     <span class="n">set_verbosity</span><span class="p">(</span><span class="n">Levels</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">Python build: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">PFX</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"</span><span class="si">%s</span><span class="s2">Python build: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">PFX</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">cpuinfo</span><span class="o">.</span><span class="n">get_cpu_info</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s%s</span><span class="s2"> = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">PFX</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"</span><span class="si">%s%s</span><span class="s2"> = </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">PFX</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
 
     <span class="n">test_cfgs</span> <span class="o">=</span> <span class="n">PIPELINE_CFGS_TO_TEST</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">p</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">args</span><span class="o">.</span><span class="n">p</span>
 
@@ -491,7 +491,7 @@
     <span class="n">benchmark_results</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">cfg</span> <span class="ow">in</span> <span class="n">test_cfgs</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">Obtaining timings for pipeline </span><span class="si">%s</span><span class="s2">...&quot;</span><span class="p">,</span> <span class="n">PFX</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"</span><span class="si">%s</span><span class="s2">Obtaining timings for pipeline </span><span class="si">%s</span><span class="s2">..."</span><span class="p">,</span> <span class="n">PFX</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
         <span class="n">set_verbosity</span><span class="p">(</span><span class="n">Levels</span><span class="o">.</span><span class="n">WARN</span><span class="p">)</span>
         <span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">profile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -502,9 +502,9 @@
             <span class="n">_</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
 
         <span class="n">set_verbosity</span><span class="p">(</span><span class="n">Levels</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s%s</span><span class="s2">:&quot;</span><span class="p">,</span> <span class="n">PFX</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"</span><span class="si">%s%s</span><span class="s2">:"</span><span class="p">,</span> <span class="n">PFX</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">cfg</span><span class="p">))</span>
         <span class="n">pipeline</span><span class="o">.</span><span class="n">report_profile</span><span class="p">(</span><span class="n">detailed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Extract min./avg.execution times</span>
         <span class="n">min_time</span><span class="p">,</span> <span class="n">avg_time</span><span class="p">,</span> <span class="n">max_time</span> <span class="o">=</span> <span class="n">get_get_outputs_time</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
@@ -520,15 +520,15 @@
         <span class="n">benchmark_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result_avg</span><span class="p">)</span>
 
     <span class="c1"># Prepare JSON output</span>
-    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;benchmark_results&quot;</span><span class="p">)</span>
+    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"benchmark_results"</span><span class="p">)</span>
     <span class="n">output_file</span> <span class="o">=</span> <span class="p">(</span> <span class="n">output_dir</span> <span class="o">/</span>
-        <span class="sa">f</span><span class="s2">&quot;results_target_</span><span class="si">{</span><span class="n">TARGET</span><span class="si">}</span><span class="s2">_nthreads_</span><span class="si">{</span><span class="n">PISA_NUM_THREADS</span><span class="si">}</span><span class="s2">.json&quot;</span>
+        <span class="sa">f</span><span class="s2">"results_target_</span><span class="si">{</span><span class="n">TARGET</span><span class="si">}</span><span class="s2">_nthreads_</span><span class="si">{</span><span class="n">PISA_NUM_THREADS</span><span class="si">}</span><span class="s2">.json"</span>
     <span class="p">)</span>
 
     <span class="c1"># Enrich with commit information (currently not written to file as</span>
     <span class="c1"># github-action-benchmark expects only the results array)</span>
-    <span class="n">commit_sha</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;GITHUB_SHA&quot;</span><span class="p">)</span>
-    <span class="n">commit_msg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;GITHUB_COMMIT_MSG&quot;</span><span class="p">)</span>
+    <span class="n">commit_sha</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"GITHUB_SHA"</span><span class="p">)</span>
+    <span class="n">commit_msg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"GITHUB_COMMIT_MSG"</span><span class="p">)</span>
 
     <span class="n">write_benchmark_json</span><span class="p">(</span>
         <span class="n">benchmark_results</span><span class="p">,</span>
@@ -536,11 +536,11 @@
         <span class="n">commit_sha</span><span class="o">=</span><span class="n">commit_sha</span><span class="p">,</span>
         <span class="n">commit_msg</span><span class="o">=</span><span class="n">commit_msg</span>
     <span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">Benchmark results written to: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">PFX</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span></div>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"</span><span class="si">%s</span><span class="s2">Benchmark results written to: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">PFX</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span></div>
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
         </article>
@@ -581,7 +581,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

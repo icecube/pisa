@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.likelihood.generalized_llh_params - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.likelihood.generalized_llh_params - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,7 +281,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.likelihood.generalized_llh_params</h1><div class="highlight"><pre>
-<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span></span><span class="sd">'''</span>
 <span class="sd">Pisa stage that pre-computes some quantities</span>
 <span class="sd">needed for the generalized likelihood, and applies</span>
 <span class="sd">small adjustments to the weight distributions in cases</span>
@@ -324,10 +324,10 @@
 <span class="sd">        new_sum: Map (Sum of the weights in each bin (ie MC expectation),</span>
 <span class="sd">                         corrected for the empty bin filling and the mean</span>
 <span class="sd">                         adjustment</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">'''</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">"Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"</span>
 
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -337,7 +337,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;generalized_llh_params&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'generalized_llh_params'</span><span class="p">,</span> <span class="s1">'init_test'</span><span class="p">]</span>
 
 <span class="n">PSEUDO_WEIGHT</span> <span class="o">=</span> <span class="mf">0.001</span>
 
@@ -345,12 +345,12 @@
 <div class="viewcode-block" id="generalized_llh_params">
 <a class="viewcode-back" href="../../../../pisa.stages.likelihood.html#pisa.stages.likelihood.generalized_llh_params.generalized_llh_params">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">generalized_llh_params</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Pisa stage that applies mean adjustment and</span>
 <span class="sd">    empty bin filling. Also computes alphas and betas</span>
 <span class="sd">    that are needed by the generalized poisson likelihood</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># this is the constructor with default arguments</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
@@ -358,22 +358,22 @@
                  <span class="p">):</span>
 
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+            <span class="s1">'weights'</span><span class="p">,</span>
         <span class="p">]</span>
         <span class="c1"># TODO: uses custom representations in setup_function</span>
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="n">MultiDimBinning</span>
+            <span class="s1">'apply_mode'</span><span class="p">:</span> <span class="n">MultiDimBinning</span>
         <span class="p">}</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;apply_mode&#39;</span> <span class="ow">in</span> <span class="n">std_kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">'apply_mode'</span> <span class="ow">in</span> <span class="n">std_kwargs</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Service requires specifying binning for `apply_mode` during init!&quot;</span>
+                <span class="s2">"Service requires specifying binning for `apply_mode` during init!"</span>
             <span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">],</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">std_kwargs</span><span class="p">[</span><span class="s1">'apply_mode'</span><span class="p">],</span> <span class="n">MultiDimBinning</span><span class="p">)</span>
 
-        <span class="n">N_bins</span> <span class="o">=</span> <span class="n">std_kwargs</span><span class="p">[</span><span class="s1">&#39;apply_mode&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tot_num_bins</span>
+        <span class="n">N_bins</span> <span class="o">=</span> <span class="n">std_kwargs</span><span class="p">[</span><span class="s1">'apply_mode'</span><span class="p">]</span><span class="o">.</span><span class="n">tot_num_bins</span>
         <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_bins</span><span class="p">):</span>
-            <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;bin_</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s1">_mask&#39;</span><span class="p">)</span>
+            <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">'bin_</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s1">_mask'</span><span class="p">)</span>
 
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -386,11 +386,11 @@
 <div class="viewcode-block" id="generalized_llh_params.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.likelihood.html#pisa.stages.likelihood.generalized_llh_params.generalized_llh_params.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Declare empty containers, determine the number</span>
 <span class="sd">        of MC events in each bin of each dataset and</span>
 <span class="sd">        compute mean adjustment</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">N_bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">tot_num_bins</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
@@ -400,28 +400,28 @@
             <span class="c1">#</span>
             <span class="c1"># Generate a new container called bin_indices</span>
             <span class="c1">#</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;llh_alphas&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;llh_betas&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;n_mc_events&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;old_sum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'llh_alphas'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'llh_betas'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'n_mc_events'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'old_sum'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
             <span class="c1">#</span>
             <span class="c1"># Step 1: assert the number of MC events in each bin,</span>
             <span class="c1">#         for each container</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">'events'</span>
             <span class="n">nevents_sim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_bins</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_bins</span><span class="p">):</span>
-                <span class="n">index_mask</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span>
-                <span class="k">if</span> <span class="s1">&#39;kfold_mask&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
-                    <span class="n">index_mask</span><span class="o">*=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;kfold_mask&#39;</span><span class="p">]</span>
+                <span class="n">index_mask</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'bin_</span><span class="si">{}</span><span class="s1">_mask'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span>
+                <span class="k">if</span> <span class="s1">'kfold_mask'</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                    <span class="n">index_mask</span><span class="o">*=</span><span class="n">container</span><span class="p">[</span><span class="s1">'kfold_mask'</span><span class="p">]</span>
                 <span class="c1"># Number of MC events in each bin</span>
                 <span class="n">nevents_sim</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">index_mask</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
             <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">nevents_sim</span><span class="p">,</span>
-                      <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;n_mc_events&quot;</span><span class="p">])</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;n_mc_events&#39;</span><span class="p">)</span>
+                      <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"n_mc_events"</span><span class="p">])</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'n_mc_events'</span><span class="p">)</span>
 
             <span class="c1">#</span>
             <span class="c1"># Step 2: Calculate the mean adjustment for each container</span>
@@ -431,28 +431,28 @@
                 <span class="n">mean_adjustment</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mf">1.0</span><span class="o">-</span><span class="n">mean_number_of_mc_events</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.e-3</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">mean_adjustment</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;mean_adjustment&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">mean_adjustment</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">'mean_adjustment'</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">mean_adjustment</span><span class="p">)</span>
 
 
             <span class="c1">#</span>
-            <span class="c1"># Add hypersurface containers if they don&#39;t exist</span>
+            <span class="c1"># Add hypersurface containers if they don't exist</span>
             <span class="c1"># (to avoid errors in get_outputs, if we want )</span>
             <span class="c1"># these to be returned when you call get_output</span>
             <span class="c1">#</span>
-            <span class="k">if</span> <span class="s1">&#39;hs_scales&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;hs_scales&#39;</span><span class="p">]</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
+            <span class="k">if</span> <span class="s1">'hs_scales'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'hs_scales'</span><span class="p">]</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'errors'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="generalized_llh_params.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.likelihood.html#pisa.stages.likelihood.generalized_llh_params.generalized_llh_params.apply_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">'''</span>
 <span class="sd">        Computes the main inputs to the generalized likelihood</span>
 <span class="sd">        function on every iteration of the minimizer</span>
 
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        '''</span>
         <span class="n">N_bins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">tot_num_bins</span>
 
         <span class="c1">#</span>
@@ -462,7 +462,7 @@
         <span class="c1">#</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">'events'</span>
 
             <span class="c1">#</span>
             <span class="c1"># Step 3: Find the maximum weight accross all events</span>
@@ -473,7 +473,7 @@
             <span class="c1"># for this part we are in events mode</span>
             <span class="c1"># Find the minimum weight of an entire MC set</span>
             <span class="n">pseudo_weight</span> <span class="o">=</span> <span class="mf">0.001</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;pseudo_weight&#39;</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">pseudo_weight</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">'pseudo_weight'</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="n">pseudo_weight</span><span class="p">)</span>
 
             <span class="n">old_weight_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_bins</span><span class="p">)</span>
             <span class="n">new_weight_sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N_bins</span><span class="p">)</span>
@@ -483,19 +483,19 @@
             <span class="c1">#</span>
             <span class="c1"># Load the pseudo_weight and mean displacement values</span>
             <span class="c1">#</span>
-            <span class="n">mean_adjustment</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;mean_adjustment&#39;</span><span class="p">]</span>
-            <span class="n">pseudo_weight</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;pseudo_weight&#39;</span><span class="p">]</span>
+            <span class="n">mean_adjustment</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'mean_adjustment'</span><span class="p">]</span>
+            <span class="n">pseudo_weight</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'pseudo_weight'</span><span class="p">]</span>
 
             <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_bins</span><span class="p">):</span>
 
-                <span class="n">index_mask</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span>
-                <span class="k">if</span> <span class="s1">&#39;kfold_mask&#39;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
-                    <span class="n">index_mask</span><span class="o">*=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;kfold_mask&#39;</span><span class="p">]</span>
-                <span class="n">current_weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">][</span><span class="n">index_mask</span><span class="p">]</span>
+                <span class="n">index_mask</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'bin_</span><span class="si">{}</span><span class="s1">_mask'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span>
+                <span class="k">if</span> <span class="s1">'kfold_mask'</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                    <span class="n">index_mask</span><span class="o">*=</span><span class="n">container</span><span class="p">[</span><span class="s1">'kfold_mask'</span><span class="p">]</span>
+                <span class="n">current_weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">][</span><span class="n">index_mask</span><span class="p">]</span>
 
                 <span class="n">old_weight_sum</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">current_weights</span><span class="p">)</span>
 
-                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">current_weights</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">),</span><span class="s1">&#39;SOME WEIGHTS BELOW ZERO&#39;</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">current_weights</span><span class="o">&gt;=</span><span class="mi">0</span><span class="p">),</span><span class="s1">'SOME WEIGHTS BELOW ZERO'</span>
                 <span class="n">n_weights</span> <span class="o">=</span> <span class="n">current_weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
                 <span class="c1"># If no weights and other datasets have some, include a pseudo weight</span>
@@ -519,7 +519,7 @@
                 <span class="n">var_z</span> <span class="o">=</span> <span class="p">(</span><span class="n">var_of_weights</span> <span class="o">+</span> <span class="n">mean_w</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">var_z</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;warning: var_z is less than zero&#39;</span><span class="p">)</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">'warning: var_z is less than zero'</span><span class="p">)</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">var_z</span><span class="p">)</span>
                     <span class="k">raise</span> <span class="ne">Exception</span>
 
@@ -536,14 +536,14 @@
 
             <span class="c1"># Calculate alphas and betas</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">alphas_vector</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;llh_alphas&#39;</span><span class="p">])</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">betas_vector</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;llh_betas&#39;</span><span class="p">])</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">new_weight_sum</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">])</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">old_weight_sum</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;old_sum&#39;</span><span class="p">])</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;llh_alphas&#39;</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;llh_betas&#39;</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;old_sum&#39;</span><span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span></div>
+            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">alphas_vector</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">'llh_alphas'</span><span class="p">])</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">betas_vector</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">'llh_betas'</span><span class="p">])</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">new_weight_sum</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">])</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">copyto</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">old_weight_sum</span><span class="p">,</span> <span class="n">dst</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">'old_sum'</span><span class="p">])</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'llh_alphas'</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'llh_betas'</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'old_sum'</span><span class="p">)</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'weights'</span><span class="p">)</span></div>
 </div>
 
 
@@ -551,7 +551,7 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.likelihood.html#pisa.stages.likelihood.generalized_llh_params.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa_tests.test_services</span><span class="w"> </span><span class="kn">import</span> <span class="n">TEST_BINNING</span>
     <span class="k">return</span> <span class="n">generalized_llh_params</span><span class="p">(</span><span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span></div>
 
@@ -594,7 +594,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

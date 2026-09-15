@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.flux.barr_simple - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.flux.barr_simple - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.flux.barr_simple</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Stage to implement the old PISA/oscfit flux systematics</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
@@ -299,14 +299,14 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.numba_tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">myjit</span><span class="p">,</span> <span class="n">ftype</span><span class="p">,</span> <span class="n">FX</span><span class="p">,</span> <span class="n">IX</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.barr_parameterization</span><span class="w"> </span><span class="kn">import</span> <span class="n">modRatioNuBar</span><span class="p">,</span> <span class="n">modRatioUpHor</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;barr_simple&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_ratio_scale&#39;</span><span class="p">,</span> <span class="s1">&#39;spectral_index_scale&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;apply_sys_kernel&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_sys_vectorized&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'barr_simple'</span><span class="p">,</span> <span class="s1">'apply_ratio_scale'</span><span class="p">,</span> <span class="s1">'spectral_index_scale'</span><span class="p">,</span>
+            <span class="s1">'apply_sys_kernel'</span><span class="p">,</span> <span class="s1">'apply_sys_vectorized'</span><span class="p">,</span> <span class="s1">'init_test'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="barr_simple">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.barr_simple.barr_simple">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">barr_simple</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    stage to apply Barr style flux uncertainties</span>
 <span class="sd">    uses parameterisations of plots from Barr 2006 paper</span>
 
@@ -327,27 +327,27 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;true_energy&quot;, &quot;true_coszen&quot;, &quot;nu_flux_nominal&quot;, &quot;nubar_flux_nominal&quot;,</span>
-<span class="sd">        &quot;nubar&quot;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "true_energy", "true_coszen", "nu_flux_nominal", "nubar_flux_nominal",</span>
+<span class="sd">        "nubar"</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;nue_numu_ratio&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;nu_nubar_ratio&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;delta_index&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Barr_uphor_ratio&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Barr_nu_nubar_ratio&quot;</span><span class="p">,</span>
+            <span class="s2">"nue_numu_ratio"</span><span class="p">,</span>
+            <span class="s2">"nu_nubar_ratio"</span><span class="p">,</span>
+            <span class="s2">"delta_index"</span><span class="p">,</span>
+            <span class="s2">"Barr_uphor_ratio"</span><span class="p">,</span>
+            <span class="s2">"Barr_nu_nubar_ratio"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;true_energy&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;true_coszen&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;nubar_flux_nominal&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;nubar&quot;</span>
+            <span class="s2">"true_energy"</span><span class="p">,</span>
+            <span class="s2">"true_coszen"</span><span class="p">,</span>
+            <span class="s2">"nu_flux_nominal"</span><span class="p">,</span>
+            <span class="s2">"nubar_flux_nominal"</span><span class="p">,</span>
+            <span class="s2">"nubar"</span>
         <span class="p">)</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -360,7 +360,7 @@
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.barr_simple.barr_simple.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"nu_flux"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="barr_simple.compute_function">
@@ -371,34 +371,34 @@
         <span class="c1"># If a parameter below has not been modified by minimizer,</span>
         <span class="c1"># its magnitude below will be a native float, otherwise np.float64,</span>
         <span class="c1"># so convert to expected FTYPE</span>
-        <span class="n">nue_numu_ratio</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">nue_numu_ratio</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">))</span>
-        <span class="n">nu_nubar_ratio</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">nu_nubar_ratio</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">))</span>
-        <span class="n">delta_index</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">delta_index</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">))</span>
-        <span class="n">Barr_uphor_ratio</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">Barr_uphor_ratio</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">))</span>
-        <span class="n">Barr_nu_nubar_ratio</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">Barr_nu_nubar_ratio</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;dimensionless&quot;</span><span class="p">))</span>
+        <span class="n">nue_numu_ratio</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">nue_numu_ratio</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">"dimensionless"</span><span class="p">))</span>
+        <span class="n">nu_nubar_ratio</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">nu_nubar_ratio</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">"dimensionless"</span><span class="p">))</span>
+        <span class="n">delta_index</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">delta_index</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">"dimensionless"</span><span class="p">))</span>
+        <span class="n">Barr_uphor_ratio</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">Barr_uphor_ratio</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">"dimensionless"</span><span class="p">))</span>
+        <span class="n">Barr_nu_nubar_ratio</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">Barr_nu_nubar_ratio</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">"dimensionless"</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">apply_sys_vectorized</span><span class="p">(</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_energy&quot;</span><span class="p">],</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;true_coszen&quot;</span><span class="p">],</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux_nominal&quot;</span><span class="p">],</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nubar_flux_nominal&quot;</span><span class="p">],</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;nubar&quot;</span><span class="p">],</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"true_energy"</span><span class="p">],</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"true_coszen"</span><span class="p">],</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"nu_flux_nominal"</span><span class="p">],</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"nubar_flux_nominal"</span><span class="p">],</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"nubar"</span><span class="p">],</span>
                 <span class="n">nue_numu_ratio</span><span class="p">,</span>
                 <span class="n">nu_nubar_ratio</span><span class="p">,</span>
                 <span class="n">delta_index</span><span class="p">,</span>
                 <span class="n">Barr_uphor_ratio</span><span class="p">,</span>
                 <span class="n">Barr_nu_nubar_ratio</span><span class="p">,</span>
-                <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;nu_flux&quot;</span><span class="p">],</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s2">"nu_flux"</span><span class="p">],</span>
             <span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;nu_flux&#39;</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'nu_flux'</span><span class="p">)</span></div>
 </div>
 
 
 
 <span class="nd">@myjit</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">apply_ratio_scale</span><span class="p">(</span><span class="n">ratio_scale</span><span class="p">,</span> <span class="n">sum_constant</span><span class="p">,</span> <span class="n">in1</span><span class="p">,</span> <span class="n">in2</span><span class="p">,</span> <span class="n">out</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; apply ratio scale to flux values</span>
+<span class="w">    </span><span class="sd">""" apply ratio scale to flux values</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -413,7 +413,7 @@
 
 <span class="sd">    out : array</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">in1</span> <span class="o">==</span> <span class="mf">0.</span> <span class="ow">and</span> <span class="n">in2</span> <span class="o">==</span> <span class="mf">0.</span><span class="p">:</span>
         <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
         <span class="n">out</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.</span>
@@ -432,7 +432,7 @@
 
 <span class="nd">@myjit</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">spectral_index_scale</span><span class="p">(</span><span class="n">true_energy</span><span class="p">,</span> <span class="n">egy_pivot</span><span class="p">,</span> <span class="n">delta_index</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; calculate spectral index scale &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""" calculate spectral index scale """</span>
     <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">true_energy</span> <span class="o">/</span> <span class="n">egy_pivot</span><span class="p">),</span> <span class="n">delta_index</span><span class="p">)</span>
 
 
@@ -496,7 +496,7 @@
     <span class="n">out</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="n">modRatioUpHor</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">true_energy</span><span class="p">,</span> <span class="n">true_coszen</span><span class="p">,</span> <span class="n">Barr_uphor_ratio</span><span class="p">)</span>
 
 
-<span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">IX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:])&quot;</span><span class="p">],</span> <span class="s2">&quot;(),(),(d),(d),(),(),(),(),(),()-&gt;(d)&quot;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
+<span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:], </span><span class="si">{</span><span class="n">IX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s2">[:])"</span><span class="p">],</span> <span class="s2">"(),(),(d),(d),(),(),(),(),(),()-&gt;(d)"</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">apply_sys_vectorized</span><span class="p">(</span>
     <span class="n">true_energy</span><span class="p">,</span>
     <span class="n">true_coszen</span><span class="p">,</span>
@@ -528,13 +528,13 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.flux.html#pisa.stages.flux.barr_simple.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;nue_numu_ratio&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;nu_nubar_ratio&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;delta_index&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Barr_uphor_ratio&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Barr_nu_nubar_ratio&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"nue_numu_ratio"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"nu_nubar_ratio"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"delta_index"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"Barr_uphor_ratio"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"Barr_nu_nubar_ratio"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>
     <span class="p">])</span>
 
     <span class="k">return</span> <span class="n">barr_simple</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
@@ -578,7 +578,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

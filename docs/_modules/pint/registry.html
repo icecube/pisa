@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pint.registry - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pint.registry - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,7 +281,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pint.registry</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">pint.registry</span>
 <span class="sd">~~~~~~~~~~~~~</span>
 
@@ -293,32 +293,406 @@
 
 <span class="sd">:copyright: 2022 by Pint Authors, see AUTHORS for more details.</span>
 <span class="sd">:license: BSD, see LICENSE for more details.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
+<span class="c1"># pyright: reportNoOverloadImplementation=none</span>
+<span class="c1"># pyright: reportInvalidTypeArguments=warning</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Generic</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Generic</span><span class="p">,</span>
+    <span class="n">Self</span><span class="p">,</span>
+    <span class="n">TypeAlias</span><span class="p">,</span>
+    <span class="n">overload</span><span class="p">,</span>
+    <span class="n">override</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">facets</span><span class="p">,</span> <span class="n">registry_helpers</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.compat</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeAlias</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span><span class="p">,</span> <span class="n">pi_theorem</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+
+    <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">optype</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">opt</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">optype.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">._typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">Scalar</span><span class="p">,</span> <span class="n">UnitLike</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">._typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span> <span class="k">as</span> <span class="n">_Quantity</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">._typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Unit</span> <span class="k">as</span> <span class="n">_Unit</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">.facets.plain.quantity</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlainQuantity</span> <span class="k">as</span> <span class="n">_PlainQuantity</span>
+
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">_PlainQuantity</span> <span class="o">=</span> <span class="n">facets</span><span class="o">.</span><span class="n">PlainRegistry</span><span class="o">.</span><span class="n">Quantity</span>
 
 <span class="c1"># To build the Quantity and Unit classes</span>
 <span class="c1"># we follow the UnitRegistry bases</span>
 <span class="c1"># but</span>
 
 
+<span class="n">MagnitudeT_co</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span>
+    <span class="s2">"MagnitudeT_co"</span><span class="p">,</span> <span class="n">covariant</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">"Magnitude"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"Any"</span>
+<span class="p">)</span>
+<span class="n">MagnitudeT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">"MagnitudeT"</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">"Magnitude"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">"Any"</span><span class="p">)</span>
+
+
 <span class="k">class</span><span class="w"> </span><span class="nc">Quantity</span><span class="p">(</span>
-    <span class="n">Generic</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">MagnitudeT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">SystemRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">MagnitudeT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">ContextRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">MagnitudeT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">DaskRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">MagnitudeT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">NumpyRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">MagnitudeT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">MeasurementRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">MagnitudeT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">NonMultiplicativeRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">MagnitudeT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">PlainRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">MagnitudeT</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">SystemRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">ContextRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">DaskRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">NumpyRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">MeasurementRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">NonMultiplicativeRegistry</span><span class="o">.</span><span class="n">Quantity</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">],</span>
+    <span class="n">_PlainQuantity</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">],</span>
+    <span class="n">Generic</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">],</span>
 <span class="p">):</span>
-    <span class="k">pass</span>
+    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+        <span class="c1"># NOTE: This list of method signatures must be kept in sync with PlainQuantity's overloads</span>
+        <span class="c1">#   (you can find the class in pint/facets/plain/quantity.py)</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span>
+            <span class="n">value</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">,</span>
+            <span class="n">units</span><span class="p">:</span> <span class="n">UnitLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Quantity[float]"</span><span class="p">:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">units</span><span class="p">:</span> <span class="n">UnitLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Quantity[Any]"</span><span class="p">:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>  <span class="c1"># FIXME: This could be more precise</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">[</span><span class="n">ScalarT</span><span class="p">:</span> <span class="n">Scalar</span><span class="p">](</span>  <span class="c1"># type: ignore[misc]</span>
+            <span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ScalarT</span><span class="p">],</span> <span class="n">units</span><span class="p">:</span> <span class="n">UnitLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Quantity[npt.Array1D]"</span><span class="p">:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>  <span class="c1"># This overload allows for `Quantity[Any](&lt;T&gt;)` to return `Quantity[T]`.</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">cls</span><span class="p">,</span>
+            <span class="n">value</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
+            <span class="n">units</span><span class="p">:</span> <span class="n">UnitLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Quantity[T]"</span><span class="p">:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Self</span><span class="p">,</span> <span class="n">units</span><span class="p">:</span> <span class="n">UnitLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span> <span class="o">...</span>
+
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanIter</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]]:</span> <span class="o">...</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__round__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRound1</span><span class="p">[</span><span class="n">T</span><span class="p">]],</span> <span class="n">ndigits</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__round__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRound2</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">T</span><span class="p">]],</span> <span class="n">ndigits</span><span class="p">:</span> <span class="nb">int</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__abs__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span><span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanAbs</span><span class="p">[</span><span class="n">T</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@classmethod</span>
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">from_list</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">](</span>
+            <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">Array1D</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]]],</span>
+            <span class="n">quant_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span>
+                <span class="n">Quantity</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]</span>
+                <span class="o">|</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">]</span>
+                <span class="o">|</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+                <span class="o">|</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+            <span class="p">],</span>
+            <span class="n">units</span><span class="p">:</span> <span class="n">UnitLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">Array1D</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]]:</span> <span class="o">...</span>
+
+        <span class="nd">@classmethod</span>
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">from_sequence</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">](</span>
+            <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">Array1D</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]]],</span>
+            <span class="n">seq</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span>
+                <span class="n">Quantity</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]</span>
+                <span class="o">|</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">]</span>
+                <span class="o">|</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+                <span class="o">|</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+            <span class="p">],</span>
+            <span class="n">units</span><span class="p">:</span> <span class="n">UnitLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">Array1D</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]]:</span> <span class="o">...</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">tolist</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">Array0D</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">tolist</span><span class="p">[</span><span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">Array1D</span><span class="p">[</span><span class="n">X</span><span class="p">]],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">X</span><span class="p">]]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">tolist</span><span class="p">[</span><span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">Array2D</span><span class="p">[</span><span class="n">X</span><span class="p">]],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">X</span><span class="p">]]]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">tolist</span><span class="p">[</span><span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">Array3D</span><span class="p">[</span><span class="n">X</span><span class="p">]],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">X</span><span class="p">]]]]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">tolist</span><span class="p">[</span><span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span>
+                <span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">Array</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span> <span class="n">X</span><span class="p">]</span>
+            <span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]]:</span> <span class="o">...</span>
+
+        <span class="c1"># Quantity[float] += datetime -&gt; becomes datetime</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__iadd__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">],</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">:</span> <span class="o">...</span>
+        <span class="c1"># General overload (should work in most cases)</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__iadd__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanIAdd</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="c1"># Quantity[float] + datetime -&gt; datetime</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">],</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">:</span> <span class="o">...</span>
+        <span class="c1"># Quantity[float | array[float]] + timedelta -&gt; Quantity[float | array[float]]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayND</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># General overloads (should work in most cases)</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanAdd</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRAdd</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">]]</span>
+            <span class="o">|</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanRAdd</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="fm">__isub__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanISub</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="c1"># Quantity[float | array[float]] - timedelta -&gt; Quantity[float | array[float]]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__sub__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayND</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># General overloads (should work in most cases)</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__sub__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanSub</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__sub__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRSub</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">]]</span>
+            <span class="o">|</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanRSub</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="c1"># datetime - Quantity[float] -&gt; datetime</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rsub__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">],</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">:</span> <span class="o">...</span>
+        <span class="c1"># timedelta - Quantity[float | array[float]] -&gt; Quantity[float | array[float]]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rsub__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayND</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># General overloads (should work in most cases)</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rsub__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRSub</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rsub__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanSub</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__imul__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanIMul</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="c1"># Quantity[float | array[float]] * timedelta -&gt; Quantity[float | array[float]]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayND</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># General overloads (should work in most cases)</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanMul</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRMul</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">]]</span>
+            <span class="o">|</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanRMul</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="fm">__rmul__</span> <span class="o">=</span> <span class="fm">__mul__</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__matmul__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanMatmul</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__matmul__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRMatmul</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">]]</span>
+            <span class="o">|</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanRMatmul</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="fm">__rmatmul__</span> <span class="o">=</span> <span class="fm">__matmul__</span>
+
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__itruediv__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanITruediv</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="c1"># Quantity[float | array[float]] / timedelta -&gt; Quantity[float | array[float]]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayND</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># General overloads</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanTruediv</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRTruediv</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">]]</span>
+            <span class="o">|</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanRTruediv</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="c1"># timedelta / Quantity[float | array[float]] -&gt; Quantity[float | array[float]]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rtruediv__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">ArrayND</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># General overloads</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rtruediv__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRTruediv</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rtruediv__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanTruediv</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__ifloordiv__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanIFloordiv</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__floordiv__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanFloordiv</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__floordiv__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRFloordiv</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">]]</span>
+            <span class="o">|</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanRTruediv</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rfloordiv__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRFloordiv</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rfloordiv__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanFloordiv</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__imod__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanIMod</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mod__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanMod</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mod__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRMod</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">]]</span>
+            <span class="o">|</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanRMod</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rmod__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRMod</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rmod__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanMod</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__ipow__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanIPow</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__pow__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanPow2</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__pow__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRPow</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">]]</span>
+            <span class="o">|</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanRPow</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rpow__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRPow</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">U</span><span class="p">]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rpow__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanPow</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__divmod__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U1</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U2</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanDivmod</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">U1</span><span class="p">,</span> <span class="n">U2</span><span class="p">]]],</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="n">T</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">U1</span><span class="p">],</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U2</span><span class="p">]]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__divmod__</span><span class="p">[</span><span class="n">U1</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U2</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRDivmod</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">U1</span><span class="p">,</span> <span class="n">U2</span><span class="p">]]]</span>
+            <span class="o">|</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanRDivmod</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">U1</span><span class="p">,</span> <span class="n">U2</span><span class="p">]],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">U1</span><span class="p">],</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U2</span><span class="p">]]:</span> <span class="o">...</span>
+
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rdivmod__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U1</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U2</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRDivmod</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">U1</span><span class="p">,</span> <span class="n">U2</span><span class="p">]]],</span> <span class="n">other</span><span class="p">:</span> <span class="n">T</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">U1</span><span class="p">],</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U2</span><span class="p">]]:</span> <span class="o">...</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rdivmod__</span><span class="p">[</span><span class="n">U1</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">U2</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanDivmod</span><span class="p">[</span><span class="n">MagnitudeT_co</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">U1</span><span class="p">,</span> <span class="n">U2</span><span class="p">]]</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">U1</span><span class="p">],</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U2</span><span class="p">]]:</span> <span class="o">...</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Unit</span><span class="p">(</span>
@@ -330,24 +704,41 @@
     <span class="n">facets</span><span class="o">.</span><span class="n">NonMultiplicativeRegistry</span><span class="o">.</span><span class="n">Unit</span><span class="p">,</span>
     <span class="n">facets</span><span class="o">.</span><span class="n">PlainRegistry</span><span class="o">.</span><span class="n">Unit</span><span class="p">,</span>
 <span class="p">):</span>
-    <span class="k">pass</span>
+    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+        <span class="c1"># Unit * Unit -&gt; Unit</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span> <span class="o">...</span>
+        <span class="c1"># Unit * timedelta -&gt; Quantity[float]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># Unit * &lt;Magnitude&gt; -&gt; Quantity[&lt;Magnitude&gt;]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># Unit * str -&gt; Quantity</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="fm">__rmul__</span> <span class="o">=</span> <span class="fm">__mul__</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">GenericUnitRegistry</span><span class="p">(</span>
-    <span class="n">Generic</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">facets</span><span class="o">.</span><span class="n">UnitT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">GenericSystemRegistry</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">facets</span><span class="o">.</span><span class="n">UnitT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">GenericContextRegistry</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">facets</span><span class="o">.</span><span class="n">UnitT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">GenericDaskRegistry</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">facets</span><span class="o">.</span><span class="n">UnitT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">GenericNumpyRegistry</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">facets</span><span class="o">.</span><span class="n">UnitT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">GenericMeasurementRegistry</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">facets</span><span class="o">.</span><span class="n">UnitT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">GenericNonMultiplicativeRegistry</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">facets</span><span class="o">.</span><span class="n">UnitT</span><span class="p">],</span>
-    <span class="n">facets</span><span class="o">.</span><span class="n">GenericPlainRegistry</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">facets</span><span class="o">.</span><span class="n">UnitT</span><span class="p">],</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GenericUnitRegistry</span><span class="p">[</span><span class="n">QuantityT</span><span class="p">:</span> <span class="n">_Quantity</span><span class="p">,</span> <span class="n">UnitT</span><span class="p">:</span> <span class="n">_Unit</span><span class="p">](</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">GenericSystemRegistry</span><span class="p">[</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">UnitT</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">GenericContextRegistry</span><span class="p">[</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">UnitT</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">GenericDaskRegistry</span><span class="p">[</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">UnitT</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">GenericNumpyRegistry</span><span class="p">[</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">UnitT</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">GenericMeasurementRegistry</span><span class="p">[</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">UnitT</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">GenericNonMultiplicativeRegistry</span><span class="p">[</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">UnitT</span><span class="p">],</span>
+    <span class="n">facets</span><span class="o">.</span><span class="n">GenericPlainRegistry</span><span class="p">[</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">UnitT</span><span class="p">],</span>
 <span class="p">):</span>
     <span class="k">pass</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">UnitRegistry</span><span class="p">(</span><span class="n">GenericUnitRegistry</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">MagnitudeT</span><span class="p">],</span> <span class="n">Unit</span><span class="p">]):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The unit registry stores the definitions and relationships between units.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">UnitRegistry</span><span class="p">(</span>
+    <span class="n">GenericUnitRegistry</span><span class="p">[</span><span class="n">Quantity</span><span class="p">[</span><span class="n">MagnitudeT</span><span class="p">],</span> <span class="n">Unit</span><span class="p">],</span> <span class="n">Generic</span><span class="p">[</span><span class="n">MagnitudeT</span><span class="p">]</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The unit registry stores the definitions and relationships between units.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -371,7 +762,7 @@
 <span class="sd">        context. If False no conversion happens. (Default: False)</span>
 <span class="sd">    on_redefinition : str</span>
 <span class="sd">        action to take in case a unit is redefined.</span>
-<span class="sd">        &#39;warn&#39;, &#39;raise&#39;, &#39;ignore&#39; (Default: &#39;raise&#39;)</span>
+<span class="sd">        'warn', 'raise', 'ignore' (Default: 'raise')</span>
 <span class="sd">    auto_reduce_dimensions :</span>
 <span class="sd">        If True, reduce dimensionality on appropriate operations.</span>
 <span class="sd">        (Default: False)</span>
@@ -390,19 +781,19 @@
 <span class="sd">    cache_folder : str or pathlib.Path or None, optional</span>
 <span class="sd">        Specify the folder in which cache files are saved and loaded from.</span>
 <span class="sd">        If None, the cache is disabled. (default)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">Quantity</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Quantity</span>
     <span class="n">Unit</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Unit</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">filename</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
         <span class="n">force_ndarray</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">force_ndarray_like</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">default_as_delta</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">autoconvert_offset_to_baseunit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">on_redefinition</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;warn&quot;</span><span class="p">,</span>
+        <span class="n">on_redefinition</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"warn"</span><span class="p">,</span>
         <span class="n">system</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">auto_reduce_dimensions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">autoconvert_to_preferred</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -430,7 +821,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">pi_theorem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quantities</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds dimensionless quantities using the Buckingham π theorem</span>
+<span class="w">        </span><span class="sd">"""Builds dimensionless quantities using the Buckingham π theorem</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -442,19 +833,19 @@
 <span class="sd">        list</span>
 <span class="sd">            a list of dimensionless quantities expressed as dicts</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">pi_theorem</span><span class="p">(</span><span class="n">quantities</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_matplotlib</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up handlers for matplotlib&#39;s unit support.</span>
+<span class="w">        </span><span class="sd">"""Set up handlers for matplotlib's unit support.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        enable : bool</span>
 <span class="sd">            whether support should be enabled or disabled (Default value = True)</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Delays importing matplotlib until it&#39;s actually requested</span>
+<span class="sd">        """</span>
+        <span class="c1"># Delays importing matplotlib until it's actually requested</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_matplotlib_handlers</span>
 
         <span class="n">setup_matplotlib_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">enable</span><span class="p">)</span>
@@ -464,25 +855,25 @@
     <span class="n">check</span> <span class="o">=</span> <span class="n">registry_helpers</span><span class="o">.</span><span class="n">check</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">LazyRegistry</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">facets</span><span class="o">.</span><span class="n">QuantityT</span><span class="p">,</span> <span class="n">facets</span><span class="o">.</span><span class="n">UnitT</span><span class="p">]):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LazyRegistry</span><span class="p">[</span><span class="n">QuantityT</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">,</span> <span class="n">UnitT</span><span class="p">:</span> <span class="n">Unit</span><span class="p">]:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span> <span class="ow">or</span> <span class="p">(),</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">"params"</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span> <span class="ow">or</span> <span class="p">(),</span> <span class="n">kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;on_redefinition&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;raise&quot;</span>
+        <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">"params"</span><span class="p">]</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">"on_redefinition"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"raise"</span>
         <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">=</span> <span class="n">UnitRegistry</span>
         <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_after_init</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">item</span> <span class="o">==</span> <span class="s2">&quot;_on_redefinition&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="s2">&quot;raise&quot;</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="o">==</span> <span class="s2">"_on_redefinition"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"raise"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__init</span><span class="p">()</span>
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;__class__&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"__class__"</span><span class="p">:</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__init</span><span class="p">()</span>
@@ -498,19 +889,19 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ApplicationRegistry</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A wrapper class used to distribute changes to the application registry.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A wrapper class used to distribute changes to the application registry."""</span>
 
-    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;_registry&quot;</span><span class="p">]</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"_registry"</span><span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">registry</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_registry</span> <span class="o">=</span> <span class="n">registry</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the wrapped registry&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get the wrapped registry"""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registry</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_registry</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the new registry</span>
+<span class="w">        </span><span class="sd">"""Set the new registry</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -520,14 +911,14 @@
 <span class="sd">        See Also</span>
 <span class="sd">        --------</span>
 <span class="sd">        set_application_registry</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_registry</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)):</span>
             <span class="n">new_registry</span> <span class="o">=</span> <span class="n">new_registry</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_registry</span><span class="p">,</span> <span class="p">(</span><span class="n">LazyRegistry</span><span class="p">,</span> <span class="n">UnitRegistry</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected UnitRegistry; got </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">new_registry</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Expected UnitRegistry; got </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">new_registry</span><span class="p">))</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s2">&quot;Changing app registry from </span><span class="si">%r</span><span class="s2"> to </span><span class="si">%r</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registry</span><span class="p">,</span> <span class="n">new_registry</span>
+            <span class="s2">"Changing app registry from </span><span class="si">%r</span><span class="s2"> to </span><span class="si">%r</span><span class="s2">."</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registry</span><span class="p">,</span> <span class="n">new_registry</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_registry</span> <span class="o">=</span> <span class="n">new_registry</span>
 
@@ -593,7 +984,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

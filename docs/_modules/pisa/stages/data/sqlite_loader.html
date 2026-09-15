@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.data.sqlite_loader - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.data.sqlite_loader - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.data.sqlite_loader</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">A Stage to load data from an sqlite database</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
@@ -299,7 +299,7 @@
 <div class="viewcode-block" id="sqlite_loader">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">sqlite_loader</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    SQLite loader class</span>
 
 <span class="sd">    Parameters</span>
@@ -312,12 +312,12 @@
 <span class="sd">    post_fix : str</span>
 
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">database</span><span class="p">,</span>
         <span class="n">output_names</span><span class="p">,</span>
-        <span class="n">post_fix</span><span class="o">=</span><span class="s1">&#39;_pred&#39;</span><span class="p">,</span>
+        <span class="n">post_fix</span><span class="o">=</span><span class="s1">'_pred'</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 
@@ -337,23 +337,23 @@
 <div class="viewcode-block" id="sqlite_loader.get_pid_and_interaction_type">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.get_pid_and_interaction_type">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_pid_and_interaction_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;Sorry&#39;&#39;&#39;</span>
-        <span class="k">if</span> <span class="s1">&#39;bar&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">'''Sorry'''</span>
+        <span class="k">if</span> <span class="s1">'bar'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
             <span class="n">nubar</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">nubar</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="s1">&#39;e&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">'e'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
             <span class="n">pid</span> <span class="o">=</span> <span class="mi">12</span>
             <span class="n">flavor</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">if</span> <span class="s1">&#39;mu&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">'mu'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
             <span class="n">pid</span> <span class="o">=</span> <span class="mi">14</span>
             <span class="n">flavor</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="s1">&#39;tau&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">'tau'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
             <span class="n">pid</span> <span class="o">=</span> <span class="mi">16</span>
             <span class="n">flavor</span> <span class="o">=</span> <span class="mi">2</span>
-        <span class="k">if</span> <span class="s1">&#39;cc&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">'cc'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
             <span class="n">interaction_type</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="s1">&#39;nc&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">'nc'</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
             <span class="n">interaction_type</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="k">return</span> <span class="n">nubar</span><span class="o">*</span><span class="n">pid</span><span class="p">,</span> <span class="n">interaction_type</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">flavor</span></div>
 
@@ -363,18 +363,18 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">query_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interaction_type</span><span class="p">,</span> <span class="n">pid</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span> <span class="k">as</span> <span class="n">con</span><span class="p">:</span>
             <span class="c1"># Get truth</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT * FROM truth WHERE interaction_type = </span><span class="si">%s</span><span class="s1"> and pid = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="n">interaction_type</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span>
-            <span class="n">truth</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;event_no&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span> <span class="o">==</span> <span class="s1">&#39;_retro&#39;</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s1">'SELECT * FROM truth WHERE interaction_type = </span><span class="si">%s</span><span class="s1"> and pid = </span><span class="si">%s</span><span class="s1">'</span><span class="o">%</span><span class="p">(</span><span class="n">interaction_type</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span>
+            <span class="n">truth</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">'event_no'</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span> <span class="o">==</span> <span class="s1">'_retro'</span><span class="p">:</span>
                 <span class="c1"># Get retro reco</span>
-                <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT * FROM retro WHERE event_no in </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;event_no&#39;</span><span class="p">])))</span>
-                <span class="n">reco</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;event_no&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="n">query</span> <span class="o">=</span> <span class="s1">'SELECT * FROM retro WHERE event_no in </span><span class="si">%s</span><span class="s1">'</span><span class="o">%</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">'event_no'</span><span class="p">])))</span>
+                <span class="n">reco</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">'event_no'</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Get GNN reco</span>
-                <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT * FROM reconstruction WHERE event_no in </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;event_no&#39;</span><span class="p">])))</span>
-                <span class="n">reco</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;event_no&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="n">query</span> <span class="o">=</span> <span class="s1">'SELECT * FROM reconstruction WHERE event_no in </span><span class="si">%s</span><span class="s1">'</span><span class="o">%</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">'event_no'</span><span class="p">])))</span>
+                <span class="n">reco</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">'event_no'</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
             <span class="c1"># Get number of i3 files with specified PID by counting unique combinations of RunID and SubrunID</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="s1">&#39;SELECT DISTINCT RunID, SubrunID FROM truth WHERE pid = </span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">pid</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="s1">'SELECT DISTINCT RunID, SubrunID FROM truth WHERE pid = </span><span class="si">%s</span><span class="s1">'</span><span class="o">%</span><span class="n">pid</span>
             <span class="n">n_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">con</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">truth</span><span class="p">,</span> <span class="n">reco</span><span class="p">,</span> <span class="n">n_files</span></div>
 
@@ -382,25 +382,25 @@
 <div class="viewcode-block" id="sqlite_loader.add_truth">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_truth">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_truth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">nubar</span><span class="p">,</span> <span class="n">flavor</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39; Adds truth to container&#39;&#39;&#39;</span>
-        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">&#39;zenith&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="s1">&#39;energy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-        <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">&quot;nubar&quot;</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span> <span class="c1"># This sets true nu/nubar</span>
-        <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">&quot;flav&quot;</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span> <span class="c1"># This sets the true flavor</span>
+<span class="w">        </span><span class="sd">''' Adds truth to container'''</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">'true_coszen'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">truth</span><span class="p">[</span><span class="s1">'zenith'</span><span class="p">])</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">'true_energy'</span><span class="p">]</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="s1">'energy'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">"nubar"</span><span class="p">,</span> <span class="n">nubar</span><span class="p">)</span> <span class="c1"># This sets true nu/nubar</span>
+        <span class="n">container</span><span class="o">.</span><span class="n">set_aux_data</span><span class="p">(</span><span class="s2">"flav"</span><span class="p">,</span> <span class="n">flavor</span><span class="p">)</span> <span class="c1"># This sets the true flavor</span>
         <span class="k">return</span> <span class="n">container</span></div>
 
 
 <div class="viewcode-block" id="sqlite_loader.add_reco">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.add_reco">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_reco</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">,</span> <span class="n">reco</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39; Adds reconstructed quantities to container&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">''' Adds reconstructed quantities to container'''</span>
 
-        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_coszen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">reco</span><span class="p">[</span><span class="s1">&#39;zenith&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">])</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;reco_&#39;</span> <span class="o">+</span> <span class="s1">&#39;energy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco</span><span class="p">[</span><span class="s1">&#39;energy&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span> <span class="o">==</span> <span class="s1">&#39;_retro&#39;</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco</span><span class="p">[</span><span class="s1">&#39;L7_PIDClassifier_FullSky_ProbTrack&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">'reco_coszen'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">reco</span><span class="p">[</span><span class="s1">'zenith'</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">])</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">'reco_'</span> <span class="o">+</span> <span class="s1">'energy'</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco</span><span class="p">[</span><span class="s1">'energy'</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span> <span class="o">==</span> <span class="s1">'_retro'</span><span class="p">:</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'pid'</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco</span><span class="p">[</span><span class="s1">'L7_PIDClassifier_FullSky_ProbTrack'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;pid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco</span><span class="p">[</span><span class="s1">&#39;track&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'pid'</span><span class="p">]</span> <span class="o">=</span> <span class="n">reco</span><span class="p">[</span><span class="s1">'track'</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_fix</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">container</span></div>
 
 
@@ -410,20 +410,20 @@
         <span class="n">CM2_TO_M2</span> <span class="o">=</span> <span class="mf">1e-4</span>
         <span class="n">weighted_aeff</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">CM2_TO_M2</span>
-            <span class="o">*</span> <span class="n">truth</span><span class="p">[</span><span class="s2">&quot;OneWeight&quot;</span><span class="p">]</span>
+            <span class="o">*</span> <span class="n">truth</span><span class="p">[</span><span class="s2">"OneWeight"</span><span class="p">]</span>
             <span class="o">/</span> <span class="n">n_files</span>
-            <span class="o">/</span> <span class="n">truth</span><span class="p">[</span><span class="s2">&quot;gen_ratio&quot;</span><span class="p">]</span>
-            <span class="o">/</span> <span class="n">truth</span><span class="p">[</span><span class="s2">&quot;NEvents&quot;</span><span class="p">]</span>
+            <span class="o">/</span> <span class="n">truth</span><span class="p">[</span><span class="s2">"gen_ratio"</span><span class="p">]</span>
+            <span class="o">/</span> <span class="n">truth</span><span class="p">[</span><span class="s2">"NEvents"</span><span class="p">]</span>
         <span class="p">)</span>
-        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weighted_aeff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weighted_aeff</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">'weighted_aeff'</span><span class="p">]</span> <span class="o">=</span> <span class="n">weighted_aeff</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">container</span></div>
 
 
 <div class="viewcode-block" id="sqlite_loader.initialize_weights">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.initialize_weights">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">initialize_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">container</span><span class="p">):</span>
-        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-        <span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+        <span class="n">container</span><span class="p">[</span><span class="s1">'initial_weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">container</span></div>
 
 
@@ -446,7 +446,7 @@
         <span class="c1"># check created at least one container</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s1">&#39;No containers created during data loading for some reason.&#39;</span>
+                <span class="s1">'No containers created during data loading for some reason.'</span>
             <span class="p">)</span></div>
 
 
@@ -454,7 +454,7 @@
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.sqlite_loader.apply_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;initial_weights&#39;</span><span class="p">])</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'initial_weights'</span><span class="p">])</span></div>
 </div>
 
 
@@ -462,12 +462,12 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.data.html#pisa.stages.data.sqlite_loader.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">CACHE_DIR</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.random_numbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_random_state</span>
 
-    <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">&#39;sqlite_loader_test_file&#39;</span><span class="p">)</span>
+    <span class="n">fpath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CACHE_DIR</span><span class="p">,</span> <span class="s1">'sqlite_loader_test_file'</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
         <span class="n">random_state</span> <span class="o">=</span> <span class="n">get_random_state</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
@@ -483,12 +483,12 @@
 
         <span class="k">with</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">fpath</span><span class="p">)</span> <span class="k">as</span> <span class="n">con</span><span class="p">:</span>
             <span class="n">cur</span> <span class="o">=</span> <span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
-            <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE truth(energy, zenith, OneWeight, gen_ratio, event_no, NEvents, interaction_type, pid, RunID, SubrunID)&quot;</span><span class="p">)</span>
-            <span class="n">cur</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s2">&quot;INSERT INTO truth VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)&quot;</span><span class="p">,</span> <span class="n">true_data</span><span class="p">)</span>
-            <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE reconstruction(energy_pred, zenith_pred, track_pred, event_no)&quot;</span><span class="p">)</span>
-            <span class="n">cur</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s2">&quot;INSERT INTO reconstruction VALUES(?, ?, ?, ?)&quot;</span><span class="p">,</span> <span class="n">reco_data</span><span class="p">)</span>
+            <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"CREATE TABLE truth(energy, zenith, OneWeight, gen_ratio, event_no, NEvents, interaction_type, pid, RunID, SubrunID)"</span><span class="p">)</span>
+            <span class="n">cur</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s2">"INSERT INTO truth VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"</span><span class="p">,</span> <span class="n">true_data</span><span class="p">)</span>
+            <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"CREATE TABLE reconstruction(energy_pred, zenith_pred, track_pred, event_no)"</span><span class="p">)</span>
+            <span class="n">cur</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="s2">"INSERT INTO reconstruction VALUES(?, ?, ?, ?)"</span><span class="p">,</span> <span class="n">reco_data</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">sqlite_loader</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;numu_cc&#39;</span><span class="p">])</span></div>
+    <span class="k">return</span> <span class="n">sqlite_loader</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">fpath</span><span class="p">,</span> <span class="n">output_names</span><span class="o">=</span><span class="p">[</span><span class="s1">'numu_cc'</span><span class="p">])</span></div>
 
 </pre></div>
         </article>
@@ -529,7 +529,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

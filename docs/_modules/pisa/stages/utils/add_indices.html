@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.utils.add_indices - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.utils.add_indices - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,7 +281,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.utils.add_indices</h1><div class="highlight"><pre>
-<span></span><span class="sd">&#39;&#39;&#39;</span>
+<span></span><span class="sd">'''</span>
 <span class="sd">Module to prep incoming data into formats that are</span>
 <span class="sd">compatible with the mc_uncertainty likelihood formulation</span>
 
@@ -290,11 +290,11 @@
 <span class="sd">event falls into.</span>
 
 <span class="sd">module structure imported from bootcamp example</span>
-<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">'''</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">"Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"</span>
 
 <span class="c1"># Load the modified index lookup function</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.bin_indexing</span><span class="w"> </span><span class="kn">import</span> <span class="n">lookup_indices</span>
@@ -302,13 +302,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa_tests.test_services</span><span class="w"> </span><span class="kn">import</span> <span class="n">TEST_BINNING</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;add_indices&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'add_indices'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="add_indices">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.add_indices.add_indices">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">add_indices</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stage to map out the index of the analysis</span>
 <span class="sd">    binning where each event falls into.</span>
 
@@ -319,15 +319,15 @@
 <span class="sd">    - stage appends an array quantity called bin_indices</span>
 <span class="sd">    - stage also appends an array mask to access events by</span>
 <span class="sd">      bin index later in the pipeline</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
                  <span class="p">):</span>
         <span class="c1"># has no apply_function, but uses both in setup_function</span>
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;calc_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;apply_mode&quot;</span><span class="p">:</span> <span class="n">MultiDimBinning</span><span class="p">,</span>
+            <span class="s2">"calc_mode"</span><span class="p">:</span> <span class="s2">"events"</span><span class="p">,</span>
+            <span class="s2">"apply_mode"</span><span class="p">:</span> <span class="n">MultiDimBinning</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -340,17 +340,17 @@
 <div class="viewcode-block" id="add_indices.setup_function">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.add_indices.add_indices.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">'''</span>
 <span class="sd">        Calculate the bin index where each event falls into</span>
 
 <span class="sd">        Create one mask for each analysis bin.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        '''</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">!=</span> <span class="s1">&#39;events&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;calc mode must be set to &quot;events&quot; for this module&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">!=</span> <span class="s1">'events'</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'calc mode must be set to "events" for this module'</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;apply mode must be set to a binning&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'apply mode must be set to a binning'</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
@@ -361,18 +361,18 @@
             <span class="n">indices</span> <span class="o">=</span> <span class="n">lookup_indices</span><span class="p">(</span><span class="n">sample</span><span class="o">=</span><span class="n">variables_to_bin</span><span class="p">,</span>
                                      <span class="n">binning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">)</span>
 
-            <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bin_indices&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">indices</span>
+            <span class="n">container</span><span class="p">[</span><span class="s1">'bin_indices'</span><span class="p">]</span> <span class="o">=</span> <span class="n">indices</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
             <span class="k">for</span> <span class="n">bin_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">tot_num_bins</span><span class="p">):</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bin_</span><span class="si">{}</span><span class="s1">_mask&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bin_i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bin_indices&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bin_i</span></div>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'bin_</span><span class="si">{}</span><span class="s1">_mask'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bin_i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'bin_indices'</span><span class="p">]</span> <span class="o">==</span> <span class="n">bin_i</span></div>
 </div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">add_indices</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
+    <span class="k">return</span> <span class="n">add_indices</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="s1">'events'</span><span class="p">,</span> <span class="n">apply_mode</span><span class="o">=</span><span class="n">TEST_BINNING</span><span class="p">)</span>
 </pre></div>
         </article>
       </div>
@@ -412,7 +412,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.osc.layers - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.osc.layers - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,9 +281,9 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.osc.layers</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Calculation of Earth layers and electron densities.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">division</span>
@@ -295,23 +295,23 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_file</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">set_verbosity</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;extCalcLayers&#39;</span><span class="p">,</span> <span class="s1">&#39;Layers&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'extCalcLayers'</span><span class="p">,</span> <span class="s1">'Layers'</span><span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;P. Eller&#39;</span><span class="p">,</span><span class="s1">&#39;E. Bourbeau&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'P. Eller'</span><span class="p">,</span><span class="s1">'E. Bourbeau'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2026, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
 <span class="n">jit</span> <span class="o">=</span> <span class="n">numba</span><span class="o">.</span><span class="n">jit</span>
@@ -330,7 +330,7 @@
         <span class="n">coszen_limit</span><span class="p">,</span>
         <span class="n">radii</span><span class="p">,</span>
         <span class="n">max_layers</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Layer density/distance calculator for each coszen specified.</span>
+<span class="w">    </span><span class="sd">"""Layer density/distance calculator for each coszen specified.</span>
 
 <span class="sd">    Accelerated with Numba if present.</span>
 
@@ -342,7 +342,7 @@
 <span class="sd">    detector_depth : depth at which the detector is buried (float)</span>
 <span class="sd">    rhos           : densities (already weighted by electron fractions) (ndarray)</span>
 <span class="sd">    rhos_neutron_weighted  : densities (already weighted by neutron fractions) (ndarray)</span>
-<span class="sd">    radii          : radii defining the Earth&#39;s layer (ndarray)</span>
+<span class="sd">    radii          : radii defining the Earth's layer (ndarray)</span>
 <span class="sd">    coszen         : coszen values corresponding to the radii above (ndarray)</span>
 <span class="sd">    max_layers     : maximum number of layers it is possible to cross (int)</span>
 
@@ -353,7 +353,7 @@
 <span class="sd">    density_neutron_weighted : array of neutron-weighted densities, flattened from (cz, max_layers)</span>
 <span class="sd">    distance : array of distances per layer, flattened from (cz, max_layers)</span>
 <span class="sd">    </span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># The densities, distances and number of layers are appended to one long list</span>
     <span class="c1"># which is later reshaped into containers of size (# of cz values, max_layers)</span>
@@ -458,7 +458,7 @@
 <div class="viewcode-block" id="Layers">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Layers</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculate the path through earth for a given layer model with densities</span>
 <span class="sd">    (PREM [1]), the electron fractions (Ye) and an array of coszen values</span>
 
@@ -478,7 +478,7 @@
 <span class="sd">    ----------</span>
 <span class="sd">    max_layers : int</span>
 <span class="sd">            maximum number of layers (this is important for the shape of the</span>
-<span class="sd">            output! if less than maximumm number of layers are crossed, it&#39;s</span>
+<span class="sd">            output! if less than maximumm number of layers are crossed, it's</span>
 <span class="sd">            filled up with 0s</span>
 
 <span class="sd">    n_layers : 1d int array of length len(cz)</span>
@@ -495,12 +495,12 @@
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    [1] A.M. Dziewonski and D.L. Anderson (1981) &quot;Preliminary reference</span>
-<span class="sd">        Earth model,&quot; Physics of the Earth and Planetary Interiors, 25(4),</span>
+<span class="sd">    [1] A.M. Dziewonski and D.L. Anderson (1981) "Preliminary reference</span>
+<span class="sd">        Earth model," Physics of the Earth and Planetary Interiors, 25(4),</span>
 <span class="sd">        pp. 297 – 356.</span>
 <span class="sd">        http://www.sciencedirect.com/science/article/pii/300031920181900467</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prem_file</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">2.</span><span class="p">):</span>
         <span class="c1"># Load earth model</span>
         <span class="k">if</span> <span class="n">prem_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
@@ -509,8 +509,8 @@
 
             <span class="c1"># The following radii and densities are extracted in reverse order</span>
             <span class="c1"># w.r.t the file. The first elements of the arrays below corresponds</span>
-            <span class="c1"># the Earth&#39;s surface, and the following numbers go deeper toward the </span>
-            <span class="c1"># planet&#39;s core</span>
+            <span class="c1"># the Earth's surface, and the following numbers go deeper toward the </span>
+            <span class="c1"># planet's core</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rhos_unweighted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prem</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prem</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rhos_neutron_weighted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prem</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
@@ -540,9 +540,9 @@
         <span class="c1">#</span>
         <span class="c1"># Make some checks about the input production height and detector depth</span>
         <span class="c1">#</span>
-        <span class="k">assert</span> <span class="n">detector_depth</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;ERROR: detector depth must be a positive value&#39;</span>
-        <span class="k">assert</span> <span class="n">detector_depth</span> <span class="o">&lt;=</span> <span class="n">r_earth</span><span class="p">,</span> <span class="s1">&#39;ERROR: detector depth is deeper than one Earth radius!&#39;</span>
-        <span class="k">assert</span> <span class="n">prop_height</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;ERROR: neutrino production height must be positive&#39;</span>
+        <span class="k">assert</span> <span class="n">detector_depth</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">'ERROR: detector depth must be a positive value'</span>
+        <span class="k">assert</span> <span class="n">detector_depth</span> <span class="o">&lt;=</span> <span class="n">r_earth</span><span class="p">,</span> <span class="s1">'ERROR: detector depth is deeper than one Earth radius!'</span>
+        <span class="k">assert</span> <span class="n">prop_height</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">'ERROR: neutrino production height must be positive'</span>
 
         <span class="c1"># Set some other</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">r_detector</span> <span class="o">=</span> <span class="n">r_earth</span> <span class="o">-</span> <span class="n">detector_depth</span>
@@ -558,7 +558,7 @@
 <div class="viewcode-block" id="Layers.setElecFrac">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.setElecFrac">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setElecFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">YeI</span><span class="p">,</span> <span class="n">YeO</span><span class="p">,</span> <span class="n">YeM</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set electron fractions of inner core, outer core, and mantle.</span>
+<span class="w">        </span><span class="sd">"""Set electron fractions of inner core, outer core, and mantle.</span>
 <span class="sd">        Locations of boundaries between each layer come from PREM.</span>
 
 <span class="sd">        Parameters</span>
@@ -567,9 +567,9 @@
 <span class="sd">            Three electron fractions (Ye), where I=inner core, O=outer core,</span>
 <span class="sd">            and M=mantle</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span> <span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot set electron fraction when not using an Earth model&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot set electron fraction when not using an Earth model"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">YeI</span><span class="p">,</span> <span class="n">YeO</span><span class="p">,</span> <span class="n">YeM</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span> <span class="o">-</span> <span class="n">YeI</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">YeO</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">YeM</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
@@ -582,27 +582,27 @@
 <div class="viewcode-block" id="Layers.scaling">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.scaling">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">scaling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scaling_array</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Multplies scaling factor with densities from earth model</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        scaling_array : numpy array containing scaling factors for different layers.        </span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;prem&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">'prem'</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prem</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">FTYPE</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">scaling_array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">*</span> <span class="n">scaling_array</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhos</span><span class="p">))</span>      
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot scale densities when not using an Earth model&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot scale densities when not using an Earth model"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Layers.computeMinLengthToLayers">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.computeMinLengthToLayers">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">computeMinLengthToLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">'''</span>
 <span class="sd">        Deterine the coszen values for which a track will </span>
 <span class="sd">        be tangeant to a given layer.</span>
 
@@ -618,7 +618,7 @@
 <span class="sd">        that angle can then be expressed back into a cosine using</span>
 <span class="sd">        trigonometric identities</span>
 
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        '''</span>
         <span class="n">coszen_limit</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1"># First element of self.radii is largest radius!</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">rad</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radii</span><span class="p">):</span>
@@ -636,17 +636,17 @@
 <div class="viewcode-block" id="Layers.calcLayers">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.calcLayers">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">calcLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cz</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        cz : 1d float array</span>
 <span class="sd">            Array of coszen values</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot calculate layers when not using an Earth model&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot calculate layers when not using an Earth model"</span><span class="p">)</span>
 
         <span class="c1"># run external function</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_n_layers</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density_neutron_weighted</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_distance</span> <span class="o">=</span> <span class="n">extCalcLayers</span><span class="p">(</span>
@@ -665,19 +665,19 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">n_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot get layers when not using an Earth model&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot get layers when not using an Earth model"</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_layers</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">density</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot get density when not using an Earth model&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot get density when not using an Earth model"</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">density_neutron_weighted</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">using_earth_model</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot get density when not using an Earth model&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot get density when not using an Earth model"</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density_neutron_weighted</span>
 
     <span class="nd">@property</span>
@@ -688,7 +688,7 @@
 <div class="viewcode-block" id="Layers.calcPathLength">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.calcPathLength">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">calcPathLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cz</span><span class="p">)</span> <span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 
 <span class="sd">        Calculate path length of the neutrino through an Earth-sized sphere, given the </span>
 <span class="sd">        production height, detector depth and zenith angle.</span>
@@ -698,10 +698,10 @@
 <span class="sd">        ----------</span>
 <span class="sd">        cz : cos(zenith angle), either single float value or an array of float values</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">r_prop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">r_detector</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector_depth</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prop_height</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cz</span><span class="p">,</span><span class="s2">&quot;__len__&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cz</span><span class="p">,</span><span class="s2">"__len__"</span><span class="p">):</span>
             <span class="n">cz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">cz</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">cz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cz</span><span class="p">)</span>
@@ -714,21 +714,21 @@
 <div class="viewcode-block" id="Layers.weight_density_to_YeFrac">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.weight_density_to_YeFrac">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">weight_density_to_YeFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">        </span><span class="sd">'''</span>
 <span class="sd">        Adjust the densities of the provided earth model layers</span>
 <span class="sd">        for the different electron fractions in the inner core,</span>
 <span class="sd">        outer core and mantle.</span>
-<span class="sd">        &#39;&#39;&#39;</span>
+<span class="sd">        '''</span>
 
         <span class="c1"># TODO make this generic</span>
         <span class="n">R_INNER</span> <span class="o">=</span> <span class="mf">1221.5</span>
         <span class="n">R_OUTER</span> <span class="o">=</span> <span class="mf">3480.</span>
         <span class="n">R_MANTLE</span><span class="o">=</span> <span class="mf">6371.</span> <span class="c1"># the crust is assumed to have the same electron fraction as the mantle</span>
 
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;ERROR: YeFrac must be an array of size 3&#39;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">YeFrac</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">'ERROR: YeFrac must be an array of size 3'</span>
         <span class="c1">#</span>
         <span class="c1"># TODO: insert extra radii is the electron density boundaries</span>
-        <span class="c1">#       don&#39;t match the current layer boundaries</span>
+        <span class="c1">#       don't match the current layer boundaries</span>
 
         <span class="c1">#</span>
         <span class="c1"># Weight the density properly (always need to start from the</span>
@@ -747,11 +747,11 @@
 <div class="viewcode-block" id="Layers.weight_density_to_YnFrac">
 <a class="viewcode-back" href="../../../../pisa.stages.osc.html#pisa.stages.osc.layers.Layers.weight_density_to_YnFrac">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">weight_density_to_YnFrac</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Adjust the densities of the provided earth model layers</span>
 <span class="sd">        for the different neutron fractions in the inner core,</span>
 <span class="sd">        outer core and mantle.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># TODO make this generic</span>
         <span class="n">R_INNER</span> <span class="o">=</span> <span class="mf">1221.5</span>
@@ -760,10 +760,10 @@
 
         <span class="k">assert</span> <span class="p">(</span>
             <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">YnFrac</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
-        <span class="p">),</span> <span class="s2">&quot;ERROR: YnFrac must be an array of size 3&quot;</span>
+        <span class="p">),</span> <span class="s2">"ERROR: YnFrac must be an array of size 3"</span>
         <span class="c1">#</span>
         <span class="c1"># TODO: insert extra radii is the electron density boundaries</span>
-        <span class="c1">#       don&#39;t match the current layer boundaries</span>
+        <span class="c1">#       don't match the current layer boundaries</span>
 
         <span class="c1">#</span>
         <span class="c1"># Weight the density properly (always need to start from the</span>
@@ -794,26 +794,26 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_layers_1</span><span class="p">():</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Test layers calculation:&#39;</span><span class="p">)</span>
-    <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">&#39;osc/PREM_4layer.dat&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Test layers calculation:'</span><span class="p">)</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">'osc/PREM_4layer.dat'</span><span class="p">)</span>
     <span class="n">layer</span><span class="o">.</span><span class="n">setElecFrac</span><span class="p">(</span><span class="mf">0.4656</span><span class="p">,</span> <span class="mf">0.4656</span><span class="p">,</span> <span class="mf">0.4957</span><span class="p">)</span>
     <span class="n">cz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e5</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
     <span class="n">layer</span><span class="o">.</span><span class="n">calcLayers</span><span class="p">(</span><span class="n">cz</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;n_layers = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">n_layers</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;density  = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;distance = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">distance</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'n_layers = </span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">n_layers</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'density  = </span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'distance = </span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">distance</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Test path length calculation:&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Test path length calculation:'</span><span class="p">)</span>
     <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
     <span class="n">cz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="o">-</span><span class="mf">1.</span><span class="p">])</span>
     <span class="n">layer</span><span class="o">.</span><span class="n">calcPathLength</span><span class="p">(</span><span class="n">cz</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;coszen = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">cz</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;pathlengths = </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">distance</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'coszen = </span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span><span class="n">cz</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'pathlengths = </span><span class="si">%s</span><span class="s1">'</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">distance</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Layers 1 &gt;&gt;&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'&lt;&lt; PASS : test_Layers 1 &gt;&gt;'</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_layers_2</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    Validate the total distance travered,</span>
 <span class="sd">    the number of layers crossed and the distance</span>
 <span class="sd">    travelled in each of these layers, for </span>
@@ -822,13 +822,13 @@
 <span class="sd">    also test separately the calculation of critical</span>
 <span class="sd">    zenith boundaries for any particular layer, as</span>
 <span class="sd">    calculated by computeMinLengthToLayers</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
     <span class="c1">#</span>
     <span class="c1"># The test file is a 4-layer PREM Earth model. The</span>
     <span class="c1"># file contains the following information:</span>
     <span class="c1">#</span>
-    <span class="c1"># Distance to Earth&#39;s core [km]     density []</span>
+    <span class="c1"># Distance to Earth's core [km]     density []</span>
     <span class="c1"># -----------------------------     ----------</span>
     <span class="c1">#               0.                     13.0</span>
     <span class="c1">#             1220.0                   13.0</span>
@@ -854,14 +854,14 @@
     <span class="c1"># Note that if the layer is above the detector depth,</span>
     <span class="c1"># The critical coszen is set to 0.</span>
     <span class="c1">#</span>
-    <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">&#39;osc/PREM_4layer.dat&#39;</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">20.</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;detector depth = </span><span class="si">%s</span><span class="s1"> km&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">detector_depth</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Detector radius = </span><span class="si">%s</span><span class="s1"> km&#39;</span><span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">r_detector</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Neutrino production height = </span><span class="si">%s</span><span class="s1"> km&#39;</span><span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">prop_height</span><span class="p">)</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">'osc/PREM_4layer.dat'</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">20.</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'detector depth = </span><span class="si">%s</span><span class="s1"> km'</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">detector_depth</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Detector radius = </span><span class="si">%s</span><span class="s1"> km'</span><span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">r_detector</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Neutrino production height = </span><span class="si">%s</span><span class="s1"> km'</span><span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">prop_height</span><span class="p">)</span>
     <span class="n">layer</span><span class="o">.</span><span class="n">computeMinLengthToLayers</span><span class="p">()</span>
     <span class="n">ref_cz_crit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4461133826191877</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.8375825182106081</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.9814881717430358</span><span class="p">,</span>  <span class="o">-</span><span class="mf">1.</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Asserting Critical coszen values...&#39;</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">coszen_limit</span><span class="p">,</span> <span class="n">ref_cz_crit</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">layer</span><span class="o">.</span><span class="n">coszen_limit</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref_cz_crit</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Asserting Critical coszen values...'</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">coszen_limit</span><span class="p">,</span> <span class="n">ref_cz_crit</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s1">'test:</span><span class="se">\n</span><span class="si">{</span><span class="n">layer</span><span class="o">.</span><span class="n">coszen_limit</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">ref_cz_crit</span><span class="si">}</span><span class="s1">'</span>
 
     <span class="c1">#</span>
     <span class="c1"># TEST II: Verify total path length (in vacuum)</span>
@@ -881,9 +881,9 @@
                               <span class="mf">3376.716060094899</span><span class="p">,</span> <span class="mf">7343.854310588515</span><span class="p">,</span> <span class="mf">12567.773643090592</span><span class="p">,</span> <span class="mf">12761.</span><span class="p">])</span>
     <span class="n">layer</span><span class="o">.</span><span class="n">calcPathLength</span><span class="p">(</span><span class="n">input_cz</span><span class="p">)</span>
     <span class="n">computed_length</span> <span class="o">=</span> <span class="n">layer</span><span class="o">.</span><span class="n">distance</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Testing full path in vacuum calculations...&#39;</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">computed_length</span><span class="p">,</span> <span class="n">correct_length</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;test:</span><span class="se">\n</span><span class="si">{</span><span class="n">computed_length</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">correct_length</span><span class="si">}</span><span class="s1">&#39;</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Layers 2 &gt;&gt;&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Testing full path in vacuum calculations...'</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">computed_length</span><span class="p">,</span> <span class="n">correct_length</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="sa">f</span><span class="s1">'test:</span><span class="se">\n</span><span class="si">{</span><span class="n">computed_length</span><span class="si">}</span><span class="se">\n</span><span class="s1">!= ref:</span><span class="se">\n</span><span class="si">{</span><span class="n">correct_length</span><span class="si">}</span><span class="s1">'</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'&lt;&lt; PASS : test_Layers 2 &gt;&gt;'</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_layers_3</span><span class="p">():</span>
     <span class="c1">#</span>
@@ -903,11 +903,11 @@
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Testing Earth layer segments and density computations...&#39;</span><span class="p">)</span>
-    <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">&#39;osc/PREM_4layer.dat&#39;</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">20.</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;detector depth = </span><span class="si">%s</span><span class="s1"> km&#39;</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">detector_depth</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Detector radius = </span><span class="si">%s</span><span class="s1"> km&#39;</span><span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">r_detector</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Neutrino production height = </span><span class="si">%s</span><span class="s1"> km&#39;</span><span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">prop_height</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Testing Earth layer segments and density computations...'</span><span class="p">)</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">'osc/PREM_4layer.dat'</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">20.</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'detector depth = </span><span class="si">%s</span><span class="s1"> km'</span> <span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">detector_depth</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Detector radius = </span><span class="si">%s</span><span class="s1"> km'</span><span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">r_detector</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Neutrino production height = </span><span class="si">%s</span><span class="s1"> km'</span><span class="o">%</span><span class="n">layer</span><span class="o">.</span><span class="n">prop_height</span><span class="p">)</span>
     <span class="n">layer</span><span class="o">.</span><span class="n">computeMinLengthToLayers</span><span class="p">()</span>
 
     <span class="c1"># Define some electron densities</span>
@@ -943,50 +943,50 @@
 
     <span class="c1"># Print out the outcome of the layer calculations</span>
     <span class="c1"># Compare total segmented lengh with total vacuum path length</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Down-going neutrino (coszen = 1):</span><span class="se">\n</span><span class="s1">-------------&#39;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;number of layers: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layers_crossed</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Densities crossed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">density_segments</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Segment lengths: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Down-going neutrino (coszen = 1):</span><span class="se">\n</span><span class="s1">-------------'</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"number of layers: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layers_crossed</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Densities crossed: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">density_segments</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Segment lengths: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]))</span>
     <span class="n">correct_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span> <span class="n">correct_path</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">&#39;ERROR in downgoing neutrino path: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">correct_path</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span> <span class="n">correct_path</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">'ERROR in downgoing neutrino path: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">0</span><span class="p">,:],</span><span class="n">correct_path</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Horizontal neutrino (coszen = 0):</span><span class="se">\n</span><span class="s1">-------------&#39;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;number of layers: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layers_crossed</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Densities crossed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">density_segments</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Segment lengths: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Horizontal neutrino (coszen = 0):</span><span class="se">\n</span><span class="s1">-------------'</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"number of layers: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layers_crossed</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Densities crossed: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">density_segments</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Segment lengths: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]))</span>
     <span class="n">correct_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">404.79277484435556</span><span class="p">,</span> <span class="mf">112.87603820120549</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">correct_path</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">&#39;ERROR in horizontal neutrino path: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">1</span><span class="p">,:],</span><span class="n">correct_path</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">correct_path</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">'ERROR in horizontal neutrino path: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">1</span><span class="p">,:],</span><span class="n">correct_path</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Neutrino tangeant to the first inner layer (coszen = -0.4461133826191877):</span><span class="se">\n</span><span class="s1">-------------</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;number of layers: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">n_layers</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Densities crossed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">density_segments</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Segment lengths: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Neutrino tangeant to the first inner layer (coszen = -0.4461133826191877):</span><span class="se">\n</span><span class="s1">-------------</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"number of layers: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">n_layers</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Densities crossed: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">density_segments</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Segment lengths: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]))</span>
     <span class="n">correct_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">44.525143211129944</span><span class="p">,</span> <span class="mf">5685.725369597015</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">2</span><span class="p">,:],</span> <span class="n">correct_path</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">&#39;ERROR in tangeant neutrino path: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">2</span><span class="p">,:],</span><span class="n">correct_path</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">2</span><span class="p">,:],</span> <span class="n">correct_path</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">'ERROR in tangeant neutrino path: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">2</span><span class="p">,:],</span><span class="n">correct_path</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Up-going neutrino (coszen = -1):</span><span class="se">\n</span><span class="s1">-------------&#39;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;number of layers: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">n_layers</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Densities crossed: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">density_segments</span><span class="p">[</span><span class="mi">3</span><span class="p">,:]))</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Segment lengths: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">3</span><span class="p">,:]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Up-going neutrino (coszen = -1):</span><span class="se">\n</span><span class="s1">-------------'</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"number of layers: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">n_layers</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Densities crossed: </span><span class="si">{}</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">density_segments</span><span class="p">[</span><span class="mi">3</span><span class="p">,:]))</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Segment lengths: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">3</span><span class="p">,:]))</span>
     <span class="n">correct_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">20.</span><span class="p">,</span> <span class="mf">670.</span><span class="p">,</span> <span class="mf">2221.</span><span class="p">,</span> <span class="mf">2260.</span><span class="p">,</span> <span class="mf">2440.</span><span class="p">,</span> <span class="mf">2260.</span><span class="p">,</span> <span class="mf">2221.</span><span class="p">,</span> <span class="mf">669.</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">3</span><span class="p">,:],</span> <span class="n">correct_path</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">&#39;ERROR in upgoing neutrino path: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">3</span><span class="p">,:],</span><span class="n">correct_path</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">3</span><span class="p">,:],</span> <span class="n">correct_path</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">'ERROR in upgoing neutrino path: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">[</span><span class="mi">3</span><span class="p">,:],</span><span class="n">correct_path</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Comparing the segments sums with the total path in vacuum...&#39;</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">vacuum_distances</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">&#39;ERROR: distance mismatch: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">vacuum_distances</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'Comparing the segments sums with the total path in vacuum...'</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">vacuum_distances</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> <span class="s1">'ERROR: distance mismatch: </span><span class="si">{0}</span><span class="s1"> vs </span><span class="si">{1}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">distance_segments</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">vacuum_distances</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Layers 3 &gt;&gt;&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'&lt;&lt; PASS : test_Layers 3 &gt;&gt;'</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_layers_4</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sd">'''</span>
 <span class="sd">    TEST IV: Verify that repeatedly setting electron fractions yields</span>
 <span class="sd">    consistent densities (see issue #868).</span>
-<span class="sd">    &#39;&#39;&#39;</span>
+<span class="sd">    '''</span>
     <span class="c1"># pylint: disable=import-outside-toplevel</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.comparisons</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALLCLOSE_KW</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Testing reproducibility of electron fraction modifications...&#39;</span><span class="p">)</span>
-    <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">&#39;osc/PREM_4layer.dat&#39;</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">20.</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Testing reproducibility of electron fraction modifications...'</span><span class="p">)</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">Layers</span><span class="p">(</span><span class="s1">'osc/PREM_4layer.dat'</span><span class="p">,</span> <span class="n">detector_depth</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span> <span class="n">prop_height</span><span class="o">=</span><span class="mf">20.</span><span class="p">)</span>
     <span class="c1"># store the unweighted density at initialization for later comparison</span>
     <span class="n">rhos_unweighted_initial</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">rhos_unweighted</span><span class="p">)</span>
 
@@ -1001,8 +1001,8 @@
     <span class="c1"># store first results</span>
     <span class="n">density_1st_call</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;First setElecFrac call (YeI=0.4656, YeO=0.4656, YeM=0.4957):&#39;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;  density: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">density_1st_call</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'First setElecFrac call (YeI=0.4656, YeO=0.4656, YeM=0.4957):'</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'  density: </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">density_1st_call</span><span class="p">)</span>
 
     <span class="c1"># change electron fractions to different values</span>
     <span class="n">YeI_2</span><span class="p">,</span> <span class="n">YeO_2</span><span class="p">,</span> <span class="n">YeM_2</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span>
@@ -1012,8 +1012,8 @@
     <span class="n">density_2nd_call</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
     <span class="n">rhos_2nd_call</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">rhos</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Second setElecFrac call (YeI=0.5, YeO=0.5, YeM=0.5):&#39;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;  density: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">density_2nd_call</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Second setElecFrac call (YeI=0.5, YeO=0.5, YeM=0.5):'</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'  density: </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">density_2nd_call</span><span class="p">)</span>
 
     <span class="c1"># Manually compute expected weighted densities from unweighted reference</span>
     <span class="c1"># to verify the calculation is correct</span>
@@ -1028,7 +1028,7 @@
     <span class="p">)</span>
 
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">rhos_2nd_call</span><span class="p">,</span> <span class="n">expected_rhos_2nd</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
-        <span class="s1">&#39;FAILED: Second call densities do not match expected calculation.&#39;</span>
+        <span class="s1">'FAILED: Second call densities do not match expected calculation.'</span>
 
     <span class="c1"># reset back to original electron fractions</span>
     <span class="n">layer</span><span class="o">.</span><span class="n">setElecFrac</span><span class="p">(</span><span class="n">YeI_1</span><span class="p">,</span> <span class="n">YeO_1</span><span class="p">,</span> <span class="n">YeM_1</span><span class="p">)</span>
@@ -1036,8 +1036,8 @@
 
     <span class="n">density_reset_call</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Reset to original setElecFrac call (YeI=0.4656, YeO=0.4656, YeM=0.4957):&#39;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;  density: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">density_reset_call</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Reset to original setElecFrac call (YeI=0.4656, YeO=0.4656, YeM=0.4957):'</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'  density: </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">density_reset_call</span><span class="p">)</span>
 
     <span class="c1"># call once more to verify consistency</span>
     <span class="n">layer</span><span class="o">.</span><span class="n">setElecFrac</span><span class="p">(</span><span class="n">YeI_1</span><span class="p">,</span> <span class="n">YeO_1</span><span class="p">,</span> <span class="n">YeM_1</span><span class="p">)</span>
@@ -1045,44 +1045,44 @@
 
     <span class="n">density_final_call</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">density</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Final setElecFrac call (same as first):&#39;</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;  density: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">density_final_call</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Final setElecFrac call (same as first):'</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'  density: </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">density_final_call</span><span class="p">)</span>
 
     <span class="c1"># assertions</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Asserting density reproducibility...&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Asserting density reproducibility...'</span><span class="p">)</span>
 
     <span class="c1"># resetting to original fractions should give original densities</span>
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">density_1st_call</span><span class="p">,</span> <span class="n">density_reset_call</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
-        <span class="sa">f</span><span class="s1">&#39;FAILED: Resetting to original fractions should reproduce original densities.</span><span class="se">\n</span><span class="s1">&#39;</span> \
-        <span class="sa">f</span><span class="s1">&#39;First call: </span><span class="si">{</span><span class="n">density_1st_call</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span> \
-        <span class="sa">f</span><span class="s1">&#39;Reset call: </span><span class="si">{</span><span class="n">density_reset_call</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="sa">f</span><span class="s1">'FAILED: Resetting to original fractions should reproduce original densities.</span><span class="se">\n</span><span class="s1">'</span> \
+        <span class="sa">f</span><span class="s1">'First call: </span><span class="si">{</span><span class="n">density_1st_call</span><span class="si">}</span><span class="se">\n</span><span class="s1">'</span> \
+        <span class="sa">f</span><span class="s1">'Reset call: </span><span class="si">{</span><span class="n">density_reset_call</span><span class="si">}</span><span class="s1">'</span>
 
     <span class="c1"># multiple identical calls should give identical results</span>
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">density_reset_call</span><span class="p">,</span> <span class="n">density_final_call</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
-        <span class="sa">f</span><span class="s1">&#39;FAILED: Multiple identical setElecFrac calls should produce identical results.</span><span class="se">\n</span><span class="s1">&#39;</span> \
-        <span class="sa">f</span><span class="s1">&#39;Reset call: </span><span class="si">{</span><span class="n">density_reset_call</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span> \
-        <span class="sa">f</span><span class="s1">&#39;Final call: </span><span class="si">{</span><span class="n">density_final_call</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="sa">f</span><span class="s1">'FAILED: Multiple identical setElecFrac calls should produce identical results.</span><span class="se">\n</span><span class="s1">'</span> \
+        <span class="sa">f</span><span class="s1">'Reset call: </span><span class="si">{</span><span class="n">density_reset_call</span><span class="si">}</span><span class="se">\n</span><span class="s1">'</span> \
+        <span class="sa">f</span><span class="s1">'Final call: </span><span class="si">{</span><span class="n">density_final_call</span><span class="si">}</span><span class="s1">'</span>
 
     <span class="c1"># verify that changing fractions actually changes densities</span>
     <span class="k">assert</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">density_1st_call</span><span class="p">,</span> <span class="n">density_2nd_call</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
-        <span class="sa">f</span><span class="s1">&#39;FAILED: Different electron fractions should produce different densities.</span><span class="se">\n</span><span class="s1">&#39;</span> \
-        <span class="sa">f</span><span class="s1">&#39;First call: </span><span class="si">{</span><span class="n">density_1st_call</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span> \
-        <span class="sa">f</span><span class="s1">&#39;Second call: </span><span class="si">{</span><span class="n">density_2nd_call</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="sa">f</span><span class="s1">'FAILED: Different electron fractions should produce different densities.</span><span class="se">\n</span><span class="s1">'</span> \
+        <span class="sa">f</span><span class="s1">'First call: </span><span class="si">{</span><span class="n">density_1st_call</span><span class="si">}</span><span class="se">\n</span><span class="s1">'</span> \
+        <span class="sa">f</span><span class="s1">'Second call: </span><span class="si">{</span><span class="n">density_2nd_call</span><span class="si">}</span><span class="s1">'</span>
 
     <span class="c1"># verify rhos_unweighted remains constant (it should never change)</span>
     <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">rhos_unweighted_initial</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">rhos_unweighted</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
-        <span class="s1">&#39;FAILED: rhos_unweighted should not change across setElecFrac calls&#39;</span>
+        <span class="s1">'FAILED: rhos_unweighted should not change across setElecFrac calls'</span>
 
     <span class="c1"># test that electron + neutron fractions sum to 1 for each layer region</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">YeFrac</span><span class="p">,</span> <span class="n">YnFrac</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">YeFrac</span><span class="p">,</span> <span class="n">layer</span><span class="o">.</span><span class="n">YnFrac</span><span class="p">)):</span>
         <span class="c1"># each Ye and Yn pair should sum to 1</span>
         <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">YeFrac</span> <span class="o">+</span> <span class="n">YnFrac</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">ALLCLOSE_KW</span><span class="p">),</span> \
-            <span class="sa">f</span><span class="s1">&#39;FAILED: YeFrac[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">] + YnFrac[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">] != 1.0&#39;</span>
+            <span class="sa">f</span><span class="s1">'FAILED: YeFrac[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">] + YnFrac[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">] != 1.0'</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_Layers 4 &gt;&gt;&#39;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'&lt;&lt; PASS : test_Layers 4 &gt;&gt;'</span><span class="p">)</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">'__main__'</span><span class="p">:</span>
     <span class="n">set_verbosity</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
     <span class="n">test_layers_1</span><span class="p">()</span>
     <span class="n">test_layers_2</span><span class="p">()</span>
@@ -1127,7 +1127,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

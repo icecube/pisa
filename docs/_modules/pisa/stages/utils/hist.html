@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.utils.hist - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.utils.hist - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,10 +281,10 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.utils.hist</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Stage to transform arrays with weights into actual `histograms`</span>
 <span class="sd">that represent event counts</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -294,13 +294,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;hist&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'hist'</span><span class="p">,</span> <span class="s1">'init_test'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="hist">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.hist.hist">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">hist</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stage to histogram events</span>
+<span class="w">    </span><span class="sd">"""Stage to histogram events</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -313,8 +313,8 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;weights&quot;, &quot;unc_weights&quot; (if `apply_unc_weights`)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "weights", "unc_weights" (if `apply_unc_weights`)</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -323,15 +323,15 @@
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s1">&#39;weights&#39;</span>
+            <span class="s1">'weights'</span>
         <span class="p">]</span>
         <span class="k">if</span> <span class="n">apply_unc_weights</span><span class="p">:</span>
-            <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;unc_weights&#39;</span><span class="p">)</span>
+            <span class="n">expected_container_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'unc_weights'</span><span class="p">)</span>
 
         <span class="c1"># apply_mode can be detected automatically for convenience</span>
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">,</span> <span class="s2">&quot;events&quot;</span><span class="p">],</span>
-            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">],</span>
+            <span class="s1">'calc_mode'</span><span class="p">:</span> <span class="p">[</span><span class="n">MultiDimBinning</span><span class="p">,</span> <span class="s2">"events"</span><span class="p">],</span>
+            <span class="s1">'apply_mode'</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">],</span>
         <span class="p">}</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -349,9 +349,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;output_binning&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"output_binning"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;output_binning&quot;</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"output_binning"</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">):</span>
 
@@ -360,17 +360,17 @@
 
             <span class="n">transform_binning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
 
-            <span class="c1"># go to &quot;events&quot; mode to create the transforms</span>
+            <span class="c1"># go to "events" mode to create the transforms</span>
 
             <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">"events"</span>
                 <span class="n">sample</span> <span class="o">=</span> <span class="p">[</span><span class="n">container</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">transform_binning</span><span class="o">.</span><span class="n">names</span><span class="p">]</span>
                 <span class="n">hist</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">transform_binning</span><span class="p">,</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                 <span class="n">transform</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hist_transform&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">transform</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"hist_transform"</span><span class="p">]</span> <span class="o">=</span> <span class="n">transform</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">"events"</span><span class="p">:</span>
             <span class="c1"># For dimensions where the binning is irregular, we pre-compute the</span>
             <span class="c1"># index that each sample falls into and then bin regularly in the index.</span>
             <span class="c1"># For dimensions that are logarithmic, we add a linear binning in</span>
@@ -379,18 +379,18 @@
             <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">dim</span><span class="o">.</span><span class="n">is_irregular</span><span class="p">:</span>
                     <span class="c1"># create a new axis with digitized variable</span>
-                    <span class="n">varname</span> <span class="o">=</span> <span class="n">dim</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_idx&quot;</span>
+                    <span class="n">varname</span> <span class="o">=</span> <span class="n">dim</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">"__"</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">"_idx"</span>
                     <span class="n">new_dim</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
                         <span class="n">varname</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="o">.</span><span class="n">num_bins</span><span class="p">],</span> <span class="n">num_bins</span><span class="o">=</span><span class="n">dim</span><span class="o">.</span><span class="n">num_bins</span>
                     <span class="p">)</span>
                     <span class="n">dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_dim</span><span class="p">)</span>
                     <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-                        <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+                        <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">"events"</span>
                         <span class="n">x</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">*</span> <span class="n">dim</span><span class="o">.</span><span class="n">units</span>
                         <span class="c1"># Compute the bin index each sample would fall into, and</span>
                         <span class="c1"># shift by -1 such that samples below the binning range</span>
                         <span class="c1"># get assigned the index -1.</span>
-                        <span class="n">x_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">dim</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                        <span class="n">x_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">dim</span><span class="o">.</span><span class="n">bin_edges</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
                         <span class="c1"># To be consistent with numpy histogramming, we need to</span>
                         <span class="c1"># shift those values that are exactly at the uppermost edge</span>
                         <span class="c1"># down one index such that they are included in the highest</span>
@@ -399,7 +399,7 @@
                         <span class="n">x_idx</span><span class="p">[</span><span class="n">on_edge</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
                         <span class="n">container</span><span class="p">[</span><span class="n">varname</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_idx</span>
                 <span class="k">elif</span> <span class="n">dim</span><span class="o">.</span><span class="n">is_log</span><span class="p">:</span>
-                    <span class="c1"># We don&#39;t compute the log of the variable just yet, this</span>
+                    <span class="c1"># We don't compute the log of the variable just yet, this</span>
                     <span class="c1"># will be done later during `apply_function` using the</span>
                     <span class="c1"># representation mechanism.</span>
                     <span class="n">new_dim</span> <span class="o">=</span> <span class="n">OneDimBinning</span><span class="p">(</span>
@@ -408,9 +408,9 @@
                     <span class="n">dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_dim</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">dimensions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;regularized_output_binning&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">dimensions</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"regularized_output_binning"</span><span class="p">]</span> <span class="o">=</span> <span class="n">MultiDimBinning</span><span class="p">(</span><span class="n">dimensions</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="s2">&quot;Using regularized binning:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;regularized_output_binning&quot;</span><span class="p">])</span>
+                <span class="s2">"Using regularized binning:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"regularized_output_binning"</span><span class="p">])</span>
             <span class="p">)</span></div>
 
 
@@ -423,63 +423,63 @@
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unweighted</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                    <span class="s2">&quot;Unweighted hist only implemented in event-wise calculation&quot;</span>
+                    <span class="s2">"Unweighted hist only implemented in event-wise calculation"</span>
                 <span class="p">)</span>
             <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
 
                 <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
-                <span class="k">if</span> <span class="s2">&quot;astro_weights&quot;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
-                    <span class="n">weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;astro_weights&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s2">"astro_weights"</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                    <span class="n">weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">+</span> <span class="n">container</span><span class="p">[</span><span class="s2">"astro_weights"</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
+                    <span class="n">weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_unc_weights</span><span class="p">:</span>
-                    <span class="n">unc_weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;unc_weights&quot;</span><span class="p">]</span>
+                    <span class="n">unc_weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"unc_weights"</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">unc_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-                <span class="n">transform</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;hist_transform&quot;</span><span class="p">]</span>
+                <span class="n">transform</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"hist_transform"</span><span class="p">]</span>
 
                 <span class="n">hist</span> <span class="o">=</span> <span class="p">(</span><span class="n">unc_weights</span><span class="o">*</span><span class="n">weights</span><span class="p">)</span> <span class="o">@</span> <span class="n">transform</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">&quot;sumw2&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">"sumw2"</span><span class="p">:</span>
                     <span class="n">sumw2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">unc_weights</span><span class="o">*</span><span class="n">weights</span><span class="p">)</span> <span class="o">@</span> <span class="n">transform</span>
                     <span class="n">bin_unc2</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">unc_weights</span><span class="p">)</span><span class="o">*</span><span class="n">weights</span><span class="p">)</span> <span class="o">@</span> <span class="n">transform</span>
 
                 <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">&quot;sumw2&quot;</span><span class="p">:</span>
-                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sumw2</span><span class="p">)</span>
-                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;bin_unc2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_unc2</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">"sumw2"</span><span class="p">:</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">"errors"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sumw2</span><span class="p">)</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">"bin_unc2"</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_unc2</span>
 
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">"events"</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
                 <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
                 <span class="n">sample</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="n">dims_log</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">is_log</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">]</span>
                 <span class="n">dims_ire</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">is_irregular</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">]</span>
                 <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">is_log</span><span class="p">,</span> <span class="n">is_ire</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;regularized_output_binning&quot;</span><span class="p">],</span> <span class="n">dims_log</span><span class="p">,</span> <span class="n">dims_ire</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"regularized_output_binning"</span><span class="p">],</span> <span class="n">dims_log</span><span class="p">,</span> <span class="n">dims_ire</span>
                 <span class="p">):</span>
                     <span class="k">if</span> <span class="n">is_log</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_ire</span><span class="p">:</span>
-                        <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;log_events&quot;</span>
+                        <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">"log_events"</span>
                         <span class="n">sample</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+                        <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">"events"</span>
                         <span class="n">sample</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">unweighted</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="s2">&quot;astro_weights&quot;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="s2">"astro_weights"</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
                         <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span>
-                            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;astro_weights&quot;</span><span class="p">]</span>
+                            <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">+</span> <span class="n">container</span><span class="p">[</span><span class="s2">"astro_weights"</span><span class="p">]</span>
                         <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">])</span>
+                        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">])</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="s2">&quot;astro_weights&quot;</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
-                        <span class="n">weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;astro_weights&quot;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="s2">"astro_weights"</span> <span class="ow">in</span> <span class="n">container</span><span class="o">.</span><span class="n">keys</span><span class="p">:</span>
+                        <span class="n">weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">+</span> <span class="n">container</span><span class="p">[</span><span class="s2">"astro_weights"</span><span class="p">]</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
+                        <span class="n">weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_unc_weights</span><span class="p">:</span>
-                    <span class="n">unc_weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;unc_weights&quot;</span><span class="p">]</span>
+                    <span class="n">unc_weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"unc_weights"</span><span class="p">]</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">unc_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 
@@ -488,24 +488,24 @@
                 <span class="n">hist</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span>
                     <span class="n">sample</span><span class="p">,</span>
                     <span class="n">unc_weights</span><span class="o">*</span><span class="n">weights</span><span class="p">,</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;regularized_output_binning&quot;</span><span class="p">],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"regularized_output_binning"</span><span class="p">],</span>
                     <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span>
                 <span class="p">)</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">&quot;sumw2&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">"sumw2"</span><span class="p">:</span>
                     <span class="n">sumw2</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">unc_weights</span><span class="o">*</span><span class="n">weights</span><span class="p">),</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;regularized_output_binning&quot;</span><span class="p">],</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"regularized_output_binning"</span><span class="p">],</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                     <span class="n">bin_unc2</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">unc_weights</span><span class="p">)</span><span class="o">*</span><span class="n">weights</span><span class="p">,</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;regularized_output_binning&quot;</span><span class="p">],</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"regularized_output_binning"</span><span class="p">],</span> <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
                 <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span>
-                <span class="c1"># Histogramming does not invalidate &quot;events&quot; representation</span>
-                <span class="n">container</span><span class="o">.</span><span class="n">validity</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">][</span><span class="nb">hash</span><span class="p">(</span><span class="s2">&quot;events&quot;</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span>
+                <span class="c1"># Histogramming does not invalidate "events" representation</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">validity</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">][</span><span class="nb">hash</span><span class="p">(</span><span class="s2">"events"</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">&quot;sumw2&quot;</span><span class="p">:</span>
-                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sumw2</span><span class="p">)</span>
-                    <span class="n">container</span><span class="p">[</span><span class="s2">&quot;bin_unc2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_unc2</span></div>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_method</span> <span class="o">==</span> <span class="s2">"sumw2"</span><span class="p">:</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">"errors"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sumw2</span><span class="p">)</span>
+                    <span class="n">container</span><span class="p">[</span><span class="s2">"bin_unc2"</span><span class="p">]</span> <span class="o">=</span> <span class="n">bin_unc2</span></div>
 </div>
 
 
@@ -513,8 +513,8 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.hist.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">hist</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">)</span></div>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
+    <span class="k">return</span> <span class="n">hist</span><span class="p">(</span><span class="n">calc_mode</span><span class="o">=</span><span class="s1">'events'</span><span class="p">)</span></div>
 
 </pre></div>
         </article>
@@ -555,7 +555,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

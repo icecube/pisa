@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.xsec.dis_sys - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.xsec.dis_sys - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,12 +281,12 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.xsec.dis_sys</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Stage to apply pre-calculated DIS uncertainties</span>
 <span class="sd">Study done by Maria Liubarska &amp; Juan Pablo Yanez, more information available here:</span>
 <span class="sd">https://drive.google.com/open?id=1SRBgIyX6kleYqDcvop6m0SInToAVhSX6</span>
 <span class="sd">ToDo: tech note being written, link here as soon as available</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
@@ -299,12 +299,12 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.profiler</span><span class="w"> </span><span class="kn">import</span> <span class="n">profile</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">from_file</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;dis_sys&#39;</span><span class="p">,</span> <span class="s1">&#39;apply_dis_sys&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'dis_sys'</span><span class="p">,</span> <span class="s1">'apply_dis_sys'</span><span class="p">,</span> <span class="s1">'init_test'</span><span class="p">]</span>
 
 <div class="viewcode-block" id="dis_sys">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.dis_sys.dis_sys">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">dis_sys</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span> <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stage to apply pre-calculated DIS systematics.</span>
 
 <span class="sd">    Parameters</span>
@@ -314,7 +314,7 @@
 <span class="sd">        True -&gt; vary the total and differential components together (param will then be: dis_csms)</span>
 
 <span class="sd">    extrapolation_type : string</span>
-<span class="sd">        choice of [&#39;constant&#39;, &#39;linear&#39;, &#39;higher&#39;]</span>
+<span class="sd">        choice of ['constant', 'linear', 'higher']</span>
 
 <span class="sd">    extrapolation_energy_threshold : float</span>
 <span class="sd">        Below what energy (in GeV) to extrapolate</span>
@@ -332,36 +332,36 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;true_energy&quot;, &quot;bjorken_y&quot;, &quot;dis&quot;, &quot;nubar&quot;, &quot;weights&quot;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "true_energy", "bjorken_y", "dis", "nubar", "weights"</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">extrapolation_type</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
-        <span class="n">extrapolation_energy_threshold</span><span class="o">=</span><span class="mi">100</span><span class="o">*</span><span class="n">ureg</span><span class="p">[</span><span class="s2">&quot;GeV&quot;</span><span class="p">],</span>
+        <span class="n">extrapolation_type</span><span class="o">=</span><span class="s1">'constant'</span><span class="p">,</span>
+        <span class="n">extrapolation_energy_threshold</span><span class="o">=</span><span class="mi">100</span><span class="o">*</span><span class="n">ureg</span><span class="p">[</span><span class="s2">"GeV"</span><span class="p">],</span>
         <span class="n">combine_components</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 
         <span class="k">if</span> <span class="n">combine_components</span> <span class="p">:</span>
             <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="s1">&#39;dis_csms&#39;</span><span class="p">,</span>
+                <span class="s1">'dis_csms'</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span> <span class="p">:</span>
             <span class="n">expected_params</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="s1">&#39;dis_csms_tot&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;dis_csms_diff&#39;</span><span class="p">,</span>
+                <span class="s1">'dis_csms_tot'</span><span class="p">,</span>
+                <span class="s1">'dis_csms_diff'</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;true_energy&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;bjorken_y&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;dis&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;nubar&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+            <span class="s1">'true_energy'</span><span class="p">,</span>
+            <span class="s1">'bjorken_y'</span><span class="p">,</span>
+            <span class="s1">'dis'</span><span class="p">,</span>
+            <span class="s1">'nubar'</span><span class="p">,</span>
+            <span class="s1">'weights'</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="c1"># explicitly sets &quot;events&quot; rep. in setup_function -&gt; be transparent</span>
+        <span class="c1"># explicitly sets "events" rep. in setup_function -&gt; be transparent</span>
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span>
+            <span class="s1">'calc_mode'</span><span class="p">:</span> <span class="s2">"events"</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -380,34 +380,34 @@
     <span class="nd">@profile</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
-        <span class="n">extrap_dict</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;cross_sections/tot_xsec_corr_Q2min1_isoscalar.pckl&#39;</span><span class="p">)</span>
+        <span class="n">extrap_dict</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">'cross_sections/tot_xsec_corr_Q2min1_isoscalar.pckl'</span><span class="p">)</span>
 
         <span class="c1"># load splines</span>
-        <span class="n">wf_nucc</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_CC_flat.pckl&#39;</span><span class="p">)</span>
-        <span class="n">wf_nubarcc</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_Bar_CC_flat.pckl&#39;</span><span class="p">)</span>
-        <span class="n">wf_nunc</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_NC_flat.pckl&#39;</span><span class="p">)</span>
-        <span class="n">wf_nubarnc</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_Bar_NC_flat.pckl&#39;</span><span class="p">)</span>
+        <span class="n">wf_nucc</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">'cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_CC_flat.pckl'</span><span class="p">)</span>
+        <span class="n">wf_nubarcc</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">'cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_Bar_CC_flat.pckl'</span><span class="p">)</span>
+        <span class="n">wf_nunc</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">'cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_NC_flat.pckl'</span><span class="p">)</span>
+        <span class="n">wf_nubarnc</span> <span class="o">=</span> <span class="n">from_file</span><span class="p">(</span><span class="s1">'cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_Bar_NC_flat.pckl'</span><span class="p">)</span>
 
         <span class="c1"># set this to events mode, as we need the per-event info to calculate these weights</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">&#39;events&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s1">'events'</span>
 
-        <span class="n">lgE_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_energy_threshold</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">&quot;GeV&quot;</span><span class="p">))</span>
+        <span class="n">lgE_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_energy_threshold</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s2">"GeV"</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
 
             <span class="c1"># creat keys for external dict</span>
 
-            <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_cc&#39;</span><span class="p">):</span>
-                <span class="n">current</span> <span class="o">=</span> <span class="s1">&#39;CC&#39;</span>
-            <span class="k">elif</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;_nc&#39;</span><span class="p">):</span>
-                <span class="n">current</span> <span class="o">=</span> <span class="s1">&#39;NC&#39;</span>
+            <span class="k">if</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'_cc'</span><span class="p">):</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="s1">'CC'</span>
+            <span class="k">elif</span> <span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'_nc'</span><span class="p">):</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="s1">'NC'</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Can not determine whether container with name &quot;</span><span class="si">%s</span><span class="s1">&quot; is pf type CC or NC based on its name&#39;</span><span class="o">%</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">nu</span> <span class="o">=</span> <span class="s1">&#39;Nu&#39;</span> <span class="k">if</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;NuBar&#39;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Can not determine whether container with name "</span><span class="si">%s</span><span class="s1">" is pf type CC or NC based on its name'</span><span class="o">%</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">nu</span> <span class="o">=</span> <span class="s1">'Nu'</span> <span class="k">if</span> <span class="n">container</span><span class="p">[</span><span class="s1">'nubar'</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">'NuBar'</span>
 
-            <span class="n">lgE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;true_energy&#39;</span><span class="p">])</span>
-            <span class="n">bjorken_y</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;bjorken_y&#39;</span><span class="p">]</span>
-            <span class="n">dis</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;dis&#39;</span><span class="p">]</span>
+            <span class="n">lgE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s1">'true_energy'</span><span class="p">])</span>
+            <span class="n">bjorken_y</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'bjorken_y'</span><span class="p">]</span>
+            <span class="n">dis</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s1">'dis'</span><span class="p">]</span>
 
             <span class="n">w_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">lgE</span><span class="p">)</span>
 
@@ -418,26 +418,26 @@
             <span class="c1"># Calculate variation of total cross section</span>
             <span class="c1">#</span>
 
-            <span class="n">poly_coef</span> <span class="o">=</span> <span class="n">extrap_dict</span><span class="p">[</span><span class="n">nu</span><span class="p">][</span><span class="n">current</span><span class="p">][</span><span class="s1">&#39;poly_coef&#39;</span><span class="p">]</span>
-            <span class="n">lin_coef</span> <span class="o">=</span> <span class="n">extrap_dict</span><span class="p">[</span><span class="n">nu</span><span class="p">][</span><span class="n">current</span><span class="p">][</span><span class="s1">&#39;linear&#39;</span><span class="p">]</span>
+            <span class="n">poly_coef</span> <span class="o">=</span> <span class="n">extrap_dict</span><span class="p">[</span><span class="n">nu</span><span class="p">][</span><span class="n">current</span><span class="p">][</span><span class="s1">'poly_coef'</span><span class="p">]</span>
+            <span class="n">lin_coef</span> <span class="o">=</span> <span class="n">extrap_dict</span><span class="p">[</span><span class="n">nu</span><span class="p">][</span><span class="n">current</span><span class="p">][</span><span class="s1">'linear'</span><span class="p">]</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_type</span> <span class="o">==</span> <span class="s1">&#39;higher&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_type</span> <span class="o">==</span> <span class="s1">'higher'</span><span class="p">:</span>
                 <span class="n">w_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span><span class="n">poly_coef</span><span class="p">,</span> <span class="n">lgE</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">w_tot</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span><span class="n">poly_coef</span><span class="p">,</span> <span class="n">lgE</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">])</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_type</span> <span class="o">==</span> <span class="s1">&#39;constant&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_type</span> <span class="o">==</span> <span class="s1">'constant'</span><span class="p">:</span>
                     <span class="n">w_tot</span><span class="p">[</span><span class="n">extrapolation_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span><span class="n">poly_coef</span><span class="p">,</span> <span class="n">lgE_min</span><span class="p">)</span>  <span class="c1"># note Numpy broadcasts</span>
-                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_type</span> <span class="o">==</span> <span class="s1">&#39;linear&#39;</span><span class="p">:</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_type</span> <span class="o">==</span> <span class="s1">'linear'</span><span class="p">:</span>
                     <span class="n">w_tot</span><span class="p">[</span><span class="n">extrapolation_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyval</span><span class="p">(</span><span class="n">lin_coef</span><span class="p">,</span> <span class="n">lgE</span><span class="p">[</span><span class="n">extrapolation_mask</span><span class="p">])</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown extrapolation type &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_type</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Unknown extrapolation type "</span><span class="si">%s</span><span class="s1">"'</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">extrapolation_type</span><span class="p">)</span>
 
             <span class="c1"># make centered arround 0, and set to 0 for all non-DIS events</span>
             <span class="n">w_tot</span> <span class="o">=</span> <span class="p">(</span><span class="n">w_tot</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">dis</span>
 
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;dis_correction_total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w_tot</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;dis_correction_total&#39;</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"dis_correction_total"</span><span class="p">]</span> <span class="o">=</span> <span class="n">w_tot</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'dis_correction_total'</span><span class="p">)</span>
 
             <span class="c1">#</span>
             <span class="c1"># Calculate variation of differential cross section</span>
@@ -445,13 +445,13 @@
 
             <span class="n">w_diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">lgE</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">current</span> <span class="o">==</span> <span class="s1">&#39;CC&#39;</span> <span class="ow">and</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">current</span> <span class="o">==</span> <span class="s1">'CC'</span> <span class="ow">and</span> <span class="n">container</span><span class="p">[</span><span class="s1">'nubar'</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">weight_func</span> <span class="o">=</span> <span class="n">wf_nucc</span>
-            <span class="k">elif</span> <span class="n">current</span> <span class="o">==</span> <span class="s1">&#39;CC&#39;</span> <span class="ow">and</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">current</span> <span class="o">==</span> <span class="s1">'CC'</span> <span class="ow">and</span> <span class="n">container</span><span class="p">[</span><span class="s1">'nubar'</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">weight_func</span> <span class="o">=</span> <span class="n">wf_nubarcc</span>
-            <span class="k">elif</span> <span class="n">current</span> <span class="o">==</span> <span class="s1">&#39;NC&#39;</span> <span class="ow">and</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">current</span> <span class="o">==</span> <span class="s1">'NC'</span> <span class="ow">and</span> <span class="n">container</span><span class="p">[</span><span class="s1">'nubar'</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">weight_func</span> <span class="o">=</span> <span class="n">wf_nunc</span>
-            <span class="k">elif</span> <span class="n">current</span> <span class="o">==</span> <span class="s1">&#39;NC&#39;</span> <span class="ow">and</span> <span class="n">container</span><span class="p">[</span><span class="s1">&#39;nubar&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">current</span> <span class="o">==</span> <span class="s1">'NC'</span> <span class="ow">and</span> <span class="n">container</span><span class="p">[</span><span class="s1">'nubar'</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">weight_func</span> <span class="o">=</span> <span class="n">wf_nubarnc</span>
 
             <span class="n">w_diff</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">weight_func</span><span class="o">.</span><span class="n">ev</span><span class="p">(</span><span class="n">lgE</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">],</span> <span class="n">bjorken_y</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">])</span>
@@ -460,8 +460,8 @@
             <span class="c1"># make centered arround 0, and set to 0 for all non-DIS events</span>
             <span class="n">w_diff</span> <span class="o">=</span> <span class="p">(</span><span class="n">w_diff</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">dis</span>
 
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;dis_correction_diff&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">w_diff</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;dis_correction_diff&#39;</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"dis_correction_diff"</span><span class="p">]</span> <span class="o">=</span> <span class="n">w_diff</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'dis_correction_diff'</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="dis_sys.apply_function">
@@ -471,29 +471,29 @@
 
         <span class="c1"># Get total and differential steering param value(s), depending on user settings</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">combine_components</span> <span class="p">:</span>
-            <span class="n">dis_csms_tot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dis_csms</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+            <span class="n">dis_csms_tot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dis_csms</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">'dimensionless'</span><span class="p">)</span>
             <span class="n">dis_csms_diff</span> <span class="o">=</span> <span class="n">dis_csms_tot</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">dis_csms_tot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dis_csms_tot</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
-            <span class="n">dis_csms_diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dis_csms_diff</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;dimensionless&#39;</span><span class="p">)</span>
+            <span class="n">dis_csms_tot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dis_csms_tot</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">'dimensionless'</span><span class="p">)</span>
+            <span class="n">dis_csms_diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dis_csms_diff</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">'dimensionless'</span><span class="p">)</span>
 
         <span class="c1"># Apply DIS sys for all containers</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="n">apply_dis_sys</span><span class="p">(</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;dis_correction_total&#39;</span><span class="p">],</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;dis_correction_diff&#39;</span><span class="p">],</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'dis_correction_total'</span><span class="p">],</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'dis_correction_diff'</span><span class="p">],</span>
                 <span class="n">FTYPE</span><span class="p">(</span><span class="n">dis_csms_tot</span><span class="p">),</span>
                 <span class="n">FTYPE</span><span class="p">(</span><span class="n">dis_csms_diff</span><span class="p">),</span>
-                <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">&#39;weights&#39;</span><span class="p">],</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">container</span><span class="p">[</span><span class="s1">'weights'</span><span class="p">],</span>
             <span class="p">)</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;weights&#39;</span><span class="p">)</span></div>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'weights'</span><span class="p">)</span></div>
 </div>
 
 
 
-<span class="n">FX</span> <span class="o">=</span> <span class="s1">&#39;f8&#39;</span> <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="k">else</span> <span class="s1">&#39;f4&#39;</span>
+<span class="n">FX</span> <span class="o">=</span> <span class="s1">'f8'</span> <span class="k">if</span> <span class="n">FTYPE</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="k">else</span> <span class="s1">'f4'</span>
 
-<span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])&#39;</span><span class="p">],</span> <span class="s1">&#39;(),(),(),()-&gt;()&#39;</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
+<span class="nd">@guvectorize</span><span class="p">([</span><span class="sa">f</span><span class="s1">'(</span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">FX</span><span class="si">}</span><span class="s1">[:])'</span><span class="p">],</span> <span class="s1">'(),(),(),()-&gt;()'</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">TARGET</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">apply_dis_sys</span><span class="p">(</span>
     <span class="n">dis_correction_total</span><span class="p">,</span>
     <span class="n">dis_correction_diff</span><span class="p">,</span>
@@ -507,9 +507,9 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.xsec.html#pisa.stages.xsec.dis_sys.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dis_csms&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"dis_csms"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">)</span>
     <span class="p">])</span>
 
     <span class="k">return</span> <span class="n">dis_sys</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">)</span></div>
@@ -553,7 +553,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

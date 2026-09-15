@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.gaussians - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.utils.gaussians - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -283,9 +283,9 @@
           <h1>Source code for pisa.utils.gaussians</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Multiple implementations of sum-of-gaussians for compatibility and speed</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span>
@@ -306,33 +306,33 @@
 
 
 <span class="c1"># TODO: if the Numba CUDA functions are defined, then other CUDA (e.g. pycuda)</span>
-<span class="c1"># code doesn&#39;t run (possibly only when Nvidia driver is set to</span>
+<span class="c1"># code doesn't run (possibly only when Nvidia driver is set to</span>
 <span class="c1"># process-exclusive or thread-exclusive mode). Need to fix this behavior. (E.g.</span>
 <span class="c1"># context that gets destroyed?)</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;GAUS_IMPLEMENTATIONS&#39;</span><span class="p">,</span> <span class="s1">&#39;gaussians&#39;</span><span class="p">,</span> <span class="s1">&#39;test_gaussians&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'GAUS_IMPLEMENTATIONS'</span><span class="p">,</span> <span class="s1">'gaussians'</span><span class="p">,</span> <span class="s1">'test_gaussians'</span><span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;J.L. Lanfranchi&#39;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">'J.L. Lanfranchi'</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s1">&#39;&#39;&#39;Copyright (c) 2014-2017, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s1">'''Copyright (c) 2014-2017, The IceCube Collaboration</span>
 
-<span class="s1"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s1"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s1"> you may not use this file except in compliance with the License.</span>
 <span class="s1"> You may obtain a copy of the License at</span>
 
 <span class="s1">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s1"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s1"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s1"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s1"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s1"> See the License for the specific language governing permissions and</span>
-<span class="s1"> limitations under the License.&#39;&#39;&#39;</span>
+<span class="s1"> limitations under the License.'''</span>
 
 
-<span class="n">GAUS_IMPLEMENTATIONS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;singlethreaded&#39;</span><span class="p">,</span> <span class="s1">&#39;multithreaded&#39;</span><span class="p">)</span>
+<span class="n">GAUS_IMPLEMENTATIONS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'singlethreaded'</span><span class="p">,</span> <span class="s1">'multithreaded'</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">NUMBA_CUDA_AVAIL</span><span class="p">:</span>
-    <span class="n">GAUS_IMPLEMENTATIONS</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">&#39;cuda&#39;</span><span class="p">,)</span>
+    <span class="n">GAUS_IMPLEMENTATIONS</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">'cuda'</span><span class="p">,)</span>
 
 <span class="n">PI</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
 <span class="n">TWOPI</span> <span class="o">=</span> <span class="n">FTYPE</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
@@ -344,7 +344,7 @@
 <div class="viewcode-block" id="gaussians">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.gaussians.gaussians">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">gaussians</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">implementation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum of multiple Gaussian curves, normalized to have area of 1.</span>
+<span class="w">    </span><span class="sd">"""Sum of multiple Gaussian curves, normalized to have area of 1.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -361,7 +361,7 @@
 <span class="sd">        Weights given to each Gaussian</span>
 
 <span class="sd">    implementation : None or string</span>
-<span class="sd">        One of &#39;singlethreaded&#39;, &#39;multithreaded&#39;, or &#39;cuda&#39;. Passing None, the</span>
+<span class="sd">        One of 'singlethreaded', 'multithreaded', or 'cuda'. Passing None, the</span>
 <span class="sd">        function will try to determine which of the implementations is best to</span>
 <span class="sd">        call.</span>
 
@@ -379,7 +379,7 @@
 <span class="sd">    upon the problem size, the hardware available (multi-core CPU or a GPU),</span>
 <span class="sd">    and whether the user specifies `implementation`.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># TODO: figure out which is the roughly the best function to call, if more</span>
     <span class="c1"># than one function is available to call (i.e., really small problems are</span>
     <span class="c1"># fastest in single core, really large `x` are probably best on GPU, and</span>
@@ -387,12 +387,12 @@
     <span class="k">if</span> <span class="n">implementation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">implementation</span> <span class="o">=</span> <span class="n">implementation</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">implementation</span> <span class="ow">in</span> <span class="n">GAUS_IMPLEMENTATIONS</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;`implementation` must be one of </span><span class="si">%s</span><span class="s1">&#39;</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'`implementation` must be one of </span><span class="si">%s</span><span class="s1">'</span>
                              <span class="o">%</span> <span class="n">GAUS_IMPLEMENTATIONS</span><span class="p">)</span>
 
-    <span class="c1"># Extract a &#39;threads&#39; kwarg if it&#39;s present, or default to OMP_NUM_THREADS</span>
-    <span class="k">if</span> <span class="s1">&#39;threads&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-        <span class="n">threads</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;threads&#39;</span><span class="p">)</span>
+    <span class="c1"># Extract a 'threads' kwarg if it's present, or default to OMP_NUM_THREADS</span>
+    <span class="k">if</span> <span class="s1">'threads'</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">threads</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">'threads'</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">threads</span> <span class="o">=</span> <span class="n">OMP_NUM_THREADS</span>
 
@@ -428,17 +428,17 @@
     <span class="c1"># Instantiate an empty output buffer</span>
     <span class="n">outbuf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">n_points</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
-    <span class="c1"># Default to CUDA since it&#39;s generally fastest</span>
-    <span class="k">if</span> <span class="n">implementation</span> <span class="o">==</span> <span class="s1">&#39;cuda&#39;</span> <span class="ow">or</span> <span class="p">(</span><span class="n">implementation</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="c1"># Default to CUDA since it's generally fastest</span>
+    <span class="k">if</span> <span class="n">implementation</span> <span class="o">==</span> <span class="s1">'cuda'</span> <span class="ow">or</span> <span class="p">(</span><span class="n">implementation</span> <span class="ow">is</span> <span class="kc">None</span>
                                     <span class="ow">and</span> <span class="n">NUMBA_CUDA_AVAIL</span><span class="p">):</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Using CUDA Gaussians implementation&#39;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Using CUDA Gaussians implementation'</span><span class="p">)</span>
         <span class="n">_gaussians_cuda</span><span class="p">(</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="p">,</span> <span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span>
                         <span class="n">n_gaussians</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="c1"># Use singlethreaded version if `threads` is 1</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">implementation</span> <span class="o">==</span> <span class="s1">&#39;singlethreaded&#39;</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">implementation</span> <span class="o">==</span> <span class="s1">'singlethreaded'</span>
           <span class="ow">or</span> <span class="n">implementation</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">threads</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Using single-threaded Gaussians implementation&#39;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Using single-threaded Gaussians implementation'</span><span class="p">)</span>
         <span class="n">_gaussians_singlethreaded</span><span class="p">(</span>
             <span class="n">outbuf</span><span class="o">=</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="o">=</span><span class="n">inv_sigma</span><span class="p">,</span>
             <span class="n">inv_sigma_sq</span><span class="o">=</span><span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
@@ -446,8 +446,8 @@
         <span class="p">)</span>
 
     <span class="c1"># Use multithreaded version otherwise</span>
-    <span class="k">elif</span> <span class="n">implementation</span> <span class="o">==</span> <span class="s1">&#39;multithreaded&#39;</span> <span class="ow">or</span> <span class="n">threads</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">&#39;Using multi-threaded Gaussians implementation&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">implementation</span> <span class="o">==</span> <span class="s1">'multithreaded'</span> <span class="ow">or</span> <span class="n">threads</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s1">'Using multi-threaded Gaussians implementation'</span><span class="p">)</span>
         <span class="n">_gaussians_multithreaded</span><span class="p">(</span>
             <span class="n">outbuf</span><span class="o">=</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="o">=</span><span class="n">inv_sigma</span><span class="p">,</span>
             <span class="n">inv_sigma_sq</span><span class="o">=</span><span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
@@ -456,8 +456,8 @@
 
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s1">&#39;Unhandled value(s): `implementation`=&quot;</span><span class="si">%s</span><span class="s1">&quot;; note: threads=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
-            <span class="s1">&#39; and NUMBA_CUDA_AVAIL=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
+            <span class="s1">'Unhandled value(s): `implementation`="</span><span class="si">%s</span><span class="s1">"; note: threads="</span><span class="si">%s</span><span class="s1">"'</span>
+            <span class="s1">' and NUMBA_CUDA_AVAIL="</span><span class="si">%s</span><span class="s1">"'</span>
             <span class="o">%</span> <span class="p">(</span><span class="n">implementation</span><span class="p">,</span> <span class="n">threads</span><span class="p">,</span> <span class="n">NUMBA_CUDA_AVAIL</span><span class="p">)</span>
         <span class="p">)</span>
 
@@ -468,8 +468,8 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_gaussians_multithreaded</span><span class="p">(</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="p">,</span> <span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span>
                              <span class="n">n_gaussians</span><span class="p">,</span> <span class="n">threads</span><span class="o">=</span><span class="n">OMP_NUM_THREADS</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum of multiple Gaussians, optimized to be run in multiple threads. This</span>
-<span class="sd">    dispatches the single-kernel threaded &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Sum of multiple Gaussians, optimized to be run in multiple threads. This</span>
+<span class="sd">    dispatches the single-kernel threaded """</span>
     <span class="n">n_points</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="n">chunklen</span> <span class="o">=</span> <span class="n">n_points</span> <span class="o">//</span> <span class="n">OMP_NUM_THREADS</span>
     <span class="n">threads</span> <span class="o">=</span> <span class="p">[]</span>
@@ -492,7 +492,7 @@
 <span class="nd">@numba_jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nogil</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fastmath</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_gaussians_singlethreaded</span><span class="p">(</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">inv_sigma</span><span class="p">,</span> <span class="n">inv_sigma_sq</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span>
                               <span class="n">n_gaussians</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum of multiple Gaussians, optimized to be run in a single thread&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Sum of multiple Gaussians, optimized to be run in a single thread"""</span>
     <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_gaussians</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">):</span>
@@ -553,7 +553,7 @@
             <span class="n">func</span> <span class="o">=</span> <span class="n">_gaussians_cuda_kernel</span><span class="p">[</span><span class="n">blocks_per_grid</span><span class="p">,</span> <span class="n">threads_per_block</span><span class="p">]</span> <span class="c1"># pylint: disable=unsubscriptable-object</span>
             <span class="n">func</span><span class="p">(</span><span class="n">d_outbuf</span><span class="p">,</span> <span class="n">d_x</span><span class="p">,</span> <span class="n">d_mu</span><span class="p">,</span> <span class="n">d_inv_sigma</span><span class="p">,</span> <span class="n">d_inv_sigma_sq</span><span class="p">,</span> <span class="n">n_gaussians</span><span class="p">)</span>
 
-        <span class="c1"># Copy contents of GPU result to host&#39;s outbuf</span>
+        <span class="c1"># Copy contents of GPU result to host's outbuf</span>
         <span class="n">d_outbuf</span><span class="o">.</span><span class="n">copy_to_host</span><span class="p">(</span><span class="n">ary</span><span class="o">=</span><span class="n">outbuf</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">del</span> <span class="n">d_x</span><span class="p">,</span> <span class="n">d_mu</span><span class="p">,</span> <span class="n">d_inv_sigma</span><span class="p">,</span> <span class="n">d_inv_sigma_sq</span><span class="p">,</span> <span class="n">d_weights</span><span class="p">,</span> <span class="n">d_outbuf</span>
@@ -586,7 +586,7 @@
 <div class="viewcode-block" id="test_gaussians">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.gaussians.test_gaussians">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">test_gaussians</span><span class="p">(</span><span class="n">test_perf</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test `gaussians` function&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Test `gaussians` function"""</span>
     <span class="n">n_gaus</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">]</span> <span class="k">if</span> <span class="n">test_perf</span> <span class="k">else</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">]</span>
     <span class="n">n_eval</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span> <span class="k">if</span> <span class="n">test_perf</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e2</span><span class="p">)</span>
 
@@ -627,63 +627,63 @@
             <span class="n">err_msgs</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">test_unw</span><span class="p">,</span> <span class="n">ref_unw</span><span class="p">):</span>
                 <span class="n">err_msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="s1">&#39;BAD RESULT (unweighted), n_gaus=</span><span class="si">%d</span><span class="s1">, implementation=&#39;</span>
-                    <span class="s1">&#39;&quot;</span><span class="si">%s</span><span class="s1">&quot;, max. abs. fract. diff.: </span><span class="si">%s</span><span class="s1">&#39;</span>
+                    <span class="s1">'BAD RESULT (unweighted), n_gaus=</span><span class="si">%d</span><span class="s1">, implementation='</span>
+                    <span class="s1">'"</span><span class="si">%s</span><span class="s1">", max. abs. fract. diff.: </span><span class="si">%s</span><span class="s1">'</span>
                     <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mus</span><span class="p">),</span> <span class="n">impl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">test_unw</span><span class="o">/</span><span class="n">ref_unw</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))))</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">test_w</span><span class="p">,</span> <span class="n">ref_w</span><span class="p">):</span>
                 <span class="n">err_msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="s1">&#39;BAD RESULT (weighted), n_gaus=</span><span class="si">%d</span><span class="s1">, implementation=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span>
-                    <span class="s1">&#39;, max. abs. fract. diff.: </span><span class="si">%s</span><span class="s1">&#39;</span>
+                    <span class="s1">'BAD RESULT (weighted), n_gaus=</span><span class="si">%d</span><span class="s1">, implementation="</span><span class="si">%s</span><span class="s1">"'</span>
+                    <span class="s1">', max. abs. fract. diff.: </span><span class="si">%s</span><span class="s1">'</span>
                     <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mus</span><span class="p">),</span> <span class="n">impl</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">((</span><span class="n">test_w</span><span class="o">/</span><span class="n">ref_w</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))))</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="n">err_msgs</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">err_msg</span> <span class="ow">in</span> <span class="n">err_msgs</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">err_msgs</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'</span><span class="se">\n</span><span class="s1">'</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">err_msgs</span><span class="p">))</span>
 
     <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="s1">&#39;gaussians() timings (unweighted) (Note:OMP_NUM_THREADS=</span><span class="si">%d</span><span class="s1">; evaluated&#39;</span>
-        <span class="s1">&#39; at </span><span class="si">%.0e</span><span class="s1"> points)&#39;</span><span class="p">,</span> <span class="n">OMP_NUM_THREADS</span><span class="p">,</span> <span class="n">n_eval</span>
+        <span class="s1">'gaussians() timings (unweighted) (Note:OMP_NUM_THREADS=</span><span class="si">%d</span><span class="s1">; evaluated'</span>
+        <span class="s1">' at </span><span class="si">%.0e</span><span class="s1"> points)'</span><span class="p">,</span> <span class="n">OMP_NUM_THREADS</span><span class="p">,</span> <span class="n">n_eval</span>
     <span class="p">)</span>
-    <span class="n">timings_str</span> <span class="o">=</span> <span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">format</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s1">&#39;10d&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">n_gaus</span><span class="p">])</span>
-    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="o">*</span><span class="mi">30</span> <span class="o">+</span> <span class="s1">&#39;Number of gaussians&#39;</span><span class="o">.</span><span class="n">center</span><span class="p">(</span><span class="mi">59</span><span class="p">))</span>
-    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;         </span><span class="si">%15s</span><span class="s1">       </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;impl.&#39;</span><span class="p">,</span> <span class="n">timings_str</span><span class="p">)</span>
-    <span class="n">timings_str</span> <span class="o">=</span> <span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">10</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">n_gaus</span><span class="p">])</span>
-    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;         </span><span class="si">%15s</span><span class="s1">       </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">15</span><span class="p">,</span> <span class="n">timings_str</span><span class="p">)</span>
+    <span class="n">timings_str</span> <span class="o">=</span> <span class="s1">'  '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">format</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s1">'10d'</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">n_gaus</span><span class="p">])</span>
+    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">' '</span><span class="o">*</span><span class="mi">30</span> <span class="o">+</span> <span class="s1">'Number of gaussians'</span><span class="o">.</span><span class="n">center</span><span class="p">(</span><span class="mi">59</span><span class="p">))</span>
+    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'         </span><span class="si">%15s</span><span class="s1">       </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="s1">'impl.'</span><span class="p">,</span> <span class="n">timings_str</span><span class="p">)</span>
+    <span class="n">timings_str</span> <span class="o">=</span> <span class="s1">'  '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">'-'</span><span class="o">*</span><span class="mi">10</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">n_gaus</span><span class="p">])</span>
+    <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'         </span><span class="si">%15s</span><span class="s1">       </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="s1">'-'</span><span class="o">*</span><span class="mi">15</span><span class="p">,</span> <span class="n">timings_str</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">impl</span> <span class="ow">in</span> <span class="n">GAUS_IMPLEMENTATIONS</span><span class="p">:</span>
         <span class="c1"># only report timings for unweighted case</span>
-        <span class="n">timings_str</span> <span class="o">=</span> <span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">format</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;10.3f&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">timings</span><span class="p">[</span><span class="n">impl</span><span class="p">]])</span>
-        <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Timings, </span><span class="si">%15s</span><span class="s1"> (ms): </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">impl</span><span class="p">,</span> <span class="n">timings_str</span><span class="p">)</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;&lt;&lt; PASS : test_gaussians &gt;&gt;&#39;</span><span class="p">)</span></div>
+        <span class="n">timings_str</span> <span class="o">=</span> <span class="s1">'  '</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">format</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">'10.3f'</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">timings</span><span class="p">[</span><span class="n">impl</span><span class="p">]])</span>
+        <span class="n">tprofile</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Timings, </span><span class="si">%15s</span><span class="s1"> (ms): </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">impl</span><span class="p">,</span> <span class="n">timings_str</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'&lt;&lt; PASS : test_gaussians &gt;&gt;'</span><span class="p">)</span></div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse command line arguments&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Parse command line arguments"""</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">ArgumentParser</span><span class="p">()</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;--test-perf&#39;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Instead of unit test, run a performance test&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="s1">'--test-perf'</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">'store_true'</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"""Instead of unit test, run a performance test"""</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s1">&#39;-v&#39;</span><span class="p">,</span>
-        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">,</span>
+        <span class="s1">'-v'</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s1">'count'</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="n">Levels</span><span class="o">.</span><span class="n">WARN</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Set verbosity level. Repeat for increased verbosity.&quot;&quot;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"""Set verbosity level. Repeat for increased verbosity."""</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="nb">vars</span><span class="p">(</span><span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">())</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Script wrapper for calling `test_gaussians`&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Script wrapper for calling `test_gaussians`"""</span>
     <span class="n">kwargs</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
-    <span class="n">set_verbosity</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;v&#39;</span><span class="p">))</span>
+    <span class="n">set_verbosity</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">'v'</span><span class="p">))</span>
     <span class="n">test_gaussians</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
         </article>
@@ -724,7 +724,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.utils.kfold - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.utils.kfold - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,15 +281,15 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.utils.kfold</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Make K-folds of data.</span>
 
 <span class="sd">This stage can be used to split MC into chunks of equal size and to select only one</span>
 <span class="sd">chunk to make histograms from. It uses the KFold class from scikit-learn to make</span>
-<span class="sd">&quot;test&quot; and &quot;train&quot; indeces for the dataset and sets all weights in the &quot;train&quot;</span>
+<span class="sd">"test" and "train" indeces for the dataset and sets all weights in the "train"</span>
 <span class="sd">indeces to zero. Optionally, weights can be re-scaled by the number of splits to</span>
 <span class="sd">renormalize the total rates.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">absolute_import</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 
@@ -299,30 +299,30 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.stage</span><span class="w"> </span><span class="kn">import</span> <span class="n">Stage</span>
 
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;A. Trettin&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">"A. Trettin"</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2020, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">"""Copyright (c) 2020, The IceCube Collaboration</span>
 
-<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s2"> you may not use this file except in compliance with the License.</span>
 <span class="s2"> You may obtain a copy of the License at</span>
 
 <span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s2"> See the License for the specific language governing permissions and</span>
-<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+<span class="s2"> limitations under the License."""</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;kfold&#39;</span><span class="p">,</span> <span class="s1">&#39;init_test&#39;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'kfold'</span><span class="p">,</span> <span class="s1">'init_test'</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="kfold">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kfold.kfold">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">kfold</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stage to make splits of the MC set and select one split to make histograms.</span>
 <span class="sd">    The weight of all indeces not belonging to the selected split are set to</span>
 <span class="sd">    zero.</span>
@@ -341,8 +341,8 @@
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;weights&quot;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        "weights"</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -356,10 +356,10 @@
     <span class="p">):</span>
 
         <span class="n">expected_container_keys</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+            <span class="s1">'weights'</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span>
+            <span class="s1">'calc_mode'</span><span class="p">:</span> <span class="s2">"events"</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="c1"># init base class</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -369,7 +369,7 @@
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">&quot;events&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span> <span class="o">==</span> <span class="s2">"events"</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">n_splits</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_splits</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">select_split</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">select_split</span><span class="p">)</span>
@@ -389,22 +389,22 @@
 
         <span class="n">kf</span> <span class="o">=</span> <span class="n">KFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_splits</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">index_gen</span> <span class="o">=</span> <span class="n">kf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">])</span>  <span class="c1"># a generator</span>
+            <span class="n">index_gen</span> <span class="o">=</span> <span class="n">kf</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">])</span>  <span class="c1"># a generator</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">train_index</span><span class="p">,</span> <span class="n">test_index</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">index_gen</span><span class="p">):</span>
                 <span class="n">select_idx</span> <span class="o">=</span> <span class="n">test_index</span>
                 <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">select_split</span><span class="p">:</span>
                     <span class="k">break</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;fold_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"fold_weight"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
             <span class="n">select_weight</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">kf</span><span class="o">.</span><span class="n">get_n_splits</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">renormalize</span> <span class="k">else</span> <span class="mf">1.0</span>
+                <span class="n">kf</span><span class="o">.</span><span class="n">get_n_splits</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">renormalize</span> <span class="k">else</span> <span class="mf">1.0</span>
             <span class="p">)</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;fold_weight&quot;</span><span class="p">][</span><span class="n">select_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">select_weight</span>
-            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">&quot;fold_weight&quot;</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"fold_weight"</span><span class="p">][</span><span class="n">select_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">select_weight</span>
+            <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s2">"fold_weight"</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_mask</span><span class="p">:</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;kfold_mask&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
-                <span class="n">container</span><span class="p">[</span><span class="s1">&#39;kfold_mask&#39;</span><span class="p">][</span><span class="n">select_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">&#39;kfold_mask&#39;</span><span class="p">)</span></div>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'kfold_mask'</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">container</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+                <span class="n">container</span><span class="p">[</span><span class="s1">'kfold_mask'</span><span class="p">][</span><span class="n">select_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">container</span><span class="o">.</span><span class="n">mark_changed</span><span class="p">(</span><span class="s1">'kfold_mask'</span><span class="p">)</span></div>
 
 
 
@@ -412,7 +412,7 @@
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kfold.kfold.apply_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;fold_weight&quot;</span><span class="p">]</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"fold_weight"</span><span class="p">]</span></div>
 </div>
 
 
@@ -420,8 +420,8 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.utils.html#pisa.stages.utils.kfold.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialisation example&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">kfold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">calc_mode</span><span class="o">=</span><span class="s1">&#39;events&#39;</span><span class="p">)</span></div>
+<span class="w">    </span><span class="sd">"""Initialisation example"""</span>
+    <span class="k">return</span> <span class="n">kfold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">calc_mode</span><span class="o">=</span><span class="s1">'events'</span><span class="p">)</span></div>
 
 </pre></div>
         </article>
@@ -462,7 +462,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

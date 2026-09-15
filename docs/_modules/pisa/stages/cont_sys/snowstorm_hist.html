@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.stages.cont_sys.snowstorm_hist - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.stages.cont_sys.snowstorm_hist - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -281,11 +281,11 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for pisa.stages.cont_sys.snowstorm_hist</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">PISA stage to apply detector systematics to snowstorm simulation by </span>
 <span class="sd">splitting and histogramming the simulation set.</span>
 <span class="sd">The method is based on this paper: https://arxiv.org/pdf/1909.01530</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
@@ -296,39 +296,39 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.core.translation</span><span class="w"> </span><span class="kn">import</span> <span class="n">histogram</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;snowstorm_hist&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;init_test&quot;</span>
+    <span class="s2">"snowstorm_hist"</span><span class="p">,</span>
+    <span class="s2">"init_test"</span>
 <span class="p">]</span>
 
-<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;J. Weldert&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">"J. Weldert"</span>
 
-<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Copyright (c) 2014-2026, The IceCube Collaboration</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">"""Copyright (c) 2014-2026, The IceCube Collaboration</span>
 
-<span class="s2"> Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="s2"> Licensed under the Apache License, Version 2.0 (the "License");</span>
 <span class="s2"> you may not use this file except in compliance with the License.</span>
 <span class="s2"> You may obtain a copy of the License at</span>
 
 <span class="s2">   http://www.apache.org/licenses/LICENSE-2.0</span>
 
 <span class="s2"> Unless required by applicable law or agreed to in writing, software</span>
-<span class="s2"> distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="s2"> distributed under the License is distributed on an "AS IS" BASIS,</span>
 <span class="s2"> WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="s2"> See the License for the specific language governing permissions and</span>
-<span class="s2"> limitations under the License.&quot;&quot;&quot;</span>
+<span class="s2"> limitations under the License."""</span>
 
 
 <div class="viewcode-block" id="snowstorm_hist">
 <a class="viewcode-back" href="../../../../pisa.stages.cont_sys.html#pisa.stages.cont_sys.snowstorm_hist.snowstorm_hist">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">snowstorm_hist</span><span class="p">(</span><span class="n">Stage</span><span class="p">):</span>  <span class="c1"># pylint: disable=invalid-name</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Service to apply detector systematics through splitting and histogramming</span>
 <span class="sd">    of snowstorm simulation.</span>
 
 <span class="sd">    Expected container keys are::</span>
 
-<span class="sd">        &quot;weights&quot; + all detector systematics that should be used</span>
+<span class="sd">        "weights" + all detector systematics that should be used</span>
 
-<span class="sd">    The stage also expects that &quot;regularized_output_binning&quot; is part of the global</span>
+<span class="sd">    The stage also expects that "regularized_output_binning" is part of the global</span>
 <span class="sd">    auxilary variables of the `data` container set. This key is added by the</span>
 <span class="sd">    utils.hist stage.</span>
 
@@ -338,10 +338,10 @@
 <span class="sd">        List of the systematic parameters.</span>
 <span class="sd">    simulation_dists : list of str</span>
 <span class="sd">        The distribution of the systematic parameter in the snowstorm simulation.</span>
-<span class="sd">        Has to be either &#39;gauss&#39; or &#39;uniform&#39;.</span>
+<span class="sd">        Has to be either 'gauss' or 'uniform'.</span>
 <span class="sd">    simulation_dists_params : list of tuples of floats</span>
-<span class="sd">        Parameters of the simulation distributions. (mean, std) for &#39;gauss&#39; and</span>
-<span class="sd">        (min, max) for &#39;uniform&#39;.</span>
+<span class="sd">        Parameters of the simulation distributions. (mean, std) for 'gauss' and</span>
+<span class="sd">        (min, max) for 'uniform'.</span>
 <span class="sd">    additional_params : list of str (default None)</span>
 <span class="sd">        Parameters that are no detector systematics but if changed require a</span>
 <span class="sd">        re-calculation of the gradients (e.g. osc params).</span>
@@ -351,14 +351,14 @@
 <span class="sd">        one parameter value changes (most accurate but slowest option). If tolerances</span>
 <span class="sd">        *are* given, though, and *all* parameters move away from their initial values</span>
 <span class="sd">        by *less* than the specified tolerances over the course of a single fit, gradients</span>
-<span class="sd">        will *never* be re-calculated. Only once at least one parameter&#39;s overall delta</span>
+<span class="sd">        will *never* be re-calculated. Only once at least one parameter's overall delta</span>
 <span class="sd">        exceeds its corresponding tolerance the gradients will be updated (and a new</span>
 <span class="sd">        reference point set). Subsequent modfications of the parameter vector will</span>
 <span class="sd">        then be compared to this updated referenced point.</span>
 <span class="sd">    params : ParamSet</span>
 <span class="sd">        Note that the params required to be in `params` are those listed in </span>
 <span class="sd">        `systematics` plus those listed in `additional_params`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -384,7 +384,7 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">systematics</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">sd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">sd</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;gauss&quot;</span><span class="p">,</span> <span class="s2">&quot;uniform&quot;</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="n">sd</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"gauss"</span><span class="p">,</span> <span class="s2">"uniform"</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">simulation_dists_params</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists_params</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">simulation_dists_params</span><span class="p">)</span>
@@ -412,22 +412,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">tol</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tol</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">FTYPE</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">grads</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Place to store gradients to save computing time.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Place to store gradients to save computing time."""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">central_values</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Central values of the systematic parameters in the snowstorm set.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Central values of the systematic parameters in the snowstorm set."""</span>
 
         <span class="c1"># Evaluation only works on event-by-event basis, and apply_mode can be</span>
         <span class="c1"># detected automatically for convenience</span>
         <span class="n">supported_reps</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;calc_mode&#39;</span><span class="p">:</span> <span class="s2">&quot;events&quot;</span><span class="p">,</span>
-            <span class="s1">&#39;apply_mode&#39;</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">],</span>
+            <span class="s1">'calc_mode'</span><span class="p">:</span> <span class="s2">"events"</span><span class="p">,</span>
+            <span class="s1">'apply_mode'</span><span class="p">:</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">MultiDimBinning</span><span class="p">],</span>
         <span class="p">}</span>
 
         <span class="c1"># -- Initialize base class -- #</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">expected_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">systematics</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">additional_params</span><span class="p">,</span>
-            <span class="n">expected_container_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">systematics</span><span class="p">,</span>
+            <span class="n">expected_container_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">systematics</span><span class="p">,</span>
             <span class="n">supported_reps</span><span class="o">=</span><span class="n">supported_reps</span><span class="p">,</span>
             <span class="o">**</span><span class="n">std_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
@@ -436,13 +436,13 @@
 <a class="viewcode-back" href="../../../../pisa.stages.cont_sys.html#pisa.stages.cont_sys.snowstorm_hist.snowstorm_hist.setup_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;output_binning&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"output_binning"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;output_binning&quot;</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"output_binning"</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">central_values</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sd</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">sd</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;gauss&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sd</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"gauss"</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">central_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists_params</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span> <span class="c1"># uniform</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">central_values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists_params</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
@@ -472,37 +472,37 @@
             <span class="k">if</span> <span class="n">calc_grads</span><span class="p">:</span>
                 <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_mode</span>
                 <span class="n">syst</span> <span class="o">=</span> <span class="p">[</span><span class="n">container</span><span class="p">[</span><span class="n">sys</span><span class="p">]</span> <span class="k">for</span> <span class="n">sys</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">systematics</span><span class="p">]</span>
-                <span class="n">weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span>
                 <span class="c1"># The following is copied from utils.hist.</span>
                 <span class="n">sample</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="n">dims_log</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">is_log</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">]</span>
                 <span class="n">dims_ire</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="o">.</span><span class="n">is_irregular</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="p">]</span>
-                <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">is_log</span><span class="p">,</span> <span class="n">is_ire</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;regularized_output_binning&quot;</span><span class="p">],</span> <span class="n">dims_log</span><span class="p">,</span> <span class="n">dims_ire</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">is_log</span><span class="p">,</span> <span class="n">is_ire</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"regularized_output_binning"</span><span class="p">],</span> <span class="n">dims_log</span><span class="p">,</span> <span class="n">dims_ire</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">is_log</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_ire</span><span class="p">:</span>
-                        <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;log_events&quot;</span>
+                        <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">"log_events"</span>
                         <span class="n">sample</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">&quot;events&quot;</span>
+                        <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="s2">"events"</span>
                         <span class="n">sample</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="n">dim</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
                 <span class="n">sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
 
             <span class="n">container</span><span class="o">.</span><span class="n">representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;syst_scale&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"syst_scale"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apply_mode</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sys</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">systematics</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">calc_grads</span><span class="p">:</span>
                     <span class="n">h1</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span>
                         <span class="nb">list</span><span class="p">(</span><span class="n">sample</span><span class="p">[:,</span> <span class="n">syst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">central_values</span><span class="p">[</span><span class="n">i</span><span class="p">]]),</span>
                         <span class="n">weights</span><span class="p">[</span><span class="n">syst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">central_values</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;regularized_output_binning&quot;</span><span class="p">],</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"regularized_output_binning"</span><span class="p">],</span>
                         <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span>
                     <span class="p">)</span>
                     <span class="n">h2</span> <span class="o">=</span> <span class="n">histogram</span><span class="p">(</span>
                         <span class="nb">list</span><span class="p">(</span><span class="n">sample</span><span class="p">[:,</span> <span class="n">syst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">central_values</span><span class="p">[</span><span class="n">i</span><span class="p">]]),</span>
                         <span class="n">weights</span><span class="p">[</span><span class="n">syst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">central_values</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;regularized_output_binning&quot;</span><span class="p">],</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"regularized_output_binning"</span><span class="p">],</span>
                         <span class="n">averaged</span><span class="o">=</span><span class="kc">False</span>
                     <span class="p">)</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;gauss&quot;</span><span class="p">:</span> <span class="c1"># TODO verify correction factor is correct</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"gauss"</span><span class="p">:</span> <span class="c1"># TODO verify correction factor is correct</span>
                         <span class="c1"># This is based on equation 2.12 in the paper.</span>
                         <span class="n">correction_factor</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists_params</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">grads</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">sys</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">h1</span><span class="o">-</span><span class="n">h2</span><span class="p">)</span><span class="o">*</span><span class="n">correction_factor</span> <span class="o">/</span> <span class="p">(</span><span class="n">h1</span><span class="o">+</span><span class="n">h2</span><span class="p">))</span>
@@ -514,15 +514,15 @@
                         <span class="n">diff</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists_params</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulation_dists_params</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">grads</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">sys</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">h1</span><span class="o">-</span><span class="n">h2</span><span class="p">)</span><span class="o">/</span><span class="n">diff</span> <span class="o">/</span> <span class="p">(</span><span class="n">h1</span><span class="o">+</span><span class="n">h2</span><span class="p">))</span>
 
-                <span class="n">container</span><span class="p">[</span><span class="s2">&quot;syst_scale&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">sys</span><span class="p">]</span><span class="o">.</span><span class="n">m</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">central_values</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">grads</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">sys</span><span class="p">]</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;syst_scale&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">&quot;syst_scale&quot;</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span></div>
+                <span class="n">container</span><span class="p">[</span><span class="s2">"syst_scale"</span><span class="p">]</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="n">sys</span><span class="p">]</span><span class="o">.</span><span class="n">m</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">central_values</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">grads</span><span class="p">[</span><span class="n">container</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">sys</span><span class="p">]</span>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"syst_scale"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">container</span><span class="p">[</span><span class="s2">"syst_scale"</span><span class="p">],</span> <span class="n">a_min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">a_max</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="snowstorm_hist.apply_function">
 <a class="viewcode-back" href="../../../../pisa.stages.cont_sys.html#pisa.stages.cont_sys.snowstorm_hist.snowstorm_hist.apply_function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">container</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">&quot;syst_scale&quot;</span><span class="p">]</span></div>
+            <span class="n">container</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span> <span class="o">*=</span> <span class="n">container</span><span class="p">[</span><span class="s2">"syst_scale"</span><span class="p">]</span></div>
 </div>
 
 
@@ -530,18 +530,18 @@
 <div class="viewcode-block" id="init_test">
 <a class="viewcode-back" href="../../../../pisa.stages.cont_sys.html#pisa.stages.cont_sys.snowstorm_hist.init_test">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_test</span><span class="p">(</span><span class="o">**</span><span class="n">param_kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Instantiation example&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Instantiation example"""</span>
     <span class="n">param_set</span> <span class="o">=</span> <span class="n">ParamSet</span><span class="p">([</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;dom_eff&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
-        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;deltam31&#39;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">3e-3</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'dom_eff'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
+        <span class="n">Param</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'deltam31'</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">3e-3</span><span class="o">*</span><span class="n">ureg</span><span class="o">.</span><span class="n">eV</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">**</span><span class="n">param_kwargs</span><span class="p">),</span>
     <span class="p">])</span>
     <span class="k">return</span> <span class="n">snowstorm_hist</span><span class="p">(</span>
-        <span class="n">systematics</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;dom_eff&#39;</span><span class="p">],</span>
-        <span class="n">simulation_dists</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;gauss&#39;</span><span class="p">],</span>
+        <span class="n">systematics</span><span class="o">=</span><span class="p">[</span><span class="s1">'dom_eff'</span><span class="p">],</span>
+        <span class="n">simulation_dists</span><span class="o">=</span><span class="p">[</span><span class="s1">'gauss'</span><span class="p">],</span>
         <span class="n">simulation_dists_params</span><span class="o">=</span><span class="p">[(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)],</span>
-        <span class="n">additional_params</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;deltam31&#39;</span><span class="p">],</span>
+        <span class="n">additional_params</span><span class="o">=</span><span class="p">[</span><span class="s1">'deltam31'</span><span class="p">],</span>
         <span class="n">params</span><span class="o">=</span><span class="n">param_set</span><span class="p">,</span>
-        <span class="n">calc_mode</span><span class="o">=</span><span class="s2">&quot;events&quot;</span><span class="p">,</span>
+        <span class="n">calc_mode</span><span class="o">=</span><span class="s2">"events"</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 </pre></div>
@@ -583,7 +583,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../../../../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

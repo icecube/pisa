@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Units and Uncertainties - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>Units and Uncertainties - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -317,9 +317,9 @@ the standard way of importing pint in PISA is the line</p>
 <li><p>To access the <em>units</em> of a quantity:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="mf">10.2</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">meter</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">units</span>
-<span class="go">&lt;Unit(&#39;meter&#39;)&gt;</span>
+<span class="go">&lt;Unit('meter')&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">units_2</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">u</span>
-<span class="go">&lt;Unit(&#39;meter&#39;)&gt;</span>
+<span class="go">&lt;Unit('meter')&gt;</span>
 </pre></div>
 </div>
 </li>
@@ -329,7 +329,7 @@ the standard way of importing pint in PISA is the line</p>
 <span class="go">12.4</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">m</span>
 <span class="go">12.4</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">&#39;meter&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">m_as</span><span class="p">(</span><span class="s1">'meter'</span><span class="p">)</span>
 <span class="go">3.77952</span>
 </pre></div>
 </div>
@@ -379,16 +379,16 @@ Note that there <em>is</em> a performance penalty for using uncertainties, so ho
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">m</span> <span class="c1"># magnitude</span>
 <span class="go">1.3+/-0.2</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">u</span> <span class="c1"># unit</span>
-<span class="go">&lt;Unit(&#39;meter&#39;)&gt;</span>
+<span class="go">&lt;Unit('meter')&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">n</span> <span class="c1"># nominal value</span>
 <span class="go">1.3</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">s</span> <span class="c1"># standard deviation</span>
 <span class="go">0.2</span>
 
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;foot&#39;</span><span class="p">)</span> <span class="c1"># conversion</span>
-<span class="go">&lt;Quantity(4.3+/-0.7, &#39;foot&#39;)&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">'foot'</span><span class="p">)</span> <span class="c1"># conversion</span>
+<span class="go">&lt;Quantity(4.3+/-0.7, 'foot')&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q</span><span class="o">.</span><span class="n">dimensionality</span>
-<span class="go">&lt;UnitsContainer({&#39;[length]&#39;: 1.0})&gt;</span>
+<span class="go">&lt;UnitsContainer({'[length]': 1.0})&gt;</span>
 </pre></div>
 </div>
 </li>
@@ -397,9 +397,9 @@ Note that there <em>is</em> a performance penalty for using uncertainties, so ho
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">unp</span><span class="o">.</span><span class="n">uarray</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">,</span> <span class="mf">3.</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">1.41</span><span class="p">,</span> <span class="mf">1.73</span><span class="p">])</span> <span class="c1"># with list of values, and list of errors, or alternatively:</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ufloat</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">),</span><span class="n">ufloat</span><span class="p">(</span><span class="mf">2.</span><span class="p">,</span><span class="mf">1.41</span><span class="p">),</span> <span class="n">ufloat</span><span class="p">(</span> <span class="mf">3.</span><span class="p">,</span><span class="mf">1.73</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">*=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">seconds</span>
-<span class="go">&lt;Quantity([1.0+/-1.0 2.0+/-1.41 3.0+/-1.73], &#39;second&#39;)&gt;</span>
+<span class="go">&lt;Quantity([1.0+/-1.0 2.0+/-1.41 3.0+/-1.73], 'second')&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">u</span>
-<span class="go">&lt;Unit(&#39;second&#39;)&gt;</span>
+<span class="go">&lt;Unit('second')&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">m</span>
 <span class="go">array([1.0+/-1.0, 2.0+/-1.41, 3.0+/-1.73], dtype=object)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">unp</span><span class="o">.</span><span class="n">nominal_values</span><span class="p">((</span><span class="n">a</span><span class="p">)</span>
@@ -433,13 +433,13 @@ Note that there <em>is</em> a performance penalty for using uncertainties, so ho
 <span class="gp">&gt;&gt;&gt; </span><span class="n">u1</span> <span class="o">=</span> <span class="n">ureg</span><span class="o">.</span><span class="n">second</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Convert q0 from meters to the units of q1 (yards)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q0</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">q1</span><span class="p">)</span>
-<span class="go">&lt;Quantity(10.9361329834, &#39;yard&#39;)&gt;</span>
+<span class="go">&lt;Quantity(10.9361329834, 'yard')&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q0</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u0</span><span class="p">)</span>
-<span class="go">&lt;Quantity(1000.0, &#39;centimeter&#39;)&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">q0</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;mile&#39;</span><span class="p">)</span>
-<span class="go">&lt;Quantity(0.00621371192237, &#39;mile&#39;)&gt;</span>
+<span class="go">&lt;Quantity(1000.0, 'centimeter')&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q0</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">'mile'</span><span class="p">)</span>
+<span class="go">&lt;Quantity(0.00621371192237, 'mile')&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">q0</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">u1</span><span class="p">)</span>
-<span class="go">DimensionalityError: Cannot convert from &#39;meter&#39; ([length]) to &#39;second&#39; ([time])</span>
+<span class="go">DimensionalityError: Cannot convert from 'meter' ([length]) to 'second' ([time])</span>
 </pre></div>
 </div>
 </li>
@@ -535,7 +535,7 @@ the <code class="docutils literal notranslate"><span class="pre">set_poisson_err
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

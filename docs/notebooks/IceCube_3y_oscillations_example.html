@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>PISA Example Using Public IceCube Data - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>PISA Example Using Public IceCube Data - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -330,7 +330,7 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">DistributionMaker</span><span class="p">(</span>
-    <span class="n">pipelines</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;settings/pipeline/IceCube_3y_neutrinos.cfg&quot;</span><span class="p">,</span> <span class="s2">&quot;settings/pipeline/IceCube_3y_muons.cfg&quot;</span><span class="p">],</span>
+    <span class="n">pipelines</span><span class="o">=</span><span class="p">[</span><span class="s2">"settings/pipeline/IceCube_3y_neutrinos.cfg"</span><span class="p">,</span> <span class="s2">"settings/pipeline/IceCube_3y_muons.cfg"</span><span class="p">],</span>
     <span class="n">profile</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
 <span class="n">model</span>
@@ -468,18 +468,18 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[&#39;nue_cc&#39;,
- &#39;numu_cc&#39;,
- &#39;nutau_cc&#39;,
- &#39;nue_nc&#39;,
- &#39;numu_nc&#39;,
- &#39;nutau_nc&#39;,
- &#39;nuebar_cc&#39;,
- &#39;numubar_cc&#39;,
- &#39;nutaubar_cc&#39;,
- &#39;nuebar_nc&#39;,
- &#39;numubar_nc&#39;,
- &#39;nutaubar_nc&#39;]
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>['nue_cc',
+ 'numu_cc',
+ 'nutau_cc',
+ 'nue_nc',
+ 'numu_nc',
+ 'nutau_nc',
+ 'nuebar_cc',
+ 'numubar_cc',
+ 'nutaubar_cc',
+ 'nuebar_nc',
+ 'numubar_nc',
+ 'nutaubar_nc']
 </pre></div>
 </div>
 </div>
@@ -529,13 +529,13 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="p">((</span><span class="n">nominal</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">sys</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">nominal</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">clabel</span><span class="o">=</span><span class="s2">&quot;rel. difference&quot;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="p">((</span><span class="n">nominal</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">sys</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">nominal</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">clabel</span><span class="o">=</span><span class="s2">"rel. difference"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
 <div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(&lt;Figure size 640x480 with 3 Axes&gt;,
- &lt;Axes: title={&#39;center&#39;: &#39;$Total,{\\;}{\\rm PID}{\\;}bin{\\;}0$&#39;}, xlabel=&#39;$E_{\\rm reco} \\; \\left( \\mathrm{GeV} \\right)$&#39;, ylabel=&#39;$\\cos{\\theta}_{\\rm reco}$&#39;&gt;,
+ &lt;Axes: title={'center': '$Total,{\\;}{\\rm PID}{\\;}bin{\\;}0$'}, xlabel='$E_{\\rm reco} \\; \\left( \\mathrm{GeV} \\right)$', ylabel='$\\cos{\\theta}_{\\rm reco}$'&gt;,
  &lt;matplotlib.collections.QuadMesh at 0x7f66a1f89250&gt;,
  None)
 </pre></div>
@@ -551,7 +551,7 @@ NB: When developing a new analysis you will <strong>not</strong> be allowed to l
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># real data</span>
-<span class="n">data_maker</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">&quot;settings/pipeline/IceCube_3y_data.cfg&quot;</span><span class="p">)</span>
+<span class="n">data_maker</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="s2">"settings/pipeline/IceCube_3y_data.cfg"</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">data_maker</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -581,9 +581,9 @@ NB: When developing a new analysis you will <strong>not</strong> be allowed to l
 <span class="n">model</span><span class="o">.</span><span class="n">reset_free</span><span class="p">()</span>
 <span class="n">nominal</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Data&quot;</span><span class="p">)</span>
-<span class="n">nominal</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Model&quot;</span><span class="p">)</span>
-<span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">nominal</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Diff&quot;</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Data"</span><span class="p">)</span>
+<span class="n">nominal</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Model"</span><span class="p">)</span>
+<span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">nominal</span><span class="p">)</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Diff"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -598,19 +598,19 @@ NB: When developing a new analysis you will <strong>not</strong> be allowed to l
 In addition, we need to choose a <a class="reference external" href="https://icecube.github.io/pisa/pisa.utils.html#module-pisa.utils.stats" rel="noreferer noopener" target="_blank">“metric”</a> (objective function), here PISA’s <a class="reference external" href="https://icecube.github.io/pisa/pisa.utils.html#pisa.utils.stats.mod_chi2" rel="noreferer noopener" target="_blank">“modified chi-square”</a>. Also, we fit theta23 octants, which are quasi degenerate, separately. PISA automatically minimizes over the separate outcomes to arrive at a global best fit.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">minimizer_cfg</span> <span class="o">=</span> <span class="n">pisa</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">fileio</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s1">&#39;settings/minimizer/slsqp_ftol1e-6_eps1e-4_maxiter1000.json&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">minimizer_cfg</span> <span class="o">=</span> <span class="n">pisa</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">fileio</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s1">'settings/minimizer/slsqp_ftol1e-6_eps1e-4_maxiter1000.json'</span><span class="p">)</span>
 <span class="c1"># instantiate the analysis object </span>
 <span class="n">ana</span> <span class="o">=</span> <span class="n">Analysis</span><span class="p">()</span>
 
-<span class="n">method</span> <span class="o">=</span> <span class="s2">&quot;octants&quot;</span>
+<span class="n">method</span> <span class="o">=</span> <span class="s2">"octants"</span>
 <span class="n">method_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;angle&quot;</span><span class="p">:</span> <span class="s2">&quot;theta23&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inflection_point&quot;</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span>
+    <span class="s2">"angle"</span><span class="p">:</span> <span class="s2">"theta23"</span><span class="p">,</span>
+    <span class="s2">"inflection_point"</span><span class="p">:</span> <span class="mi">45</span> <span class="o">*</span> <span class="n">ureg</span><span class="o">.</span><span class="n">deg</span>
 <span class="p">}</span>
 <span class="n">local_fit_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;scipy&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;method_kwargs&quot;</span><span class="p">:</span> <span class="n">minimizer_cfg</span><span class="p">,</span>
-    <span class="s2">&quot;local_fit_kwargs&quot;</span><span class="p">:</span> <span class="kc">None</span>
+    <span class="s2">"method"</span><span class="p">:</span> <span class="s2">"scipy"</span><span class="p">,</span>
+    <span class="s2">"method_kwargs"</span><span class="p">:</span> <span class="n">minimizer_cfg</span><span class="p">,</span>
+    <span class="s2">"local_fit_kwargs"</span><span class="p">:</span> <span class="kc">None</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -622,7 +622,7 @@ In addition, we need to choose a <a class="reference external" href="https://ice
 <span class="n">result</span> <span class="o">=</span> <span class="n">ana</span><span class="o">.</span><span class="n">fit_recursively</span><span class="p">(</span>
     <span class="n">data_dist</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
     <span class="n">hypo_maker</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
-    <span class="n">metric</span><span class="o">=</span><span class="s1">&#39;mod_chi2&#39;</span><span class="p">,</span>
+    <span class="n">metric</span><span class="o">=</span><span class="s1">'mod_chi2'</span><span class="p">,</span>
     <span class="n">external_priors_penalty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">,</span>
     <span class="n">method_kwargs</span><span class="o">=</span><span class="n">method_kwargs</span><span class="p">,</span>
@@ -636,7 +636,7 @@ In addition, we need to choose a <a class="reference external" href="https://ice
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">min_metric</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">metric_val</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;minimal metric value: </span><span class="si">{</span><span class="n">min_metric</span><span class="si">:</span><span class="s2">.5g</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"minimal metric value: </span><span class="si">{</span><span class="n">min_metric</span><span class="si">:</span><span class="s2">.5g</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -695,15 +695,15 @@ You can see that after the fit, it improved considerably, and the distribution o
 
 <span class="n">bestfit</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">return_sum</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Data&quot;</span><span class="p">)</span>
-<span class="n">nominal</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Nominal&quot;</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Data"</span><span class="p">)</span>
+<span class="n">nominal</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Nominal"</span><span class="p">)</span>
 <span class="n">diff</span> <span class="o">=</span> <span class="n">data</span> <span class="o">-</span> <span class="n">nominal</span>
-<span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">*</span><span class="n">diff</span><span class="o">/</span><span class="p">(</span><span class="n">nominal</span> <span class="o">+</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">nominal</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">])))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;signed $\chi^2$&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">12</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">*</span><span class="n">diff</span><span class="o">/</span><span class="p">(</span><span class="n">nominal</span> <span class="o">+</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">nominal</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="s1">'total'</span><span class="p">])))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s2">"signed $\chi^2$"</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">12</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
 
-<span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Data&quot;</span><span class="p">)</span>
-<span class="n">bestfit</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Bestfit&quot;</span><span class="p">)</span>
+<span class="n">data</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Data"</span><span class="p">)</span>
+<span class="n">bestfit</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Bestfit"</span><span class="p">)</span>
 <span class="n">diff</span> <span class="o">=</span> <span class="n">data</span> <span class="o">-</span> <span class="n">bestfit</span>
-<span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">*</span><span class="n">diff</span><span class="o">/</span><span class="p">(</span><span class="n">bestfit</span> <span class="o">+</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">bestfit</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">])))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;signed $\chi^2$&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">12</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span><span class="o">*</span><span class="n">diff</span><span class="o">/</span><span class="p">(</span><span class="n">bestfit</span> <span class="o">+</span> <span class="n">unp</span><span class="o">.</span><span class="n">std_devs</span><span class="p">(</span><span class="n">bestfit</span><span class="o">.</span><span class="n">hist</span><span class="p">[</span><span class="s1">'total'</span><span class="p">])))</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">symm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">r</span><span class="s2">"signed $\chi^2$"</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="mi">12</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -714,8 +714,8 @@ You can see that after the fit, it improved considerably, and the distribution o
 <p>When checking the chi2 value from the fitted model, you maybe see that it is around 113, while in the minimizer loop we saw it converged to 116. It is important to keep in mind that in the fit we had extended the metric with prior penalty terms. When we add those back we get the identical number as reported in the fit.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">nominal</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">bestfit</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">))</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">nominal</span><span class="p">,</span> <span class="s1">'mod_chi2'</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">bestfit</span><span class="p">,</span> <span class="s1">'mod_chi2'</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -731,9 +731,9 @@ You can see that after the fit, it improved considerably, and the distribution o
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">pisa</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">ALL_METRICS</span><span class="p">:</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">bestfit</span><span class="p">,</span><span class="w"> </span><span class="n">metric</span><span class="p">)</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">bestfit</span><span class="p">,</span><span class="w"> </span><span class="n">metric</span><span class="p">)</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">except</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1"> failed&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1"> failed'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -757,7 +757,7 @@ signed_sqrt_mod_chi2 = -9.176
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">update_params</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">bestfit_params</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">bestfit</span><span class="p">,</span> <span class="s1">&#39;mod_chi2&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">model</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">priors_penalty</span><span class="p">(</span><span class="s1">&#39;mod_chi2&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">metric_total</span><span class="p">(</span><span class="n">bestfit</span><span class="p">,</span> <span class="s1">'mod_chi2'</span><span class="p">)</span> <span class="o">+</span> <span class="n">model</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">priors_penalty</span><span class="p">(</span><span class="s1">'mod_chi2'</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -786,7 +786,7 @@ signed_sqrt_mod_chi2 = -9.176
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
-<span class="n">temp</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.json&#39;</span><span class="p">)</span>
+<span class="n">temp</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">'.json'</span><span class="p">)</span>
 <span class="n">pisa</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">fileio</span><span class="o">.</span><span class="n">to_file</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">temp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -797,7 +797,7 @@ signed_sqrt_mod_chi2 = -9.176
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">result_reload</span> <span class="o">=</span> <span class="n">pisa</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">fileio</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 <span class="n">temp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span> <span class="c1"># remove the temporary file again</span>
-<span class="n">bestfit_params</span> <span class="o">=</span> <span class="n">pisa</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">ParamSet</span><span class="p">(</span><span class="n">result_reload</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">free</span>
+<span class="n">bestfit_params</span> <span class="o">=</span> <span class="n">pisa</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">ParamSet</span><span class="p">(</span><span class="n">result_reload</span><span class="p">[</span><span class="s1">'params'</span><span class="p">])</span><span class="o">.</span><span class="n">free</span>
 <span class="n">bestfit_params</span>
 </pre></div>
 </div>
@@ -972,7 +972,7 @@ data csv_icc_hist
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

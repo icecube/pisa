@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>re - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>re - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -282,13 +282,13 @@
         <article role="main" id="furo-main-content">
           <h1>Source code for re</h1><div class="highlight"><pre>
 <span></span><span class="c1">#</span>
-<span class="c1"># Secret Labs&#39; Regular Expression Engine</span>
+<span class="c1"># Secret Labs' Regular Expression Engine</span>
 <span class="c1">#</span>
 <span class="c1"># re-compatible interface for the sre matching engine</span>
 <span class="c1">#</span>
 <span class="c1"># Copyright (c) 1998-2001 by Secret Labs AB.  All rights reserved.</span>
 <span class="c1">#</span>
-<span class="c1"># This version of the SRE library can be redistributed under CNRI&#39;s</span>
+<span class="c1"># This version of the SRE library can be redistributed under CNRI's</span>
 <span class="c1"># Python 1.6 license.  For any other use, please contact Secret Labs</span>
 <span class="c1"># AB (info@pythonware.com).</span>
 <span class="c1">#</span>
@@ -297,7 +297,7 @@
 <span class="c1"># other compatibility work.</span>
 <span class="c1">#</span>
 
-<span class="sa">r</span><span class="sd">&quot;&quot;&quot;Support for regular expressions (RE).</span>
+<span class="sa">r</span><span class="sd">"""Support for regular expressions (RE).</span>
 
 <span class="sd">This module provides regular expression matching operations similar to</span>
 <span class="sd">those found in Perl.  It supports both 8-bit and Unicode strings; both</span>
@@ -305,26 +305,26 @@
 <span class="sd">characters outside the US ASCII range.</span>
 
 <span class="sd">Regular expressions can contain both special and ordinary characters.</span>
-<span class="sd">Most ordinary characters, like &quot;A&quot;, &quot;a&quot;, or &quot;0&quot;, are the simplest</span>
+<span class="sd">Most ordinary characters, like "A", "a", or "0", are the simplest</span>
 <span class="sd">regular expressions; they simply match themselves.  You can</span>
-<span class="sd">concatenate ordinary characters, so last matches the string &#39;last&#39;.</span>
+<span class="sd">concatenate ordinary characters, so last matches the string 'last'.</span>
 
 <span class="sd">The special characters are:</span>
-<span class="sd">    &quot;.&quot;      Matches any character except a newline.</span>
-<span class="sd">    &quot;^&quot;      Matches the start of the string.</span>
-<span class="sd">    &quot;$&quot;      Matches the end of the string or just before the newline at</span>
+<span class="sd">    "."      Matches any character except a newline.</span>
+<span class="sd">    "^"      Matches the start of the string.</span>
+<span class="sd">    "$"      Matches the end of the string or just before the newline at</span>
 <span class="sd">             the end of the string.</span>
-<span class="sd">    &quot;*&quot;      Matches 0 or more (greedy) repetitions of the preceding RE.</span>
+<span class="sd">    "*"      Matches 0 or more (greedy) repetitions of the preceding RE.</span>
 <span class="sd">             Greedy means that it will match as many repetitions as possible.</span>
-<span class="sd">    &quot;+&quot;      Matches 1 or more (greedy) repetitions of the preceding RE.</span>
-<span class="sd">    &quot;?&quot;      Matches 0 or 1 (greedy) of the preceding RE.</span>
+<span class="sd">    "+"      Matches 1 or more (greedy) repetitions of the preceding RE.</span>
+<span class="sd">    "?"      Matches 0 or 1 (greedy) of the preceding RE.</span>
 <span class="sd">    *?,+?,?? Non-greedy versions of the previous three special characters.</span>
 <span class="sd">    {m,n}    Matches from m to n repetitions of the preceding RE.</span>
 <span class="sd">    {m,n}?   Non-greedy version of the above.</span>
-<span class="sd">    &quot;\\&quot;     Either escapes special characters or signals a special sequence.</span>
+<span class="sd">    "\\"     Either escapes special characters or signals a special sequence.</span>
 <span class="sd">    []       Indicates a set of characters.</span>
-<span class="sd">             A &quot;^&quot; as the first character indicates a complementing set.</span>
-<span class="sd">    &quot;|&quot;      A|B, creates an RE that will match either A or B.</span>
+<span class="sd">             A "^" as the first character indicates a complementing set.</span>
+<span class="sd">    "|"      A|B, creates an RE that will match either A or B.</span>
 <span class="sd">    (...)    Matches the RE inside the parentheses.</span>
 <span class="sd">             The contents can be retrieved or matched later in the string.</span>
 <span class="sd">    (?aiLmsux) The letters set the corresponding flags defined below.</span>
@@ -332,14 +332,14 @@
 <span class="sd">    (?P&lt;name&gt;...) The substring matched by the group is accessible by name.</span>
 <span class="sd">    (?P=name)     Matches the text matched earlier by the group named name.</span>
 <span class="sd">    (?#...)  A comment; ignored.</span>
-<span class="sd">    (?=...)  Matches if ... matches next, but doesn&#39;t consume the string.</span>
-<span class="sd">    (?!...)  Matches if ... doesn&#39;t match next.</span>
+<span class="sd">    (?=...)  Matches if ... matches next, but doesn't consume the string.</span>
+<span class="sd">    (?!...)  Matches if ... doesn't match next.</span>
 <span class="sd">    (?&lt;=...) Matches if preceded by ... (must be fixed length).</span>
 <span class="sd">    (?&lt;!...) Matches if not preceded by ... (must be fixed length).</span>
 <span class="sd">    (?(id/name)yes|no) Matches yes pattern if the group with id/name matched,</span>
 <span class="sd">                       the (optional) no pattern otherwise.</span>
 
-<span class="sd">The special sequences consist of &quot;\\&quot; and a character from the list</span>
+<span class="sd">The special sequences consist of "\\" and a character from the list</span>
 <span class="sd">below.  If the ordinary character is not on the list, then the</span>
 <span class="sd">resulting RE will match the second character.</span>
 <span class="sd">    \number  Matches the contents of the group of the same number.</span>
@@ -380,30 +380,30 @@
 <span class="sd">    purge     Clear the regular expression cache.</span>
 <span class="sd">    escape    Backslash all non-alphanumerics in a string.</span>
 
-<span class="sd">Each function other than purge and escape can take an optional &#39;flags&#39; argument</span>
-<span class="sd">consisting of one or more of the following module constants, joined by &quot;|&quot;.</span>
+<span class="sd">Each function other than purge and escape can take an optional 'flags' argument</span>
+<span class="sd">consisting of one or more of the following module constants, joined by "|".</span>
 <span class="sd">A, L, and U are mutually exclusive.</span>
 <span class="sd">    A  ASCII       For string patterns, make \w, \W, \b, \B, \d, \D</span>
 <span class="sd">                   match the corresponding ASCII character categories</span>
 <span class="sd">                   (rather than the whole Unicode categories, which is the</span>
 <span class="sd">                   default).</span>
 <span class="sd">                   For bytes patterns, this flag is the only available</span>
-<span class="sd">                   behaviour and needn&#39;t be specified.</span>
+<span class="sd">                   behaviour and needn't be specified.</span>
 <span class="sd">    I  IGNORECASE  Perform case-insensitive matching.</span>
 <span class="sd">    L  LOCALE      Make \w, \W, \b, \B, dependent on the current locale.</span>
-<span class="sd">    M  MULTILINE   &quot;^&quot; matches the beginning of lines (after a newline)</span>
+<span class="sd">    M  MULTILINE   "^" matches the beginning of lines (after a newline)</span>
 <span class="sd">                   as well as the string.</span>
-<span class="sd">                   &quot;$&quot; matches the end of lines (before a newline) as well</span>
+<span class="sd">                   "$" matches the end of lines (before a newline) as well</span>
 <span class="sd">                   as the end of the string.</span>
-<span class="sd">    S  DOTALL      &quot;.&quot; matches any character at all, including the newline.</span>
-<span class="sd">    X  VERBOSE     Ignore whitespace and comments for nicer looking RE&#39;s.</span>
+<span class="sd">    S  DOTALL      "." matches any character at all, including the newline.</span>
+<span class="sd">    X  VERBOSE     Ignore whitespace and comments for nicer looking RE's.</span>
 <span class="sd">    U  UNICODE     For compatibility only. Ignored for string patterns (it</span>
 <span class="sd">                   is the default), and forbidden for bytes patterns.</span>
 
-<span class="sd">This module also defines exception &#39;PatternError&#39;, aliased to &#39;error&#39; for</span>
+<span class="sd">This module also defines exception 'PatternError', aliased to 'error' for</span>
 <span class="sd">backward compatibility.</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">_compiler</span><span class="p">,</span> <span class="n">_parser</span>
@@ -413,27 +413,27 @@
 
 <span class="c1"># public symbols</span>
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;match&quot;</span><span class="p">,</span> <span class="s2">&quot;fullmatch&quot;</span><span class="p">,</span> <span class="s2">&quot;search&quot;</span><span class="p">,</span> <span class="s2">&quot;sub&quot;</span><span class="p">,</span> <span class="s2">&quot;subn&quot;</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;findall&quot;</span><span class="p">,</span> <span class="s2">&quot;finditer&quot;</span><span class="p">,</span> <span class="s2">&quot;compile&quot;</span><span class="p">,</span> <span class="s2">&quot;purge&quot;</span><span class="p">,</span> <span class="s2">&quot;escape&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;Pattern&quot;</span><span class="p">,</span> <span class="s2">&quot;Match&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ASCII&quot;</span><span class="p">,</span> <span class="s2">&quot;IGNORECASE&quot;</span><span class="p">,</span> <span class="s2">&quot;LOCALE&quot;</span><span class="p">,</span> <span class="s2">&quot;MULTILINE&quot;</span><span class="p">,</span> <span class="s2">&quot;DOTALL&quot;</span><span class="p">,</span> <span class="s2">&quot;VERBOSE&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;UNICODE&quot;</span><span class="p">,</span> <span class="s2">&quot;NOFLAG&quot;</span><span class="p">,</span> <span class="s2">&quot;RegexFlag&quot;</span><span class="p">,</span> <span class="s2">&quot;PatternError&quot;</span>
+    <span class="s2">"match"</span><span class="p">,</span> <span class="s2">"fullmatch"</span><span class="p">,</span> <span class="s2">"search"</span><span class="p">,</span> <span class="s2">"sub"</span><span class="p">,</span> <span class="s2">"subn"</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span>
+    <span class="s2">"findall"</span><span class="p">,</span> <span class="s2">"finditer"</span><span class="p">,</span> <span class="s2">"compile"</span><span class="p">,</span> <span class="s2">"purge"</span><span class="p">,</span> <span class="s2">"escape"</span><span class="p">,</span>
+    <span class="s2">"error"</span><span class="p">,</span> <span class="s2">"Pattern"</span><span class="p">,</span> <span class="s2">"Match"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"I"</span><span class="p">,</span> <span class="s2">"L"</span><span class="p">,</span> <span class="s2">"M"</span><span class="p">,</span> <span class="s2">"S"</span><span class="p">,</span> <span class="s2">"X"</span><span class="p">,</span> <span class="s2">"U"</span><span class="p">,</span>
+    <span class="s2">"ASCII"</span><span class="p">,</span> <span class="s2">"IGNORECASE"</span><span class="p">,</span> <span class="s2">"LOCALE"</span><span class="p">,</span> <span class="s2">"MULTILINE"</span><span class="p">,</span> <span class="s2">"DOTALL"</span><span class="p">,</span> <span class="s2">"VERBOSE"</span><span class="p">,</span>
+    <span class="s2">"UNICODE"</span><span class="p">,</span> <span class="s2">"NOFLAG"</span><span class="p">,</span> <span class="s2">"RegexFlag"</span><span class="p">,</span> <span class="s2">"PatternError"</span>
 <span class="p">]</span>
 
-<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;2.2.1&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">"2.2.1"</span>
 
 <span class="nd">@enum</span><span class="o">.</span><span class="n">global_enum</span>
 <span class="nd">@enum</span><span class="o">.</span><span class="n">_simple_enum</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntFlag</span><span class="p">,</span> <span class="n">boundary</span><span class="o">=</span><span class="n">enum</span><span class="o">.</span><span class="n">KEEP</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">RegexFlag</span><span class="p">:</span>
     <span class="n">NOFLAG</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">ASCII</span> <span class="o">=</span> <span class="n">A</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">SRE_FLAG_ASCII</span> <span class="c1"># assume ascii &quot;locale&quot;</span>
+    <span class="n">ASCII</span> <span class="o">=</span> <span class="n">A</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">SRE_FLAG_ASCII</span> <span class="c1"># assume ascii "locale"</span>
     <span class="n">IGNORECASE</span> <span class="o">=</span> <span class="n">I</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">SRE_FLAG_IGNORECASE</span> <span class="c1"># ignore case</span>
     <span class="n">LOCALE</span> <span class="o">=</span> <span class="n">L</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">SRE_FLAG_LOCALE</span> <span class="c1"># assume current 8-bit locale</span>
-    <span class="n">UNICODE</span> <span class="o">=</span> <span class="n">U</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">SRE_FLAG_UNICODE</span> <span class="c1"># assume unicode &quot;locale&quot;</span>
+    <span class="n">UNICODE</span> <span class="o">=</span> <span class="n">U</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">SRE_FLAG_UNICODE</span> <span class="c1"># assume unicode "locale"</span>
     <span class="n">MULTILINE</span> <span class="o">=</span> <span class="n">M</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">SRE_FLAG_MULTILINE</span> <span class="c1"># make anchors look for newline</span>
     <span class="n">DOTALL</span> <span class="o">=</span> <span class="n">S</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">SRE_FLAG_DOTALL</span> <span class="c1"># make dot match newline</span>
     <span class="n">VERBOSE</span> <span class="o">=</span> <span class="n">X</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">SRE_FLAG_VERBOSE</span> <span class="c1"># ignore whitespace and comments</span>
-    <span class="c1"># sre extensions (experimental, don&#39;t rely on these)</span>
+    <span class="c1"># sre extensions (experimental, don't rely on these)</span>
     <span class="n">DEBUG</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">SRE_FLAG_DEBUG</span> <span class="c1"># dump pattern after compilation</span>
     <span class="fm">__str__</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__str__</span>
     <span class="n">_numeric_repr_</span> <span class="o">=</span> <span class="nb">hex</span>
@@ -445,18 +445,18 @@
 <span class="c1"># public interface</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to apply the pattern at the start of the string, returning</span>
-<span class="sd">    a Match object, or None if no match was found.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Try to apply the pattern at the start of the string, returning</span>
+<span class="sd">    a Match object, or None if no match was found."""</span>
     <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">fullmatch</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to apply the pattern to all of the string, returning</span>
-<span class="sd">    a Match object, or None if no match was found.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Try to apply the pattern to all of the string, returning</span>
+<span class="sd">    a Match object, or None if no match was found."""</span>
     <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scan through string looking for a match to the pattern, returning</span>
-<span class="sd">    a Match object, or None if no match was found.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Scan through string looking for a match to the pattern, returning</span>
+<span class="sd">    a Match object, or None if no match was found."""</span>
     <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_ZeroSentinel</span><span class="p">(</span><span class="nb">int</span><span class="p">):</span>
@@ -464,139 +464,139 @@
 <span class="n">_zero_sentinel</span> <span class="o">=</span> <span class="n">_ZeroSentinel</span><span class="p">()</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">sub</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">repl</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">_zero_sentinel</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">_zero_sentinel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the string obtained by replacing the leftmost</span>
+<span class="w">    </span><span class="sd">"""Return the string obtained by replacing the leftmost</span>
 <span class="sd">    non-overlapping occurrences of the pattern in string by the</span>
 <span class="sd">    replacement repl.  repl can be either a string or a callable;</span>
 <span class="sd">    if a string, backslash escapes in it are processed.  If it is</span>
-<span class="sd">    a callable, it&#39;s passed the Match object and must return</span>
-<span class="sd">    a replacement string to be used.&quot;&quot;&quot;</span>
+<span class="sd">    a callable, it's passed the Match object and must return</span>
+<span class="sd">    a replacement string to be used."""</span>
     <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_zero_sentinel</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;sub() got multiple values for argument &#39;count&#39;&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"sub() got multiple values for argument 'count'"</span><span class="p">)</span>
         <span class="n">count</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
         <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">flags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_zero_sentinel</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;sub() got multiple values for argument &#39;flags&#39;&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"sub() got multiple values for argument 'flags'"</span><span class="p">)</span>
             <span class="n">flags</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
             <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;sub() takes from 3 to 5 positional arguments &quot;</span>
-                                <span class="s2">&quot;but </span><span class="si">%d</span><span class="s2"> were given&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">5</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)))</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"sub() takes from 3 to 5 positional arguments "</span>
+                                <span class="s2">"but </span><span class="si">%d</span><span class="s2"> were given"</span> <span class="o">%</span> <span class="p">(</span><span class="mi">5</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)))</span>
 
         <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;&#39;count&#39; is passed as positional argument&quot;</span><span class="p">,</span>
+            <span class="s2">"'count' is passed as positional argument"</span><span class="p">,</span>
             <span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">repl</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
-<span class="n">sub</span><span class="o">.</span><span class="n">__text_signature__</span> <span class="o">=</span> <span class="s1">&#39;(pattern, repl, string, count=0, flags=0)&#39;</span>
+<span class="n">sub</span><span class="o">.</span><span class="n">__text_signature__</span> <span class="o">=</span> <span class="s1">'(pattern, repl, string, count=0, flags=0)'</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">subn</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">repl</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">_zero_sentinel</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">_zero_sentinel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a 2-tuple containing (new_string, number).</span>
+<span class="w">    </span><span class="sd">"""Return a 2-tuple containing (new_string, number).</span>
 <span class="sd">    new_string is the string obtained by replacing the leftmost</span>
 <span class="sd">    non-overlapping occurrences of the pattern in the source</span>
 <span class="sd">    string by the replacement repl.  number is the number of</span>
 <span class="sd">    substitutions that were made. repl can be either a string or a</span>
 <span class="sd">    callable; if a string, backslash escapes in it are processed.</span>
-<span class="sd">    If it is a callable, it&#39;s passed the Match object and must</span>
-<span class="sd">    return a replacement string to be used.&quot;&quot;&quot;</span>
+<span class="sd">    If it is a callable, it's passed the Match object and must</span>
+<span class="sd">    return a replacement string to be used."""</span>
     <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">count</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_zero_sentinel</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;subn() got multiple values for argument &#39;count&#39;&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"subn() got multiple values for argument 'count'"</span><span class="p">)</span>
         <span class="n">count</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
         <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">flags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_zero_sentinel</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;subn() got multiple values for argument &#39;flags&#39;&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"subn() got multiple values for argument 'flags'"</span><span class="p">)</span>
             <span class="n">flags</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
             <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;subn() takes from 3 to 5 positional arguments &quot;</span>
-                                <span class="s2">&quot;but </span><span class="si">%d</span><span class="s2"> were given&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">5</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)))</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"subn() takes from 3 to 5 positional arguments "</span>
+                                <span class="s2">"but </span><span class="si">%d</span><span class="s2"> were given"</span> <span class="o">%</span> <span class="p">(</span><span class="mi">5</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)))</span>
 
         <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;&#39;count&#39; is passed as positional argument&quot;</span><span class="p">,</span>
+            <span class="s2">"'count' is passed as positional argument"</span><span class="p">,</span>
             <span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span><span class="o">.</span><span class="n">subn</span><span class="p">(</span><span class="n">repl</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
-<span class="n">subn</span><span class="o">.</span><span class="n">__text_signature__</span> <span class="o">=</span> <span class="s1">&#39;(pattern, repl, string, count=0, flags=0)&#39;</span>
+<span class="n">subn</span><span class="o">.</span><span class="n">__text_signature__</span> <span class="o">=</span> <span class="s1">'(pattern, repl, string, count=0, flags=0)'</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">split</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">maxsplit</span><span class="o">=</span><span class="n">_zero_sentinel</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">_zero_sentinel</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split the source string by the occurrences of the pattern,</span>
+<span class="w">    </span><span class="sd">"""Split the source string by the occurrences of the pattern,</span>
 <span class="sd">    returning a list containing the resulting substrings.  If</span>
 <span class="sd">    capturing parentheses are used in pattern, then the text of all</span>
 <span class="sd">    groups in the pattern are also returned as part of the resulting</span>
 <span class="sd">    list.  If maxsplit is nonzero, at most maxsplit splits occur,</span>
 <span class="sd">    and the remainder of the string is returned as the final element</span>
-<span class="sd">    of the list.&quot;&quot;&quot;</span>
+<span class="sd">    of the list."""</span>
     <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">maxsplit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_zero_sentinel</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;split() got multiple values for argument &#39;maxsplit&#39;&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"split() got multiple values for argument 'maxsplit'"</span><span class="p">)</span>
         <span class="n">maxsplit</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
         <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">flags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_zero_sentinel</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;split() got multiple values for argument &#39;flags&#39;&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"split() got multiple values for argument 'flags'"</span><span class="p">)</span>
             <span class="n">flags</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
             <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;split() takes from 2 to 4 positional arguments &quot;</span>
-                                <span class="s2">&quot;but </span><span class="si">%d</span><span class="s2"> were given&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)))</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"split() takes from 2 to 4 positional arguments "</span>
+                                <span class="s2">"but </span><span class="si">%d</span><span class="s2"> were given"</span> <span class="o">%</span> <span class="p">(</span><span class="mi">4</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)))</span>
 
         <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;&#39;maxsplit&#39; is passed as positional argument&quot;</span><span class="p">,</span>
+            <span class="s2">"'maxsplit' is passed as positional argument"</span><span class="p">,</span>
             <span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">maxsplit</span><span class="p">)</span>
-<span class="n">split</span><span class="o">.</span><span class="n">__text_signature__</span> <span class="o">=</span> <span class="s1">&#39;(pattern, string, maxsplit=0, flags=0)&#39;</span>
+<span class="n">split</span><span class="o">.</span><span class="n">__text_signature__</span> <span class="o">=</span> <span class="s1">'(pattern, string, maxsplit=0, flags=0)'</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">findall</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a list of all non-overlapping matches in the string.</span>
+<span class="w">    </span><span class="sd">"""Return a list of all non-overlapping matches in the string.</span>
 
 <span class="sd">    If one or more capturing groups are present in the pattern, return</span>
 <span class="sd">    a list of groups; this will be a list of tuples if the pattern</span>
 <span class="sd">    has more than one group.</span>
 
-<span class="sd">    Empty matches are included in the result.&quot;&quot;&quot;</span>
+<span class="sd">    Empty matches are included in the result."""</span>
     <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">finditer</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return an iterator over all non-overlapping matches in the</span>
+<span class="w">    </span><span class="sd">"""Return an iterator over all non-overlapping matches in the</span>
 <span class="sd">    string.  For each match, the iterator returns a Match object.</span>
 
-<span class="sd">    Empty matches are included in the result.&quot;&quot;&quot;</span>
+<span class="sd">    Empty matches are included in the result."""</span>
     <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-    <span class="s2">&quot;Compile a regular expression pattern, returning a Pattern object.&quot;</span>
+    <span class="s2">"Compile a regular expression pattern, returning a Pattern object."</span>
     <span class="k">return</span> <span class="n">_compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">purge</span><span class="p">():</span>
-    <span class="s2">&quot;Clear the regular expression caches&quot;</span>
+    <span class="s2">"Clear the regular expression caches"</span>
     <span class="n">_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
     <span class="n">_cache2</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
     <span class="n">_compile_template</span><span class="o">.</span><span class="n">cache_clear</span><span class="p">()</span>
 
 
 <span class="c1"># SPECIAL_CHARS</span>
-<span class="c1"># closing &#39;)&#39;, &#39;}&#39; and &#39;]&#39;</span>
-<span class="c1"># &#39;-&#39; (a range in character set)</span>
-<span class="c1"># &#39;&amp;&#39;, &#39;~&#39;, (extended character set operations)</span>
-<span class="c1"># &#39;#&#39; (comment) and WHITESPACE (ignored) in verbose mode</span>
-<span class="n">_special_chars_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="nb">chr</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="sa">b</span><span class="s1">&#39;()[]</span><span class="si">{}</span><span class="s1">?*+-|^$</span><span class="se">\\</span><span class="s1">.&amp;~# </span><span class="se">\t\n\r\v\f</span><span class="s1">&#39;</span><span class="p">}</span>
+<span class="c1"># closing ')', '}' and ']'</span>
+<span class="c1"># '-' (a range in character set)</span>
+<span class="c1"># '&amp;', '~', (extended character set operations)</span>
+<span class="c1"># '#' (comment) and WHITESPACE (ignored) in verbose mode</span>
+<span class="n">_special_chars_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="s1">'</span><span class="se">\\</span><span class="s1">'</span> <span class="o">+</span> <span class="nb">chr</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="sa">b</span><span class="s1">'()[]</span><span class="si">{}</span><span class="s1">?*+-|^$</span><span class="se">\\</span><span class="s1">.&amp;~# </span><span class="se">\t\n\r\v\f</span><span class="s1">'</span><span class="p">}</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">escape</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Escape special characters in a string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">pattern</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">_special_chars_map</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="s1">&#39;latin1&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">pattern</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">_special_chars_map</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;latin1&#39;</span><span class="p">)</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="s1">'latin1'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pattern</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">_special_chars_map</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'latin1'</span><span class="p">)</span>
 
-<span class="n">Pattern</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_compiler</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-<span class="n">Match</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_compiler</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">))</span>
+<span class="n">Pattern</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_compiler</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">''</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">Match</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_compiler</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">''</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">''</span><span class="p">))</span>
 
 <span class="c1"># --------------------------------------------------------------------</span>
 <span class="c1"># internals</span>
@@ -626,10 +626,10 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">Pattern</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">flags</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;cannot process flags argument with a compiled pattern&quot;</span><span class="p">)</span>
+                    <span class="s2">"cannot process flags argument with a compiled pattern"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">pattern</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">isstring</span><span class="p">(</span><span class="n">pattern</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;first argument must be string or compiled pattern&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"first argument must be string or compiled pattern"</span><span class="p">)</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">_compiler</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">DEBUG</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">p</span>
@@ -637,7 +637,7 @@
             <span class="c1"># Drop the least recently used item.</span>
             <span class="c1"># next(iter(_cache)) is known to have linear amortized time,</span>
             <span class="c1"># but it is used here to avoid a dependency from using OrderedDict.</span>
-            <span class="c1"># For the small _MAXCACHE value it doesn&#39;t make much of a difference.</span>
+            <span class="c1"># For the small _MAXCACHE value it doesn't make much of a difference.</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">del</span> <span class="n">_cache</span><span class="p">[</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">_cache</span><span class="p">))]</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">StopIteration</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
@@ -748,7 +748,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=3344f118"></script>
+</div><script src="../_static/documentation_options.js?v=82f492cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

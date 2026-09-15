@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils package - PISA 4.3a1+11.g4f4b9a5e.dirty documentation</title>
+        <title>pisa.utils package - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+11.g4f4b9a5e.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -1084,10 +1084,10 @@ required, in addition to a <code class="docutils literal notranslate"><span clas
 
 <span class="na">binning1.order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">axis1, axis2</span>
 <span class="na">binning1.axis1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">{</span>
-<span class="w">    </span><span class="na">&#39;num_bins&#39;</span><span class="o">:</span><span class="w"> </span><span class="s">40, &#39;is_log&#39;: True, &#39;domain&#39;: [1,80] units.GeV, &#39;tex&#39;: r&#39;A_1&#39;</span>
+<span class="w">    </span><span class="na">'num_bins'</span><span class="o">:</span><span class="w"> </span><span class="s">40, 'is_log': True, 'domain': [1,80] units.GeV, 'tex': r'A_1'</span>
 <span class="w">    </span><span class="na">}</span>
 <span class="na">binning1.axis2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">{</span>
-<span class="w">    </span><span class="na">&#39;num_bins&#39;</span><span class="o">:</span><span class="w"> </span><span class="s">10, &#39;is_lin&#39;: True, &#39;domain&#39;: [1,5], &#39;tex&#39;: r&#39;A_2&#39;</span>
+<span class="w">    </span><span class="na">'num_bins'</span><span class="o">:</span><span class="w"> </span><span class="s">10, 'is_lin': True, 'domain': [1,5], 'tex': r'A_2'</span>
 <span class="w">    </span><span class="na">}</span>
 
 
@@ -1424,8 +1424,8 @@ interpolation syntax on the value.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">interpret_param_subfields</span><span class="p">(</span><span class="n">subfields</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;nh&#39;</span><span class="p">,</span> <span class="s1">&#39;deltam31&#39;</span><span class="p">,</span> <span class="s1">&#39;range&#39;</span><span class="p">]))</span>
-<span class="go">{&#39;pname&#39;: &#39;deltam31&#39;, &#39;subfields&#39;: [], &#39;attr&#39;: [&#39;range&#39;], &#39;selector&#39;: &#39;nh&#39;}</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">interpret_param_subfields</span><span class="p">(</span><span class="n">subfields</span><span class="o">=</span><span class="p">[</span><span class="s1">'nh'</span><span class="p">,</span> <span class="s1">'deltam31'</span><span class="p">,</span> <span class="s1">'range'</span><span class="p">]))</span>
+<span class="go">{'pname': 'deltam31', 'subfields': [], 'attr': ['range'], 'selector': 'nh'}</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1499,10 +1499,10 @@ as strings that must be used or parsed elsewhere.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">quant</span> <span class="o">=</span> <span class="n">parse_quantity</span><span class="p">(</span><span class="s1">&#39;1.2 +/- 0.7 * units.meter&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">quant</span> <span class="o">=</span> <span class="n">parse_quantity</span><span class="p">(</span><span class="s1">'1.2 +/- 0.7 * units.meter'</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">quant</span><span class="p">))</span>
 <span class="go">1.2+/-0.7 meter</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;{:~}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">quant</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="s1">'{:~}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">quant</span><span class="p">))</span>
 <span class="go">1.2+/-0.7 m</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">quant</span><span class="o">.</span><span class="n">magnitude</span><span class="p">)</span>
 <span class="go">1.2+/-0.7</span>
@@ -1514,13 +1514,13 @@ as strings that must be used or parsed elsewhere.</p>
 <span class="go">0.7</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">quant</span> <span class="o">=</span> <span class="n">parse_quantity</span><span class="p">(</span><span class="s1">&#39;5 * units.gigametric_ton&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">quant</span> <span class="o">=</span> <span class="n">parse_quantity</span><span class="p">(</span><span class="s1">'5 * units.gigametric_ton'</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">quant</span><span class="o">.</span><span class="n">std_dev</span><span class="p">)</span>
 <span class="go">nan</span>
 </pre></div>
 </div>
 <p>Also note that spaces and the “*” are optional:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_quantity</span><span class="p">(</span><span class="s1">&#39;1+/-1units.GeV&#39;</span><span class="p">))</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_quantity</span><span class="p">(</span><span class="s1">'1+/-1units.GeV'</span><span class="p">))</span>
 <span class="go">1.0+/-1.0 gigaelectron_volt</span>
 </pre></div>
 </div>
@@ -1545,20 +1545,20 @@ to mean.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_string_literal</span><span class="p">(</span><span class="s1">&#39;true&#39;</span><span class="p">))</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_string_literal</span><span class="p">(</span><span class="s1">'true'</span><span class="p">))</span>
 <span class="go">True</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_string_literal</span><span class="p">(</span><span class="s1">&#39;False&#39;</span><span class="p">))</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_string_literal</span><span class="p">(</span><span class="s1">'False'</span><span class="p">))</span>
 <span class="go">False</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_string_literal</span><span class="p">(</span><span class="s1">&#39;none&#39;</span><span class="p">))</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_string_literal</span><span class="p">(</span><span class="s1">'none'</span><span class="p">))</span>
 <span class="go">None</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_string_literal</span><span class="p">(</span><span class="s1">&#39;something else&#39;</span><span class="p">))</span>
-<span class="go">&#39;something else&#39;</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">parse_string_literal</span><span class="p">(</span><span class="s1">'something else'</span><span class="p">))</span>
+<span class="go">'something else'</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1818,126 +1818,126 @@ needn’t be defined in the JSON file:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
   <span class="c1"># Specify the detector name, lower case</span>
 
-  <span class="s2">&quot;&lt;lower-case detector name&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
+  <span class="s2">"&lt;lower-case detector name&gt;"</span><span class="p">:</span> <span class="p">{</span>
 
     <span class="c1"># Specify the processing version, lower case</span>
-    <span class="c1"># Examples in PINGU include &quot;4&quot;, &quot;5&quot;, and &quot;5.1&quot;</span>
+    <span class="c1"># Examples in PINGU include "4", "5", and "5.1"</span>
 
-    <span class="s2">&quot;&lt;lower-case processing version&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">"&lt;lower-case processing version&gt;"</span><span class="p">:</span> <span class="p">{</span>
 
 
       <span class="c1"># Mapping from standard names to path where these can be found in</span>
       <span class="c1"># source HDF5 file; separate HDF5 path nodes with a forward-slash.</span>
       <span class="c1">#</span>
-      <span class="c1"># Fields that cuts or particles in the &quot;cuts&quot;/&quot;pid&quot; sections below</span>
-      <span class="c1"># require (e.g., &quot;cuts_step_1&quot; for PINGU v5 processing), must be</span>
+      <span class="c1"># Fields that cuts or particles in the "cuts"/"pid" sections below</span>
+      <span class="c1"># require (e.g., "cuts_step_1" for PINGU v5 processing), must be</span>
       <span class="c1"># added here so the code knows how to extract the info from the</span>
       <span class="c1"># source HDF5 file.</span>
       <span class="c1">#</span>
       <span class="c1"># Outputting a PID field to the destination PISA HDF5 file will *not*</span>
-      <span class="c1"># be done if the &quot;pid&quot; field is omitted below.</span>
+      <span class="c1"># be done if the "pid" field is omitted below.</span>
       <span class="c1">#</span>
-      <span class="c1"># In addition to the below-named fields, &quot;true_coszen&quot; and</span>
-      <span class="c1"># &quot;reco_coszen&quot; are generated from the data from the &quot;true_zenith&quot;</span>
-      <span class="c1"># and &quot;reco_zenith&quot; fields, respectively. So any of those fields can</span>
+      <span class="c1"># In addition to the below-named fields, "true_coszen" and</span>
+      <span class="c1"># "reco_coszen" are generated from the data from the "true_zenith"</span>
+      <span class="c1"># and "reco_zenith" fields, respectively. So any of those fields can</span>
       <span class="c1"># be used via the aforementioned names.</span>
 
-      <span class="s2">&quot;field_map&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;run&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;nu_code&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;true_energy&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;true_zenith&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;reco_energy&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;reco_zenith&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;one_weight&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;generator_volume&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;generator_radius&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;detection_length&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;interaction_type&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;azimuth_min&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;azimuth_max&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;zenith_min&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;zenith_max&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;energy_log_min&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;energy_log_max&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;num_events_per_file&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sim_spectral_index&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;pid&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;HDF5 path to corresponding node&gt;&quot;</span><span class="p">,</span>
+      <span class="s2">"field_map"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"run"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"nu_code"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"true_energy"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"true_zenith"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"reco_energy"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"reco_zenith"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"one_weight"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"generator_volume"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"generator_radius"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"detection_length"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"interaction_type"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"azimuth_min"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"azimuth_max"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"zenith_min"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"zenith_max"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"energy_log_min"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"energy_log_max"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"num_events_per_file"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"sim_spectral_index"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
+        <span class="s2">"pid"</span><span class="p">:</span> <span class="s2">"&lt;HDF5 path to corresponding node&gt;"</span><span class="p">,</span>
       <span class="p">},</span>
 
 
-      <span class="c1"># Mapping from file&#39;s nu code to PDG nu codes (only necessary if</span>
+      <span class="c1"># Mapping from file's nu code to PDG nu codes (only necessary if</span>
       <span class="c1"># nu_code values are not the PDG codes listed below)</span>
 
-      <span class="s2">&quot;nu_code_to_pdg_map&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;&lt;source nue code&gt;&quot;</span><span class="p">:</span>        <span class="mi">12</span><span class="p">,</span>
-        <span class="s2">&quot;&lt;source nue_bar code&gt;&quot;</span><span class="p">:</span>   <span class="o">-</span><span class="mi">12</span><span class="p">,</span>
-        <span class="s2">&quot;&lt;source numu code&gt;&quot;</span><span class="p">:</span>       <span class="mi">14</span><span class="p">,</span>
-        <span class="s2">&quot;&lt;source numu_bar code&gt;&quot;</span><span class="p">:</span>  <span class="o">-</span><span class="mi">14</span><span class="p">,</span>
-        <span class="s2">&quot;&lt;source nutau code&gt;&quot;</span><span class="p">:</span>      <span class="mi">16</span><span class="p">,</span>
-        <span class="s2">&quot;&lt;source nutau_bar code&gt;&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">16</span>
+      <span class="s2">"nu_code_to_pdg_map"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"&lt;source nue code&gt;"</span><span class="p">:</span>        <span class="mi">12</span><span class="p">,</span>
+        <span class="s2">"&lt;source nue_bar code&gt;"</span><span class="p">:</span>   <span class="o">-</span><span class="mi">12</span><span class="p">,</span>
+        <span class="s2">"&lt;source numu code&gt;"</span><span class="p">:</span>       <span class="mi">14</span><span class="p">,</span>
+        <span class="s2">"&lt;source numu_bar code&gt;"</span><span class="p">:</span>  <span class="o">-</span><span class="mi">14</span><span class="p">,</span>
+        <span class="s2">"&lt;source nutau code&gt;"</span><span class="p">:</span>      <span class="mi">16</span><span class="p">,</span>
+        <span class="s2">"&lt;source nutau_bar code&gt;"</span><span class="p">:</span> <span class="o">-</span><span class="mi">16</span>
       <span class="p">},</span>
 
 
       <span class="c1"># Specify standard cuts</span>
 
-      <span class="s2">&quot;cuts&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">"cuts"</span><span class="p">:</span> <span class="p">{</span>
 
 
-        <span class="c1"># Cut name; &quot;bjrej&quot; and &quot;analysis&quot; listed here are just example</span>
+        <span class="c1"># Cut name; "bjrej" and "analysis" listed here are just example</span>
         <span class="c1"># names for cuts one might specify</span>
 
-        <span class="s2">&quot;bgrej&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"bgrej"</span><span class="p">:</span> <span class="p">{</span>
 
           <span class="c1"># Which of the fields in the field_map (and the derived fields</span>
           <span class="c1"># such as true_coszen and reco_coszen) are required for this cut?</span>
 
-          <span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;&lt;field1&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;field2&gt;&quot;</span><span class="p">,</span> <span class="o">...</span> <span class="p">],</span>
+          <span class="s2">"fields"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"&lt;field1&gt;"</span><span class="p">,</span> <span class="s2">"&lt;field2&gt;"</span><span class="p">,</span> <span class="o">...</span> <span class="p">],</span>
 
           <span class="c1"># Expression for an event to pass the cut (not get thrown away);</span>
           <span class="c1"># see below for details on specifying an expression</span>
 
-          <span class="s2">&quot;pass_if&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;expression&gt;&quot;</span>
+          <span class="s2">"pass_if"</span><span class="p">:</span> <span class="s2">"&lt;expression&gt;"</span>
         <span class="p">},</span>
 
-        <span class="s2">&quot;analysis&quot;</span><span class="p">:</span> <span class="p">{</span>
-          <span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;&lt;field1&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;field2&gt;&quot;</span><span class="p">,</span> <span class="o">...</span> <span class="p">],</span>
-          <span class="s2">&quot;pass_if&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;expression&gt;&quot;</span>
+        <span class="s2">"analysis"</span><span class="p">:</span> <span class="p">{</span>
+          <span class="s2">"fields"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"&lt;field1&gt;"</span><span class="p">,</span> <span class="s2">"&lt;field2&gt;"</span><span class="p">,</span> <span class="o">...</span> <span class="p">],</span>
+          <span class="s2">"pass_if"</span><span class="p">:</span> <span class="s2">"&lt;expression&gt;"</span>
         <span class="p">},</span>
 
-        <span class="s2">&quot;&lt;cut name&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
-          <span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;&lt;field1&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;field2&gt;&quot;</span><span class="p">,</span> <span class="o">...</span> <span class="p">],</span>
-          <span class="s2">&quot;pass_if&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;expression&gt;&quot;</span>
+        <span class="s2">"&lt;cut name&gt;"</span><span class="p">:</span> <span class="p">{</span>
+          <span class="s2">"fields"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"&lt;field1&gt;"</span><span class="p">,</span> <span class="s2">"&lt;field2&gt;"</span><span class="p">,</span> <span class="o">...</span> <span class="p">],</span>
+          <span class="s2">"pass_if"</span><span class="p">:</span> <span class="s2">"&lt;expression&gt;"</span>
         <span class="p">}</span>
       <span class="p">},</span>
 
 
       <span class="c1"># Particle identification section</span>
 
-      <span class="s2">&quot;pid&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">"pid"</span><span class="p">:</span> <span class="p">{</span>
 
 
         <span class="c1"># Name of the particle (case-insensitive); e.g., in PINGU this</span>
-        <span class="c1"># would be &quot;trck&quot; or &quot;cscd&quot;</span>
+        <span class="c1"># would be "trck" or "cscd"</span>
 
-        <span class="s2">&quot;&lt;particle name 1&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"&lt;particle name 1&gt;"</span><span class="p">:</span> <span class="p">{</span>
 
 
           <span class="c1"># Which of the fields in the field_map (and the derived fields</span>
           <span class="c1"># such as true_coszen and reco_coszen) are required for this cut?</span>
 
-          <span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">field1</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">field2</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+          <span class="s2">"field"</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">field1</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">field2</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
 
 
           <span class="c1"># Expression for an event to be classified as this type of</span>
           <span class="c1"># particle; # see below for details on specifying an expression</span>
 
-          <span class="s2">&quot;criteria&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;expression&gt;&quot;</span>
+          <span class="s2">"criteria"</span><span class="p">:</span> <span class="s2">"&lt;expression&gt;"</span>
         <span class="p">}</span>
 
-        <span class="s2">&quot;&lt;particle name 2&gt;&quot;</span><span class="p">:</span> <span class="p">{</span>
-          <span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">field1</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">field2</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-          <span class="s2">&quot;criteria&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;expression&gt;&quot;</span>
+        <span class="s2">"&lt;particle name 2&gt;"</span><span class="p">:</span> <span class="p">{</span>
+          <span class="s2">"field"</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">field1</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">field2</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+          <span class="s2">"criteria"</span><span class="p">:</span> <span class="s2">"&lt;expression&gt;"</span>
         <span class="p">}</span>
       <span class="p">}</span>
     <span class="p">}</span>
@@ -2060,12 +2060,12 @@ or a number, and a path cannot start with a slash.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">retrieve_expression</span><span class="p">(</span><span class="s1">&#39;np.sqrt(MCneutrino/x**2 + MCneutrino/y**2)&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">retrieve_expression</span><span class="p">(</span><span class="s1">'np.sqrt(MCneutrino/x**2 + MCneutrino/y**2)'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Indexing into the data arrays can also be performed, and numpy masks
 used as usual:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;I3MCTree/energy[I3MCTree/event == I3EventHeader[0]</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">expr</span> <span class="o">=</span> <span class="s1">'I3MCTree/energy[I3MCTree/event == I3EventHeader[0]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2227,13 +2227,13 @@ separator in the string.</p></li>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a-0.1.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;a-0.01.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;a-0.05.txt&#39;</span><span class="p">]</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'a-0.1.txt'</span><span class="p">,</span> <span class="s1">'a-0.01.txt'</span><span class="p">,</span> <span class="s1">'a-0.05.txt'</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fsort</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="go">[&#39;a-0.1.txt&#39;, &#39;a-0.05.txt&#39;, &#39;a-0.01.txt&#39;]</span>
+<span class="go">['a-0.1.txt', 'a-0.05.txt', 'a-0.01.txt']</span>
 </pre></div>
 </div>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fsort</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="go">[&#39;a-0.01.txt&#39;, &#39;a-0.05.txt&#39;, &#39;a-0.1.txt&#39;]</span>
+<span class="go">['a-0.01.txt', 'a-0.05.txt', 'a-0.1.txt']</span>
 </pre></div>
 </div>
 <div class="admonition seealso">
@@ -2256,8 +2256,8 @@ separator in the string.</p></li>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">get_valid_filename</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;A,bCd $%#^#*!()&quot;&#39;</span> <span class="o">.</span><span class="n">ext</span> <span class="s1">&#39;))</span>
-<span class="go">&#39;a_bcd__.ext&#39;</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">get_valid_filename</span><span class="p">(</span><span class="sa">r</span><span class="s1">'A,bCd $%#^#*!()"'</span> <span class="o">.</span><span class="n">ext</span> <span class="s1">'))</span>
+<span class="go">'a_bcd__.ext'</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2300,9 +2300,9 @@ for sorting e.g. version strings, etc..</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;f1.10.0.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;f1.01.2.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;f1.1.1.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;f9.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;f10.txt&#39;</span><span class="p">]</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'f1.10.0.txt'</span><span class="p">,</span> <span class="s1">'f1.01.2.txt'</span><span class="p">,</span> <span class="s1">'f1.1.1.txt'</span><span class="p">,</span> <span class="s1">'f9.txt'</span><span class="p">,</span> <span class="s1">'f10.txt'</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nsort</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
-<span class="go">[&#39;f1.1.1.txt&#39;, &#39;f1.01.2.txt&#39;, &#39;f1.10.0.txt&#39;, &#39;f9.txt&#39;, &#39;f10.txt&#39;]</span>
+<span class="go">['f1.1.1.txt', 'f1.01.2.txt', 'f1.10.0.txt', 'f9.txt', 'f10.txt']</span>
 </pre></div>
 </div>
 <div class="admonition seealso">
@@ -2320,9 +2320,9 @@ for sorting e.g. version strings, etc..</p>
 <dd><p>Use as the <cite>key</cite> argument to the <cite>sorted</cite> function or <cite>sort</cite> method.</p>
 <p>Code adapted from nedbatchelder.com/blog/200712/human_sorting.html#comments</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;f1.10.0.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;f1.01.2.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;f1.1.1.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;f9.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;f10.txt&#39;</span><span class="p">]</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">l</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'f1.10.0.txt'</span><span class="p">,</span> <span class="s1">'f1.01.2.txt'</span><span class="p">,</span> <span class="s1">'f1.1.1.txt'</span><span class="p">,</span> <span class="s1">'f9.txt'</span><span class="p">,</span> <span class="s1">'f10.txt'</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">nsort_key_func</span><span class="p">)</span>
-<span class="go">[&#39;f1.1.1.txt&#39;, &#39;f1.01.2.txt&#39;, &#39;f1.10.0.txt&#39;, &#39;f9.txt&#39;, &#39;f10.txt&#39;]</span>
+<span class="go">['f1.1.1.txt', 'f1.01.2.txt', 'f1.10.0.txt', 'f9.txt', 'f10.txt']</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -2583,10 +2583,10 @@ context manager was introduced to switch between the PISA 3 default (no
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nuebar</span> <span class="o">=</span> <span class="n">NuFlav</span><span class="p">(</span><span class="s1">&#39;nuebar&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nuebar</span> <span class="o">=</span> <span class="n">NuFlav</span><span class="p">(</span><span class="s1">'nuebar'</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">nuebar</span><span class="p">))</span>
 <span class="go">nuebar</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">BarSep</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">BarSep</span><span class="p">(</span><span class="s1">'_'</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">nuebar</span><span class="p">)</span>
 <span class="go">nue_bar</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">nuebar</span><span class="p">))</span>
@@ -2622,23 +2622,23 @@ former case, the entire flavor dictionary (which includes both ‘cc’ and
 returned.</p>
 <p>Initializing, setting and getting data in various ways:</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span> <span class="o">=</span> <span class="n">FlavIntData</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">&#39;nue&#39;</span><span class="p">,</span> <span class="s1">&#39;cc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">&#39;nuenc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">&#39;numu&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cc&#39;</span><span class="p">:</span> <span class="s1">&#39;cc data...&#39;</span><span class="p">,</span> <span class="s1">&#39;nc&#39;</span><span class="p">:</span> <span class="s1">&#39;nc data...&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">'nue'</span><span class="p">,</span> <span class="s1">'cc'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">'nuenc'</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">'numu'</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'cc'</span><span class="p">:</span> <span class="s1">'cc data...'</span><span class="p">,</span> <span class="s1">'nc'</span><span class="p">:</span> <span class="s1">'nc data...'</span><span class="p">}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="n">NuFlav</span><span class="p">(</span><span class="mi">16</span><span class="p">),</span> <span class="n">IntType</span><span class="p">(</span><span class="mi">1</span><span class="p">)]</span> <span class="o">==</span> <span class="mi">4</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">&#39;nuecc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">'nuecc'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
 <span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">&#39;NUE_NC&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">'NUE_NC'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span>
 <span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">&#39;nu_e&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;cc&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;nc&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">'nu_e'</span><span class="p">]</span> <span class="o">==</span> <span class="p">{</span><span class="s1">'cc'</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">'nc'</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
 <span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">&#39;nu mu cc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;cc data...&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">'nu mu cc'</span><span class="p">]</span> <span class="o">==</span> <span class="s1">'cc data...'</span>
 <span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">&#39;nu mu&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;cc&#39;</span><span class="p">:</span> <span class="s1">&#39;cc data...&#39;</span><span class="p">,</span> <span class="s1">&#39;nc&#39;</span><span class="p">:</span> <span class="s1">&#39;nc data...&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">'nu mu'</span><span class="p">]</span> <span class="o">==</span> <span class="p">{</span><span class="s1">'cc'</span><span class="p">:</span> <span class="s1">'cc data...'</span><span class="p">,</span> <span class="s1">'nc'</span><span class="p">:</span> <span class="s1">'nc data...'</span><span class="p">}</span>
 <span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">&#39;nutau cc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fi_dat</span><span class="p">[</span><span class="s1">'nutau cc'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span>
 <span class="go">True</span>
 </pre></div>
 </div>
@@ -2835,18 +2835,18 @@ which returns a valid IntType object)</p></li>
 </dd>
 </dl>
 <p>The following, e.g., are all interpreted as charged-current IntTypes:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="s1">&#39;cc&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="s1">&#39;</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="s1">'cc'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="s1">'</span>
 <span class="go">     _cc</span>
 </pre></div>
 </div>
 </div></blockquote>
 <dl>
-<dt>‘)</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="s1">&#39;numubarcc&#39;</span><span class="p">)</span>
+<dt>‘)</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="s1">'numubarcc'</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="n">IntType</span><span class="p">(</span><span class="s1">&#39;cc&#39;</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="n">NuFlavInt</span><span class="p">(</span><span class="s1">&#39;numubarcc&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="n">IntType</span><span class="p">(</span><span class="s1">'cc'</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">IntType</span><span class="p">(</span><span class="n">NuFlavInt</span><span class="p">(</span><span class="s1">'numubarcc'</span><span class="p">))</span>
 </pre></div>
 </div>
 </dd>
@@ -3097,10 +3097,10 @@ valid token.</p>
 <dd><p>Extract data from a nested dictionary <cite>d</cite> whose format is commonly
 found in PISA</p>
 <p>The dictionary must have the format:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;&lt;flavor&gt;&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;&lt;interaction type&gt;&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">data</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">}}</span>
-<span class="o">&lt;</span><span class="n">flavor</span><span class="o">&gt;</span> <span class="ow">is</span> <span class="n">one</span> <span class="n">of</span> <span class="s2">&quot;nue&quot;</span><span class="p">,</span> <span class="s2">&quot;nue_bar&quot;</span><span class="p">,</span> <span class="s2">&quot;numu&quot;</span><span class="p">,</span> <span class="s2">&quot;numu_bar&quot;</span><span class="p">,</span> <span class="s2">&quot;nutau&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;nutau_bar&quot;</span>
-<span class="o">&lt;</span><span class="n">interaction</span> <span class="nb">type</span><span class="o">&gt;</span> <span class="ow">is</span> <span class="n">one</span> <span class="n">of</span> <span class="s2">&quot;cc&quot;</span><span class="p">,</span> <span class="s2">&quot;nc&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"&lt;flavor&gt;"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"&lt;interaction type&gt;"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">data</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">}}</span>
+<span class="o">&lt;</span><span class="n">flavor</span><span class="o">&gt;</span> <span class="ow">is</span> <span class="n">one</span> <span class="n">of</span> <span class="s2">"nue"</span><span class="p">,</span> <span class="s2">"nue_bar"</span><span class="p">,</span> <span class="s2">"numu"</span><span class="p">,</span> <span class="s2">"numu_bar"</span><span class="p">,</span> <span class="s2">"nutau"</span><span class="p">,</span>
+    <span class="s2">"nutau_bar"</span>
+<span class="o">&lt;</span><span class="n">interaction</span> <span class="nb">type</span><span class="o">&gt;</span> <span class="ow">is</span> <span class="n">one</span> <span class="n">of</span> <span class="s2">"cc"</span><span class="p">,</span> <span class="s2">"nc"</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -3224,9 +3224,9 @@ returned (cf. method <cite>cc_flavints</cite></p>
 represented in this group.</p>
 <p>The returned dictionary has format:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s1">&#39;all_int_type_flavs&#39;</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-    <span class="s1">&#39;cc_only_flavs&#39;</span><span class="p">:</span>      <span class="p">[</span><span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-    <span class="s1">&#39;nc_only_flavs&#39;</span><span class="p">:</span>      <span class="p">[</span><span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="s1">'all_int_type_flavs'</span><span class="p">:</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="s1">'cc_only_flavs'</span><span class="p">:</span>      <span class="p">[</span><span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="s1">'nc_only_flavs'</span><span class="p">:</span>      <span class="p">[</span><span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">NuFlav</span> <span class="nb">object</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -3802,13 +3802,13 @@ interpretation is meant to differ; e.g.,</p>
 display.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">hr_range_formatter</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="go">&#39;0-10&#39;</span>
+<span class="go">'0-10'</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">hr_range_formatter</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="go">&#39;0-10:2&#39;</span>
+<span class="go">'0-10:2'</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">hr_range_formatter</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
-<span class="go">&#39;0-3:8&#39;</span>
+<span class="go">'0-3:8'</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">hr_range_formatter</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mf">3.1</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="go">&#39;0.1-3.1:1&#39;</span>
+<span class="go">'0.1-3.1:1'</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -3874,36 +3874,36 @@ is separated by a semicolon, and whitespace is ignored. Refer to
 </dl>
 <p class="rubric">Examples</p>
 <p>A single number evaluates to a list with a list with a single number.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">"1"</span><span class="p">)</span>
 <span class="go">[[1]]</span>
 </pre></div>
 </div>
 <p>A sequence of numbers or ranges can be specified separated by commas.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">&quot;1, 3.2, 19.8&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">"1, 3.2, 19.8"</span><span class="p">)</span>
 <span class="go">[[1, 3.2, 19.8]]</span>
 </pre></div>
 </div>
 <p>A range can be specified with a dash; default is a step size of 1 (or -1 if
 the end of the range is less than the start of the range); note that the
 endpoint is included, unlike slicing in Python.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">&quot;1-3&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">"1-3"</span><span class="p">)</span>
 <span class="go">[[1, 2, 3]]</span>
 </pre></div>
 </div>
 <p>The range can go from or to a negative number, and can go in a negative
 direction.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">&quot;-1 - -5&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">"-1 - -5"</span><span class="p">)</span>
 <span class="go">[[-1, -3, -5]]</span>
 </pre></div>
 </div>
 <p>Multiple lists are separated by semicolons, and parentheses and brackets
 can be used to make it easier to understand the string.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">&quot;1 ; 8 ; [(-10 - -8:2), 1]&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">"1 ; 8 ; [(-10 - -8:2), 1]"</span><span class="p">)</span>
 <span class="go">[[1], [8], [-10, -8, 1]]</span>
 </pre></div>
 </div>
 <p>Finally, all of the above can be combined.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">&quot;1.-3.; 9.5-10.6:0.5,3--1:-1; 12.5-13:0.8&quot;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="n">hrlol2lol</span><span class="p">(</span><span class="s2">"1.-3.; 9.5-10.6:0.5,3--1:-1; 12.5-13:0.8"</span><span class="p">)</span>
 <span class="go">[[1, 2, 3], [9.5, 10.0, 10.5, 3, 2, 1, 0, -1], [12.5]]</span>
 </pre></div>
 </div>
@@ -3960,15 +3960,15 @@ positive or negative.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">list2hrlist</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
-<span class="go">&#39;0,1&#39;</span>
+<span class="go">'0,1'</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">list2hrlist</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
-<span class="go">&#39;0,3&#39;</span>
+<span class="go">'0,3'</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">list2hrlist</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="go">&#39;0-2&#39;</span>
+<span class="go">'0-2'</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">utils</span><span class="o">.</span><span class="n">list2hrlist</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">,</span> <span class="mf">2.1</span><span class="p">,</span> <span class="mf">3.1</span><span class="p">])</span>
-<span class="go">&#39;0.1-3.1:1&#39;</span>
+<span class="go">'0.1-3.1:1'</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">list2hrlist</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
-<span class="go">&#39;0-2,4-6,20&#39;</span>
+<span class="go">'0-2,4-6,20'</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -4038,24 +4038,24 @@ supplied; otherwise, all items are strings.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; One, TWO, three &#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">force_case</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">))</span>
-<span class="go">[&#39;one&#39;, &#39;two&#39;, &#39;three&#39;]</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="s1">' One, TWO, three '</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">','</span><span class="p">,</span> <span class="n">force_case</span><span class="o">=</span><span class="s1">'lower'</span><span class="p">))</span>
+<span class="go">['one', 'two', 'three']</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;One:TWO:three&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">))</span>
-<span class="go">[&#39;One&#39;, &#39;TWO&#39;, &#39;three&#39;]</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="s1">'One:TWO:three'</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">':'</span><span class="p">))</span>
+<span class="go">['One', 'TWO', 'three']</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;one  two  three&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">))</span>
-<span class="go">[&#39;one&#39;, &#39;&#39;, &#39;two&#39;, &#39;&#39; , &#39;three&#39;]</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="s1">'one  two  three'</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">' '</span><span class="p">))</span>
+<span class="go">['one', '', 'two', '' , 'three']</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;1 2 3&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">parse_func</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="s1">'1 2 3'</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">' '</span><span class="p">,</span> <span class="n">parse_func</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
 <span class="go">[1, 2, 3]</span>
 </pre></div>
 </div>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">ast</span><span class="w"> </span><span class="kn">import</span> <span class="n">literal_eval</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;True; False; None; (1, 2, 3)&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="s1">'True; False; None; (1, 2, 3)'</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">','</span><span class="p">,</span>
 <span class="gp">&gt;&gt;&gt; </span>            <span class="n">parse_func</span><span class="o">=</span><span class="n">literal_eval</span><span class="p">))</span>
 <span class="go">[True, False, None, (1, 2, 3)]</span>
 </pre></div>
@@ -4182,7 +4182,7 @@ time at which the function is called.</p>
 </pre></div>
 </div>
 <p>should be equivalent to the shell command ..</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">date</span> <span class="o">+</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">T%H:%M:%S%z&#39;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">date</span> <span class="o">+</span><span class="s1">'%Y-%m-</span><span class="si">%d</span><span class="s1">T%H:%M:%S%z'</span>
 </pre></div>
 </div>
 <dl class="field-list simple">
@@ -5080,58 +5080,58 @@ decimal value.):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 
   <span class="c1"># Specify the detector name, lower case</span>
-  <span class="s2">&quot;pingu&quot;</span><span class="p">:</span> <span class="p">{</span>
+  <span class="s2">"pingu"</span><span class="p">:</span> <span class="p">{</span>
 
     <span class="c1"># Monte Carlo run number for this detector</span>
-    <span class="s2">&quot;388&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">"388"</span><span class="p">:</span> <span class="p">{</span>
 
       <span class="c1"># Version of geometry, lower-case. E.g., ic86 for IceCube/DeepCore</span>
-      <span class="s2">&quot;geom&quot;</span><span class="p">:</span> <span class="s2">&quot;v36&quot;</span><span class="p">,</span>
+      <span class="s2">"geom"</span><span class="p">:</span> <span class="s2">"v36"</span><span class="p">,</span>
 
       <span class="c1"># A straightforward way of computing aeff/veff/meff is to keep all</span>
       <span class="c1"># simulated events and compare the #analysis/#simulated. If all</span>
       <span class="c1"># simulated events are kept, then the filename containing these is</span>
       <span class="c1"># recorded here.</span>
-      <span class="s2">&quot;all_gen_events_file&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+      <span class="s2">"all_gen_events_file"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
 
       <span class="c1"># Max and min azimuth angle simulated (rad)</span>
-      <span class="s2">&quot;azimuth_max&quot;</span><span class="p">:</span> <span class="s2">&quot;2*pi&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;azimuth_min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+      <span class="s2">"azimuth_max"</span><span class="p">:</span> <span class="s2">"2*pi"</span><span class="p">,</span>
+      <span class="s2">"azimuth_min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
 
       <span class="c1"># Max and min energy simulated (GeV)</span>
-      <span class="s2">&quot;energy_max&quot;</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
-      <span class="s2">&quot;energy_min&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="s2">"energy_max"</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+      <span class="s2">"energy_min"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
 
       <span class="c1"># GENIE simulates some un-physica events (interactions that will not</span>
       <span class="c1"># occur in nature). The number below was arrived at by Ken Clark, so</span>
       <span class="c1"># ask him for more info.</span>
-      <span class="s2">&quot;physical_events_fract&quot;</span><span class="p">:</span> <span class="mf">0.8095</span><span class="p">,</span>
+      <span class="s2">"physical_events_fract"</span><span class="p">:</span> <span class="mf">0.8095</span><span class="p">,</span>
 
       <span class="c1"># GENIE has a prescale factor (TODO: generalize or eliminate for</span>
       <span class="c1"># other xsec?)</span>
-      <span class="s2">&quot;genie_prescale_factor&quot;</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">,</span>
+      <span class="s2">"genie_prescale_factor"</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">,</span>
 
       <span class="c1"># Neutrino flavors simulated</span>
-      <span class="s2">&quot;flavints&quot;</span><span class="p">:</span> <span class="s2">&quot;nutau,nutaubar&quot;</span><span class="p">,</span>
+      <span class="s2">"flavints"</span><span class="p">:</span> <span class="s2">"nutau,nutaubar"</span><span class="p">,</span>
 
       <span class="c1"># #nu / (#nu + #nubar) simulated</span>
-      <span class="s2">&quot;nu_to_total_fract&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+      <span class="s2">"nu_to_total_fract"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
 
       <span class="c1"># Number of events simulated per I3 file</span>
-      <span class="s2">&quot;num_events_per_file&quot;</span><span class="p">:</span> <span class="mi">250000</span><span class="p">,</span>
+      <span class="s2">"num_events_per_file"</span><span class="p">:</span> <span class="mi">250000</span><span class="p">,</span>
 
       <span class="c1"># Number of I3 files used</span>
-      <span class="s2">&quot;num_i3_files&quot;</span><span class="p">:</span> <span class="mi">195</span><span class="p">,</span>
+      <span class="s2">"num_i3_files"</span><span class="p">:</span> <span class="mi">195</span><span class="p">,</span>
 
       <span class="c1"># Simulated spectral inde gamma; value of 1 =&gt; E*{-1}</span>
-      <span class="s2">&quot;sim_spectral_index&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="s2">"sim_spectral_index"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
 
       <span class="c1"># Version of neutrino/ice cross sections used for the simulation</span>
-      <span class="s2">&quot;xsec_version&quot;</span><span class="p">:</span> <span class="s2">&quot;genie_2.6.4&quot;</span><span class="p">,</span>
+      <span class="s2">"xsec_version"</span><span class="p">:</span> <span class="s2">"genie_2.6.4"</span><span class="p">,</span>
 
       <span class="c1"># Max and min zenith angle simulated (rad)</span>
-      <span class="s2">&quot;zenith_max&quot;</span><span class="p">:</span> <span class="s2">&quot;pi&quot;</span><span class="p">,</span>
-      <span class="s2">&quot;zenith_min&quot;</span><span class="p">:</span> <span class="mi">0</span>
+      <span class="s2">"zenith_max"</span><span class="p">:</span> <span class="s2">"pi"</span><span class="p">,</span>
+      <span class="s2">"zenith_min"</span><span class="p">:</span> <span class="mi">0</span>
     <span class="p">}</span>
   <span class="p">}</span>
 <span class="p">}</span>
@@ -7275,7 +7275,7 @@ modifications that have been proposed in the literature.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=3344f118"></script>
+</div><script src="_static/documentation_options.js?v=82f492cd"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
