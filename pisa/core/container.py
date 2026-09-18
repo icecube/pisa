@@ -53,6 +53,20 @@ When data for some variable is modified in one representation---through the
 1. that representation is marked as *valid* for that variable, and
 2. all other representations are marked as *invalid*.
 
+.. caution::
+    Not all modifications will result in a call to `__setitem__()` and therefore
+    trigger the above automatic representation validation/invalidation
+    management. The following ways of modifying the data *will* do so:
+
+    - direct assignment to variable subscript (``container[key] = new_data``)
+    - augmented assignment to variable subscript (e.g. ``container[key] *= 2``)
+
+    The following ways *will not* do so (among others):
+
+    - in-place modification of returned object (e.g. ``data = container[key]; data *= 2`` for mutable types)
+    - assignment to particular index/subscript of the data (e.g. ``container[key][0] = 0``)
+    - bypassing user interface/direct manipulation of internal storage (e.g. ``container.current_data[key] = new_data``)
+
 If custom validity configuration is required, the methods
 :py:meth:`~Container.mark_changed` and :py:meth:`~Container.mark_valid` may be
 called and the attribute :py:attr:`~Container.validity` manipulated as desired.
@@ -65,6 +79,20 @@ invalidate the weights in the 'events' representation. Hence, one can set::
 in order to ensure that PISA does not attempt to translate from binned → "events"
 when event-by-event weights are requested (see below). Instead, the exact
 event-by-event weights will remain available.
+
+However, the above execution of `__setitem__` has the disadvantage that *all* other
+(but the current) representations are made invalid, so that they would also have to
+be set to valid manually to prevent unnecessary data transformations in the future.
+Hence, when one is certain that invalidation is unnecessary, one can call::
+
+    container.set_item_no_invalidate(key, data)
+
+which does not invalidate any representations.
+
+.. tip::
+    In case of uncertainty, in particular when devising a new service which
+    modifies data in some representation, include an explicit call to
+    :py:meth:`~Container.mark_changed`.
 
 When accessing data in a currently invalid representation,
 :py:meth:`~Container.auto_translate` is triggered, which ensures synchronization
@@ -184,6 +212,7 @@ from __future__ import absolute_import, print_function
 
 from collections.abc import Sequence
 from collections import defaultdict
+from copy import deepcopy
 import re
 
 import numpy as np
@@ -478,7 +507,8 @@ class Container():
             Auxiliary data not tied to any representation
 
         validity : dict[variable_name][representation_hash] -> bool
-            Tracks which representations have current valid data
+            Tracks validities of the various representations for the
+            various variables
 
         precedence : dict[representation_hash] -> int
             Precedence for choosing translation source (lower = higher priority).
@@ -504,8 +534,10 @@ class Container():
 
     valid_translation_modes = ("average", "sum")
     """Available translation modes"""
-    sum_mode_keys = () # TODO
+
+    sum_mode_keys = ("weights", "initial_weights")
     """Variables for which "sum" is assumed as default translation mode"""
+
     array_representations = ("events", "log_events")
     """Available unbinned data representations"""
 
@@ -684,7 +716,38 @@ class Container():
                 self.translation_modes[key] = "sum"
             else:
                 self.translation_modes[key] = "average"
+            logging.trace("Set translation mode = '%s' for variable '%s'.",
+                          self.translation_modes[key], key)
         self.mark_changed(key)
+
+    def set_item_no_invalidate(self, key, data):
+        """Set `self[key]` to `data`, but without invalidating representations
+        that aren't already invalid. If the variable `key` is new, no other
+        representations than the current one are involved.
+
+        Parameters
+        ----------
+        key : string
+            data identifier/variable
+        data: ndarray, :py:class:`~.Map` or (binning, array)-tuple
+            data sample to add to the container
+        """
+        # First we need to find out which representations are currently valid,
+        # as these should remain valid
+        valid_rep_hashs_for_key = [rep_hash for rep_hash in self.validity[key] if
+                                   self.validity[key][rep_hash]]
+        logging.trace("Found %d currently valid representation(s) for variable '%s'",
+                      len(valid_rep_hashs_for_key), key)
+
+        # We want this call to __setitem__ to reuse its checks, assignments,
+        # and bookkeeping, even though it will initially cause all but the
+        # current representation to become invalid.
+        self[key] = data
+
+        for rep_hash in valid_rep_hashs_for_key:
+            self.validity[key][rep_hash] = True
+            logging.trace("Re-validated variable '%s' in representation '%s'.",
+                          key, self._representations[rep_hash])
 
     def __add_data(self, key, data):
         """Add data for a given variable, after performing consistency checks
@@ -803,10 +866,57 @@ class Container():
         """Iterate over all keys in container"""
         return self.keys
 
+    def _events_to_log_events(self, key):
+        '''One-to-one translation: take (guarded) log of per-event quantities
+
+        Rejects negative values, zeros produce -inf, and raises if NaNs are
+        present.
+
+        Raises
+        ------
+        ValueError : if NaNs or negative values are present in data for `key`
+        '''
+        arr = self[key]
+        if np.any(np.isnan(arr)):
+            raise ValueError(f"Cannot take log of NaNs for '{key}'.")
+        if np.any(arr < 0):
+            raise ValueError(f"Cannot take log of negative values for '{key}'.")
+        # use numpy.errstate to avoid noisy warnings for log(0) -> -inf
+        with np.errstate(divide='ignore'):
+            log_arr = np.log(arr)
+        return log_arr
+
+    def _log_events_to_events(self, key):
+        '''One-to-one translation: (guarded) exponentiation of per-event quantities.
+
+        Rejects NaNs in the log array, -inf produces 0, and warns when
+        exponentiation yields +inf.
+
+        Raises
+        ------
+        ValueError : if NaNs are present in data for `key`
+        '''
+        log_arr = self[key]
+        if np.any(np.isnan(log_arr)):
+            raise ValueError(f"Cannot exponentiate NaNs for '{key}'.")
+        with np.errstate(over='ignore'):
+            # an overflow is treated afterwards
+            arr = np.exp(log_arr)
+        pos_inf_mask = np.isposinf(arr)
+        if np.any(pos_inf_mask):
+            logging.warning(
+                "Container `%s`: exponentiation produced +inf for variable '%s'"
+                " in %d element(s). Check input values in 'log_events'"
+                " representation!", self.name, key, int(pos_inf_mask.sum())
+            )
+        return arr
+
     def translate(self, key, src_representation):
         '''Translate data for variable `key` from source rep. to current rep.
 
-        Afterwards, both source and destination representation will be valid.
+        Afterwards, the current representation will be valid, and all valid
+        representations will remain valid (since the data doesn't actually get
+        modified by translating, i.e., switching the representation).
 
         Parameters
         ----------
@@ -815,85 +925,85 @@ class Container():
         src_representation : hashable object, e.g. str or MultiDimBinning
             some representation present in container
         '''
-        assert hash(src_representation) in self.representation_keys
+        src_hash = hash(src_representation)
+        assert src_hash in self.representation_keys
 
-        dest_representation = self.representation
+        # ensure src is actually valid
+        if not self.validity[key].get(src_hash, False):
+            raise ValueError(
+                f"Source representation {src_representation} for variable '{key}'"
+                " is not valid; call auto_translate() or provide a valid"
+                " representation before calling translate()!"
+            )
 
-        if hash(src_representation) == hash(dest_representation):
-            # nothing to do
-            return
-
-        from_map = isinstance(src_representation, MultiDimBinning)
-        to_map = isinstance(dest_representation, MultiDimBinning)
-
-        if self.translation_modes[key] == 'average':
-            if from_map and to_map:
-                out = self.resample(key, src_representation, dest_representation)
-                self.representation = dest_representation
-                self[key] = out
-
-            elif to_map:
-                out = self.array_to_binned(key, src_representation, dest_representation)
-                self.representation = dest_representation
-                self[key] = out
-
-            elif from_map:
-                out = self.binned_to_array(key, src_representation, dest_representation)
-                self.representation = dest_representation
-                self[key] = out
-
-            elif src_representation == "events" and dest_representation == "log_events":
-                self.representation = "events"
-                logging.trace(f"Container `{self.name}`: taking log of {key}")
-                sample = np.log(self[key])
-                self.representation = dest_representation
-                self[key] = sample
-
-            elif src_representation == "log_events" and dest_representation == "events":
-                self.representation = "log_events"
-                sample = np.exp(self[key])
-                self.representation = dest_representation
-                self[key] = sample
-
-            else:
-                raise NotImplementedError(
-                    f"Translating {src_representation} to {dest_representation}"
-                    " in 'average' mode!"
-                )
-
-        elif self.translation_modes[key] == 'sum':
-            if from_map and to_map:
-                raise NotImplementedError("Map to Map in sum mode needs to integrate over bins.")
-
-            if to_map:
-                out = self.array_to_binned(key, src_representation, dest_representation, averaged=False)
-                self.representation = dest_representation
-                self[key] = out
-
-            else:
-                # destination rep. is an event-by-event rep., no matter the source rep.
-                raise NotImplementedError(
-                    f"Translating {src_representation} to {dest_representation}"
-                    " in 'sum' mode!"
-                )
-
-        else:
+        if not self.translation_modes[key] in self.valid_translation_modes:
             raise ValueError(
                 f"Unknown translation mode for variable '{key}':"
                 f" '{self.translation_modes[key]}'!"
             )
 
-        # validate source!
-        self.validity[key][hash(src_representation)] = True
+        dest_representation = self.representation
+        dest_hash = hash(dest_representation)
 
+        if src_hash == dest_hash:
+            logging.trace("Attempting to translate from one representation to"
+                          " itself, so there is nothing to do.")
+            return
+
+        from_map = isinstance(src_representation, MultiDimBinning)
+        to_map = isinstance(dest_representation, MultiDimBinning)
+
+        if from_map and to_map:
+            if self.translation_modes[key] == 'average':
+                out = self.resample(key, src_representation, dest_representation)
+            elif self.translation_modes[key] == 'sum':
+                raise NotImplementedError(
+                    "Map to Map in sum mode needs to integrate over bins."
+                )
+        elif to_map:
+            if self.translation_modes[key] == 'average':
+                out = self.array_to_binned(key, src_representation, dest_representation)
+            elif self.translation_modes[key] == 'sum':
+                out = self.array_to_binned(key, src_representation, dest_representation,
+                                           averaged=False)
+        elif from_map:
+            if self.translation_modes[key] == 'average':
+                out = self.binned_to_array(key, src_representation, dest_representation)
+            elif self.translation_modes[key] == 'sum':
+                # Destination rep. is from map to an event-by-event rep., which would
+                # require using information about weight distribution (TODO)
+                raise NotImplementedError(
+                    f"Translating from {src_representation} to {dest_representation}"
+                    " in 'sum' mode!"
+                )
+        # Do not distinguish between average and sum modes in case of one-to-one
+        # relationship
+        elif src_representation == "events" and dest_representation == "log_events":
+            self.representation = "events"
+            out = self._events_to_log_events(key)
+        elif src_representation == "log_events" and dest_representation == "events":
+            self.representation = "log_events"
+            out = self._log_events_to_events(key)
+        else:
+            raise NotImplementedError(
+                f"Translating from {src_representation} to {dest_representation}"
+                " is not implemented!"
+            )
+
+        self.representation = dest_representation
+        self.set_item_no_invalidate(key=key, data=out)
+        # Sanity check on source and dest
+        assert self.validity[key][src_hash]
+        assert self.validity[key][dest_hash]
 
     def auto_translate(self, key):
+        '''Auto translate to current representation after auto-determining a
+        preferred source representation'''
         src_representation = self.find_valid_representation(key)
         if src_representation is None:
             raise Exception(f'No valid representation for {key} in container')
-        # logging.debug(f'Auto-translating variable `{key}` from {src_representation}')
+        logging.trace('Auto-translating "%s" from %s', key, src_representation)
         self.translate(key, src_representation)
-        
                 
     def find_valid_representation(self, key):
         ''' Find valid, and best representation for key'''
@@ -1039,7 +1149,6 @@ class Container():
         return eval(keep_criteria)  # pylint: disable=eval-used
 
 
-
 def test_container():
     """Unit tests for :py:class:`Container` class."""
 
@@ -1073,12 +1182,12 @@ def test_container():
     m = np.meshgrid(binning.midpoints[0].m, binning.midpoints[1].m)[1].ravel()
     assert np.allclose(bx, m, **ALLCLOSE_KW), f'test:\n{bx}\n!= ref:\n{m}'
 
-    # array repr
+    # array repr (should not attempt to translate, since 'w' still valid in 'events')
     container.representation = 'events'
     array_weights = container['w']
     assert np.allclose(array_weights, w, **ALLCLOSE_KW), f'test:\n{array_weights}\n!= ref:\n{w}'
 
-    # binned repr
+    # binned repr (needs to translate 'w')
     container.representation = binning
     diag = np.diag(np.arange(100) + 0.5)
     bd = container['w']
@@ -1101,18 +1210,85 @@ def test_container():
     logging.trace('Testing container representation and validity management')
 
     container = Container('nue', 'events')
+    for weight_key in Container.sum_mode_keys:
+        container[weight_key] = w
+        assert container.translation_modes[weight_key] == 'sum'
     container['x'] = x
     assert container.translation_modes['x'] == 'average'
     container['y'] = y
     assert container.translation_modes['y'] == 'average'
 
+    # Test translation logic for variables transforming in sum mode
     container.representation = binning
     binning_hash = hash(binning)
-    for k in container.all_keys:
-        if 'weight' in k:
-            container[k] *= 1.0 # invalidates 'events' rep. when __setitem__ called
-            assert container.validity[k][binning_hash]
-            assert not container.validity[k][hash('events')]
+    # Just pick last weight key from above
+    k = weight_key
+    # Artificially invalidate current (=binned) rep., so a translation to it
+    # will be required
+    container.validity[k][binning_hash] = False
+    data = container[k] * 1.01
+    # Should now already have been translated to binned rep due to statement
+    # `container[k]`, without invalidating anything (e.g. 'events')
+    assert container.validity[k][binning_hash]
+    assert container.validity[k][hash('events')]
+    # But entry not yet rescaled
+    assert not np.allclose(container[k], data, **ALLCLOSE_KW)
+
+    # 1. Test modification via method that doesn't invalidate reps.
+    container.set_item_no_invalidate(key=k, data=data)
+    assert container.validity[k][binning_hash]
+    # 'events' rep again needs to remain valid
+    assert container.validity[k][hash('events')]
+    # Entry has to be the rescaled one
+    assert np.allclose(container[k], data, **ALLCLOSE_KW)
+
+    # 2. "Traditional" subscription augmented assignment
+    # (triggers __setitem__ and therefore mark_changed)
+    container[k] *= 1.0
+    assert container.validity[k][binning_hash]
+    assert not container.validity[k][hash('events')]
+
+    # 3. Mutating returned object in-place (here: in binned rep.)
+    # Re-validate 'events' manually, so we can check for invalidation
+    container.validity[k][hash('events')] = True
+    assert container.representation == binning
+    arr = container[k]
+    orig_arr = deepcopy(arr)
+    arr += 5.
+    # -> Local reference mutated - the container data should have been modified
+    assert np.allclose(container[k] - orig_arr, 5., **ALLCLOSE_KW)
+    # But without marking the data as changed!
+    assert container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+    container.mark_changed(k)
+    assert not container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+
+    # 4. Overwrite an index into the returned array (same outcome as in 3.)
+    # Re-validate 'events' manually, so we can check for invalidation
+    container.validity[k][hash('events')] = True
+    orig_arr = deepcopy(container[k])
+    container[k][0] = np.inf
+    assert container[k][0] != orig_arr[0]
+    assert container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+    container.mark_changed(k)
+    assert not container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+
+    # 5. Directly manipulate internal storage (same outcome as in 3.+4.)
+    # Re-validate 'events' manually, so we can check for invalidation
+    container.validity[k][hash('events')] = True
+    new_data = np.ones_like(orig_arr)
+    # Instead of `current_data[k]`, could also set `data[hash(rep)][k]` here
+    container.current_data[k] = new_data
+    assert np.allclose(container[k], new_data, **ALLCLOSE_KW)
+    assert container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+    container.mark_changed(k)
+    assert not container.validity[k][hash('events')]
+    assert container.validity[k][binning_hash]
+
 
     # Setting invalid mode for binning dimension is irrelevant/ignored
     # when attempting to get it in the binned rep.
@@ -1129,6 +1305,34 @@ def test_container():
         container['oneweight']
     except ValueError:
         pass
+
+    # For the weight-like quantities with translation mode set to 'sum', no
+    # translation back to 'events' is implemented
+    for weight_key in Container.sum_mode_keys:
+        try:
+            container[weight_key]
+        except NotImplementedError:
+            pass
+
+    # However, if we set 'events' rep. validity to True, this has to work again,
+    # because no translation is necessary
+    container.validity[Container.sum_mode_keys[0]][hash('events')] = True
+    _ = container[Container.sum_mode_keys[0]]
+
+
+    # 3rd set of tests
+    # ----------------
+    # Assumes `container` and `data` exist and that we are in 'events' rep.
+    # Try to set a previously unseen variable via `set_item_no_invalidate`
+    new_key = 'newkey'
+    assert new_key not in container.all_keys
+    container.set_item_no_invalidate(key=new_key, data=data)
+    assert 'newkey' in container.all_keys
+    assert container.translation_modes['newkey'] == 'average'
+    # only current "events" rep. should be valid, no others
+    valid_flags = container.validity['newkey']
+    assert valid_flags.get(hash('events'), False)
+    assert sum(1 for v in valid_flags.values() if v) == 1
 
 
 def test_container_set():
