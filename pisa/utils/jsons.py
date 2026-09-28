@@ -237,7 +237,7 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
         Set to `True` to remove any non-essential whitespace in the output
         file (calls `json.dumps()` with `separators=(',', ':')`). In this case,
         the `indent` value is ignored and set to `None`. Note that this will in
-        general harm human readibility of the output.
+        general harm human readability of the output.
 
     """
     # Import here to avoid circular imports
