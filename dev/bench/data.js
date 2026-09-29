@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789487183212,
+  "lastUpdate": 1790677769342,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -1440,6 +1440,51 @@ window.BENCHMARK_DATA = {
             "range": "0.008802652359008789",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9d6b3b9a42b77a70f789bbb62a5e104612634ed9",
+          "message": "Enable storage of maximally compact JSON-encoded data (such as fit results) (#973)\n\n* add a `compactify` parameter to `utils.jsons.to_json()` for maximum compression of JSON output on demand, extend test cases accordingly, remove spurious `outfile` argument",
+          "timestamp": "2026-09-29T12:26:36+02:00",
+          "tree_id": "a2b818862fd385fb94bbeac2fc92b96235d2c755",
+          "url": "https://github.com/icecube/pisa/commit/9d6b3b9a42b77a70f789bbb62a5e104612634ed9"
+        },
+        "date": 1790677767455,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 0.8351832652578548,
+            "range": "0.2165992259979248",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 0.5936969932244749,
+            "range": "0.18487095832824707",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.0002825114191794882,
+            "range": "0.004172086715698242",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
