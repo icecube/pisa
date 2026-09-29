@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils package - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
+        <title>pisa.utils package - PISA 4.3a1+13.g9d6b3b9a.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 4.3a1+13.g9d6b3b9a.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+13.g9d6b3b9a.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -4592,7 +4592,7 @@ files (including bz2-compressed and xor-scrambled files)</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pisa.utils.jsons.to_json">
-<span class="sig-prename descclassname"><span class="pre">pisa.utils.jsons.</span></span><span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/jsons.html#to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.jsons.to_json" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">pisa.utils.jsons.</span></span><span class="sig-name descname"><span class="pre">to_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">warn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compactify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pisa/utils/jsons.html#to_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pisa.utils.jsons.to_json" title="Link to this definition">¶</a></dt>
 <dd><p>Write <cite>content</cite> to a JSON file at <cite>filename</cite>.</p>
 <p>Uses a custom parser that automatically converts numpy arrays to lists.</p>
 <p>If <cite>filename</cite> has a “.bz2” extension, the contents will be compressed
@@ -4605,14 +4605,18 @@ make them human-unreadable (this is useful for, e.g., blind fits).</p>
 <li><p><strong>content</strong> (<em>obj</em>) – Object to be written to file. Tries making use of the object’s own
 <cite>to_json</cite> method if it exists.</p></li>
 <li><p><strong>filename</strong> (<em>str</em>) – Name of the file to be written to. Extension has to be ‘json’ or ‘bz2’.</p></li>
-<li><p><strong>indent</strong> (<em>int</em>) – Pretty-printing. Cf. documentation of json.dump() or json.dumps()</p></li>
-<li><p><strong>overwrite</strong> (<em>bool</em>) – Set to <cite>True</cite> (default) to allow overwriting existing file. Raise
-exception and quit otherwise.</p></li>
-<li><p><strong>warn</strong> (<em>bool</em>) – Issue a warning message if a file is being overwritten (<cite>True</cite>,
-default). Suppress warning by setting to <cite>False</cite> (e.g. when overwriting
-is the desired behaviour).</p></li>
-<li><p><strong>sort_keys</strong> (<em>bool</em>) – Output of dictionaries will be sorted by key if set to <cite>True</cite>.
-Default is <cite>False</cite>. Cf. json.dump() or json.dumps().</p></li>
+<li><p><strong>indent</strong> (<em>int</em><em> (</em><em>default: 2</em><em>)</em>) – Pretty-printing (cf. documentation of json.dump() or json.dumps()).
+Use <cite>compactify</cite> to achieve the most compact JSON representation.</p></li>
+<li><p><strong>overwrite</strong> (<em>bool</em><em> (</em><em>default: True</em><em>)</em>) – Allow overwriting existing files if set to <cite>True</cite>. Raise exception
+and quit otherwise.</p></li>
+<li><p><strong>warn</strong> (<em>bool</em><em> (</em><em>default: True</em><em>)</em>) – Suppress warning message if a file is being overwritten by setting to
+<cite>False</cite> (e.g. when overwriting is the desired behaviour).</p></li>
+<li><p><strong>sort_keys</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Output of dictionaries will be sorted by key if set to <cite>True</cite>
+(cf. json.dump() or json.dumps()).</p></li>
+<li><p><strong>compactify</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Set to <cite>True</cite> to remove any non-essential whitespace in the output
+file (calls <cite>json.dumps()</cite> with <cite>separators=(‘,’, ‘:’)</cite>). In this case,
+the <cite>indent</cite> value is ignored and set to <cite>None</cite>. Note that this will in
+general harm human readability of the output.</p></li>
 </ul>
 </dd>
 </dl>
@@ -7275,7 +7279,7 @@ modifications that have been proposed in the literature.</p>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=82f492cd"></script>
+</div><script src="_static/documentation_options.js?v=fb9227ae"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pisa.utils.jsons - PISA 4.3a1+12.gbbd8d073.dirty documentation</title>
+        <title>pisa.utils.jsons - PISA 4.3a1+13.g9d6b3b9a.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">PISA 4.3a1+12.gbbd8d073.dirty documentation</div></a>
+      <a href="../../../index.html"><div class="brand">PISA 4.3a1+13.g9d6b3b9a.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+12.gbbd8d073.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a1+13.g9d6b3b9a.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -493,7 +493,7 @@
 <div class="viewcode-block" id="to_json">
 <a class="viewcode-back" href="../../../pisa.utils.html#pisa.utils.jsons.to_json">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compactify</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Write `content` to a JSON file at `filename`.</span>
 
 <span class="sd">    Uses a custom parser that automatically converts numpy arrays to lists.</span>
@@ -514,30 +514,43 @@
 <span class="sd">    filename : str</span>
 <span class="sd">        Name of the file to be written to. Extension has to be 'json' or 'bz2'.</span>
 
-<span class="sd">    indent : int</span>
-<span class="sd">        Pretty-printing. Cf. documentation of json.dump() or json.dumps()</span>
+<span class="sd">    indent : int (default: 2)</span>
+<span class="sd">        Pretty-printing (cf. documentation of json.dump() or json.dumps()).</span>
+<span class="sd">        Use `compactify` to achieve the most compact JSON representation.</span>
 
-<span class="sd">    overwrite : bool</span>
-<span class="sd">        Set to `True` (default) to allow overwriting existing file. Raise</span>
-<span class="sd">        exception and quit otherwise.</span>
+<span class="sd">    overwrite : bool (default: True)</span>
+<span class="sd">        Allow overwriting existing files if set to `True`. Raise exception</span>
+<span class="sd">        and quit otherwise.</span>
 
-<span class="sd">    warn : bool</span>
-<span class="sd">        Issue a warning message if a file is being overwritten (`True`,</span>
-<span class="sd">        default). Suppress warning by setting to `False` (e.g. when overwriting</span>
-<span class="sd">        is the desired behaviour).</span>
+<span class="sd">    warn : bool (default: True)</span>
+<span class="sd">        Suppress warning message if a file is being overwritten by setting to</span>
+<span class="sd">        `False` (e.g. when overwriting is the desired behaviour).</span>
 
-<span class="sd">    sort_keys : bool</span>
-<span class="sd">        Output of dictionaries will be sorted by key if set to `True`.</span>
-<span class="sd">        Default is `False`. Cf. json.dump() or json.dumps().</span>
+<span class="sd">    sort_keys : bool (default: False)</span>
+<span class="sd">        Output of dictionaries will be sorted by key if set to `True`</span>
+<span class="sd">        (cf. json.dump() or json.dumps()).</span>
+
+<span class="sd">    compactify : bool (default: False)</span>
+<span class="sd">        Set to `True` to remove any non-essential whitespace in the output</span>
+<span class="sd">        file (calls `json.dumps()` with `separators=(',', ':')`). In this case,</span>
+<span class="sd">        the `indent` value is ignored and set to `None`. Note that this will in</span>
+<span class="sd">        general harm human readability of the output.</span>
 
 <span class="sd">    """</span>
     <span class="c1"># Import here to avoid circular imports</span>
     <span class="c1"># pylint: disable=import-outside-toplevel</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pisa.utils.fileio</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_file_exists</span>
 
+    <span class="c1"># compactify flag overrides indent and removes whitespace surrounding seps.</span>
+    <span class="k">if</span> <span class="n">compactify</span><span class="p">:</span>
+        <span class="n">compact_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'indent'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'separators'</span><span class="p">:</span> <span class="p">(</span><span class="s1">','</span><span class="p">,</span> <span class="s1">':'</span><span class="p">)}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># honour indent selection</span>
+        <span class="n">compact_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'indent'</span><span class="p">:</span> <span class="n">indent</span><span class="p">}</span>
+
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="s1">'to_json'</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">content</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span>
-                               <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">content</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">,</span>
+                               <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">,</span> <span class="o">**</span><span class="n">compact_kwargs</span><span class="p">)</span>
 
     <span class="n">check_file_exists</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">warn</span><span class="o">=</span><span class="n">warn</span><span class="p">)</span>
 
@@ -545,21 +558,24 @@
     <span class="n">ext</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'.'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="k">assert</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">'json'</span> <span class="ow">or</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">ZIP_EXTS</span> <span class="o">+</span> <span class="n">XOR_EXTS</span>
 
+    <span class="c1"># common encoding kwargs</span>
+    <span class="n">dumps_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">'cls'</span><span class="p">:</span> <span class="n">NumpyEncoder</span><span class="p">,</span>
+        <span class="s1">'sort_keys'</span><span class="p">:</span> <span class="n">sort_keys</span><span class="p">,</span>
+        <span class="s1">'allow_nan'</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s1">'ignore_nan'</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">compact_kwargs</span>
+    <span class="p">}</span>
+
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">'bz2'</span><span class="p">:</span>
             <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
                 <span class="n">bz2</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span>
-                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
-                        <span class="n">content</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span>
-                        <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">False</span>
-                    <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="o">**</span><span class="n">dumps_kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">'xor'</span><span class="p">:</span>
-            <span class="n">json_bytes</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
-                <span class="n">content</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span>
-                <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">False</span>
-                <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+            <span class="n">json_bytes</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="o">**</span><span class="n">dumps_kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
 
             <span class="c1"># encrypt with key 42</span>
             <span class="n">encrypted_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
@@ -569,11 +585,9 @@
             <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">encrypted_bytes</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
-                    <span class="n">content</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">NumpyEncoder</span><span class="p">,</span>
-                    <span class="n">sort_keys</span><span class="o">=</span><span class="n">sort_keys</span><span class="p">,</span> <span class="n">allow_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_nan</span><span class="o">=</span><span class="kc">False</span>
-                <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="o">**</span><span class="n">dumps_kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
             <span class="p">)</span>
+
         <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">'Wrote </span><span class="si">%.2f</span><span class="s1"> kiB to </span><span class="si">%s</span><span class="s1">'</span><span class="p">,</span> <span class="n">outfile</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span><span class="o">/</span><span class="mf">1024.</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
 
 
@@ -884,37 +898,56 @@
 
     <span class="n">temp_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
     <span class="k">try</span><span class="p">:</span>
+        <span class="n">exts</span> <span class="o">=</span> <span class="p">[</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'.bz2'</span><span class="p">,</span> <span class="s1">'.xor'</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">test_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="c1"># Test that the object can be written / read directly</span>
-            <span class="n">base_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">'.json'</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'.bz2'</span><span class="p">,</span> <span class="s1">'.xor'</span><span class="p">]:</span>
-                <span class="n">fname</span> <span class="o">=</span> <span class="n">base_fname</span> <span class="o">+</span> <span class="n">ext</span>
-                <span class="n">to_json</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
-                <span class="n">loaded_data</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">floating_types</span><span class="p">:</span>
-                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
-                        <span class="n">loaded_data</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">equal_nan</span><span class="o">=</span><span class="kc">True</span>
-                    <span class="p">),</span> <span class="s1">'</span><span class="si">{}</span><span class="s1">=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">loaded_data</span><span class="p">,</span> <span class="n">fname</span>
-                    <span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">loaded_data</span> <span class="o">==</span> <span class="n">obj</span><span class="p">),</span> \
-                        <span class="s1">'</span><span class="si">{}</span><span class="s1">=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded_nda=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">file_sizes_pairs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'direct'</span><span class="p">:</span> <span class="p">{</span><span class="n">ext</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">exts</span><span class="p">},</span>
+                                <span class="s1">'dict'</span><span class="p">:</span> <span class="p">{</span><span class="n">ext</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">exts</span><span class="p">}}</span>
+            <span class="c1"># Test with compactified and regular JSON encodings:</span>
+            <span class="c1"># file sizes should be unaffected for scalars.</span>
+            <span class="k">for</span> <span class="n">to_json_kwargs</span><span class="p">,</span> <span class="n">suffix</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                    <span class="p">({</span><span class="s1">'compactify'</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="p">{</span><span class="s1">'compactify'</span><span class="p">:</span> <span class="kc">False</span><span class="p">}),</span> <span class="p">(</span><span class="s1">'compact'</span><span class="p">,</span> <span class="s1">'reg'</span><span class="p">)</span>
+                <span class="p">):</span>
+                <span class="c1"># Test that the object can be written / read directly</span>
+                <span class="n">base_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s1">'</span> <span class="o">+</span> <span class="s1">'.json'</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">exts</span><span class="p">:</span>
+                    <span class="n">fname</span> <span class="o">=</span> <span class="n">base_fname</span> <span class="o">+</span> <span class="n">ext</span>
+                    <span class="n">to_json</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">to_json_kwargs</span><span class="p">)</span>
+                    <span class="n">file_sizes_pairs</span><span class="p">[</span><span class="s1">'direct'</span><span class="p">][</span><span class="n">ext</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span><span class="o">.</span><span class="n">st_size</span><span class="p">)</span>
+                    <span class="n">loaded_data</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="n">floating_types</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+                            <span class="n">loaded_data</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">equal_nan</span><span class="o">=</span><span class="kc">True</span>
+                        <span class="p">),</span> <span class="s1">'</span><span class="si">{}</span><span class="s1">=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                             <span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">loaded_data</span><span class="p">,</span> <span class="n">fname</span>
                         <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">loaded_data</span> <span class="o">==</span> <span class="n">obj</span><span class="p">),</span> \
+                            <span class="s1">'</span><span class="si">{}</span><span class="s1">=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded_nda=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">loaded_data</span><span class="p">,</span> <span class="n">fname</span>
+                            <span class="p">)</span>
 
-            <span class="c1"># Test that the same object can be written / read as a value in a</span>
-            <span class="c1"># dictionary</span>
-            <span class="n">orig</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">),</span> <span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s2">"x"</span><span class="p">,</span> <span class="n">obj</span><span class="p">)])</span>
-            <span class="n">base_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="s1">'d.</span><span class="si">{}</span><span class="s1">.json'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
-            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'.bz2'</span><span class="p">,</span> <span class="s1">'.xor'</span><span class="p">]:</span>
-                <span class="n">fname</span> <span class="o">=</span> <span class="n">base_fname</span> <span class="o">+</span> <span class="n">ext</span>
-                <span class="n">to_json</span><span class="p">(</span><span class="n">orig</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
-                <span class="n">loaded</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
-                <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="n">orig</span><span class="p">),</span> \
-                    <span class="s1">'orig=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="n">orig</span><span class="p">,</span> <span class="n">loaded</span><span class="p">,</span> <span class="n">fname</span>
-                    <span class="p">)</span>
+                <span class="c1"># Test that the same object can be written / read as a value in a</span>
+                <span class="c1"># dictionary</span>
+                <span class="n">orig</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">),</span> <span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s2">"x"</span><span class="p">,</span> <span class="n">obj</span><span class="p">)])</span>
+                <span class="n">base_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'d.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s1">.json'</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">exts</span><span class="p">:</span>
+                    <span class="n">fname</span> <span class="o">=</span> <span class="n">base_fname</span> <span class="o">+</span> <span class="n">ext</span>
+                    <span class="n">to_json</span><span class="p">(</span><span class="n">orig</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">to_json_kwargs</span><span class="p">)</span>
+                    <span class="n">file_sizes_pairs</span><span class="p">[</span><span class="s1">'dict'</span><span class="p">][</span><span class="n">ext</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span><span class="o">.</span><span class="n">st_size</span><span class="p">)</span>
+                    <span class="n">loaded</span> <span class="o">=</span> <span class="n">from_json</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                    <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="n">orig</span><span class="p">),</span> \
+                        <span class="s1">'orig=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">loaded=</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s1">see file: </span><span class="si">{}</span><span class="s1">'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">orig</span><span class="p">,</span> <span class="n">loaded</span><span class="p">,</span> <span class="n">fname</span>
+                        <span class="p">)</span>
+
+            <span class="c1"># Verify relative file sizes: successful compactification must only</span>
+            <span class="c1"># occur in case of array or dict data</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">ext_dict</span> <span class="ow">in</span> <span class="n">file_sizes_pairs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">size_pair</span> <span class="ow">in</span> <span class="n">ext_dict</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="s1">'array'</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">or</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">'dict'</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="n">size_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">size_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">assert</span> <span class="n">recursiveEquality</span><span class="p">(</span><span class="o">*</span><span class="n">size_pair</span><span class="p">)</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="n">rmtree</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span>
 
@@ -964,7 +997,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=82f492cd"></script>
+</div><script src="../../../_static/documentation_options.js?v=fb9227ae"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
