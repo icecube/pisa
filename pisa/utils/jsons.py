@@ -196,7 +196,7 @@ def from_json(filename, cls=None):
 
 
 def to_json(content, filename, indent=2, overwrite=True, warn=True,
-            sort_keys=False):
+            sort_keys=False, compactify=False):
     """Write `content` to a JSON file at `filename`.
 
     Uses a custom parser that automatically converts numpy arrays to lists.
@@ -217,30 +217,43 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
     filename : str
         Name of the file to be written to. Extension has to be 'json' or 'bz2'.
 
-    indent : int
-        Pretty-printing. Cf. documentation of json.dump() or json.dumps()
+    indent : int (default: 2)
+        Pretty-printing (cf. documentation of json.dump() or json.dumps()).
+        Use `compactify` to achieve the most compact JSON representation.
 
-    overwrite : bool
-        Set to `True` (default) to allow overwriting existing file. Raise
-        exception and quit otherwise.
+    overwrite : bool (default: True)
+        Allow overwriting existing files if set to `True`. Raise exception
+        and quit otherwise.
 
-    warn : bool
-        Issue a warning message if a file is being overwritten (`True`,
-        default). Suppress warning by setting to `False` (e.g. when overwriting
-        is the desired behaviour).
+    warn : bool (default: True)
+        Suppress warning message if a file is being overwritten by setting to
+        `False` (e.g. when overwriting is the desired behaviour).
 
-    sort_keys : bool
-        Output of dictionaries will be sorted by key if set to `True`.
-        Default is `False`. Cf. json.dump() or json.dumps().
+    sort_keys : bool (default: False)
+        Output of dictionaries will be sorted by key if set to `True`
+        (cf. json.dump() or json.dumps()).
+
+    compactify : bool (default: False)
+        Set to `True` to remove any non-essential whitespace in the output
+        file (calls `json.dumps()` with `separators=(',', ':')`). In this case,
+        the `indent` value is ignored and set to `None`. Note that this will in
+        general harm human readability of the output.
 
     """
     # Import here to avoid circular imports
     # pylint: disable=import-outside-toplevel
     from pisa.utils.fileio import check_file_exists
 
+    # compactify flag overrides indent and removes whitespace surrounding seps.
+    if compactify:
+        compact_kwargs = {'indent': None, 'separators': (',', ':')}
+    else:
+        # honour indent selection
+        compact_kwargs = {'indent': indent}
+
     if hasattr(content, 'to_json'):
-        return content.to_json(filename, indent=indent, overwrite=overwrite,
-                               warn=warn, sort_keys=sort_keys)
+        return content.to_json(filename, overwrite=overwrite, warn=warn,
+                               sort_keys=sort_keys, **compact_kwargs)
 
     check_file_exists(fname=filename, overwrite=overwrite, warn=warn)
 
@@ -248,21 +261,24 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
     ext = ext.replace('.', '').lower()
     assert ext == 'json' or ext in ZIP_EXTS + XOR_EXTS
 
+    # common encoding kwargs
+    dumps_kwargs = {
+        'cls': NumpyEncoder,
+        'sort_keys': sort_keys,
+        'allow_nan': True,
+        'ignore_nan': False,
+        **compact_kwargs
+    }
+
     with open(filename, 'wb') as outfile:
         if ext == 'bz2':
             outfile.write(
                 bz2.compress(
-                    json.dumps(
-                        content, outfile, indent=indent, cls=NumpyEncoder,
-                        sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-                    ).encode()
+                    json.dumps(content, **dumps_kwargs).encode()
                 )
             )
         elif ext == 'xor':
-            json_bytes = json.dumps(
-                content, indent=indent, cls=NumpyEncoder,
-                sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-                ).encode()
+            json_bytes = json.dumps(content, **dumps_kwargs).encode()
 
             # encrypt with key 42
             encrypted_bytes = bytearray()
@@ -272,11 +288,9 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
             outfile.write(encrypted_bytes)
         else:
             outfile.write(
-                json.dumps(
-                    content, indent=indent, cls=NumpyEncoder,
-                    sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-                ).encode()
+                json.dumps(content, **dumps_kwargs).encode()
             )
+
         logging.debug('Wrote %.2f kiB to %s', outfile.tell()/1024., filename)
 
 
@@ -572,37 +586,56 @@ def test_to_json_from_json():
 
     temp_dir = tempfile.mkdtemp()
     try:
+        exts = ['', '.bz2', '.xor']
         for name, obj in test_data.items():
-            # Test that the object can be written / read directly
-            base_fname = os.path.join(temp_dir, name + '.json')
-            for ext in ['', '.bz2', '.xor']:
-                fname = base_fname + ext
-                to_json(obj, fname)
-                loaded_data = from_json(fname)
-                if obj.dtype in floating_types:
-                    assert np.allclose(
-                        loaded_data, obj, rtol=1e-12, atol=0, equal_nan=True
-                    ), '{}=\n{}\nloaded=\n{}\nsee file: {}'.format(
-                        name, obj, loaded_data, fname
-                    )
-                else:
-                    assert np.all(loaded_data == obj), \
-                        '{}=\n{}\nloaded_nda=\n{}\nsee file: {}'.format(
+            file_sizes_pairs = {'direct': {ext: [] for ext in exts},
+                                'dict': {ext: [] for ext in exts}}
+            # Test with compactified and regular JSON encodings:
+            # file sizes should be unaffected for scalars.
+            for to_json_kwargs, suffix in zip(
+                    ({'compactify': True}, {'compactify': False}), ('compact', 'reg')
+                ):
+                # Test that the object can be written / read directly
+                base_fname = os.path.join(temp_dir, f'{name}_{suffix}' + '.json')
+                for ext in exts:
+                    fname = base_fname + ext
+                    to_json(obj, fname, **to_json_kwargs)
+                    file_sizes_pairs['direct'][ext].append(os.stat(fname).st_size)
+                    loaded_data = from_json(fname)
+                    if obj.dtype in floating_types:
+                        assert np.allclose(
+                            loaded_data, obj, rtol=1e-12, atol=0, equal_nan=True
+                        ), '{}=\n{}\nloaded=\n{}\nsee file: {}'.format(
                             name, obj, loaded_data, fname
                         )
+                    else:
+                        assert np.all(loaded_data == obj), \
+                            '{}=\n{}\nloaded_nda=\n{}\nsee file: {}'.format(
+                                name, obj, loaded_data, fname
+                            )
 
-            # Test that the same object can be written / read as a value in a
-            # dictionary
-            orig = OrderedDict([(name, obj), (name + "x", obj)])
-            base_fname = os.path.join(temp_dir, 'd.{}.json'.format(name))
-            for ext in ['', '.bz2', '.xor']:
-                fname = base_fname + ext
-                to_json(orig, fname)
-                loaded = from_json(fname)
-                assert recursiveEquality(loaded, orig), \
-                    'orig=\n{}\nloaded=\n{}\nsee file: {}'.format(
-                        orig, loaded, fname
-                    )
+                # Test that the same object can be written / read as a value in a
+                # dictionary
+                orig = OrderedDict([(name, obj), (name + "x", obj)])
+                base_fname = os.path.join(temp_dir, f'd.{name}_{suffix}.json')
+                for ext in exts:
+                    fname = base_fname + ext
+                    to_json(orig, fname, **to_json_kwargs)
+                    file_sizes_pairs['dict'][ext].append(os.stat(fname).st_size)
+                    loaded = from_json(fname)
+                    assert recursiveEquality(loaded, orig), \
+                        'orig=\n{}\nloaded=\n{}\nsee file: {}'.format(
+                            orig, loaded, fname
+                        )
+
+            # Verify relative file sizes: successful compactification must only
+            # occur in case of array or dict data
+            for k, ext_dict in file_sizes_pairs.items():
+                for size_pair in ext_dict.values():
+                    if 'array' in name or k == 'dict':
+                        assert size_pair[0] < size_pair[1]
+                    else:
+                        assert recursiveEquality(*size_pair)
     finally:
         rmtree(temp_dir)
 
