@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790677769342,
+  "lastUpdate": 1790677802810,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -1485,6 +1485,51 @@ window.BENCHMARK_DATA = {
             "range": "0.004172086715698242",
             "unit": "s",
             "extra": "target=cpu, nthreads=1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9d6b3b9a42b77a70f789bbb62a5e104612634ed9",
+          "message": "Enable storage of maximally compact JSON-encoded data (such as fit results) (#973)\n\n* add a `compactify` parameter to `utils.jsons.to_json()` for maximum compression of JSON output on demand, extend test cases accordingly, remove spurious `outfile` argument",
+          "timestamp": "2026-09-29T12:26:36+02:00",
+          "tree_id": "a2b818862fd385fb94bbeac2fc92b96235d2c755",
+          "url": "https://github.com/icecube/pisa/commit/9d6b3b9a42b77a70f789bbb62a5e104612634ed9"
+        },
+        "date": 1790677801396,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 0.894024420757683,
+            "range": "0.22222423553466797",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.3830356792527802,
+            "range": "0.15317177772521973",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.0005484113887864716,
+            "range": "0.005635738372802734",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
           }
         ]
       }
