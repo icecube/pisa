@@ -206,7 +206,7 @@ In this case, the old files have to be removed manually (along with any associat
 
 With the exception of `Python` itself (and possibly `git`), the installation methods outlined above should not demand the _manual_ prior installation of any Python or non-Python requirements for PISA.
 Support for all of these comes pre-packaged or as `conda`/`mamba`-installable packages in the Miniforge Python distribution.
-* [python](http://www.python.org) — version >= 3.8 and < 3.15 required (tested to work with >= 3.10)
+* [python](http://www.python.org) — version >= 3.8 and < 3.15 required (tested to work with >= 3.11)
   * Miniforge & CVMFS: built in
 * [pip](https://pip.pypa.io) version >= 1.8 required
   * Miniforge & CVMFS: built in
