@@ -7,7 +7,7 @@
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Changelog - PISA 4.3a1+17.g5aee2988.dirty documentation</title>
+        <title>Changelog - PISA 4.3a2+0.g5aee2988.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 4.3a1+17.g5aee2988.dirty documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 4.3a2+0.g5aee2988.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a1+17.g5aee2988.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a2+0.g5aee2988.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -293,6 +293,60 @@
         <article role="main" id="furo-main-content">
           <section id="changelog">
 <h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
+<section id="release-4-3a2">
+<h2>4.3a2<a class="headerlink" href="#release-4-3a2" title="Link to this heading">¶</a></h2>
+<p><em>Released on 2026-10-09 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/4.3a2">GitHub</a></em></p>
+<p>Second alpha pre-release for PISA 4.3. Included are several bug fixes, one new cross-section service, and a few minor enhancements.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>A <strong>Docker image with PISA 4.3a2 pre-installed</strong> is available via <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span> <span class="pre">ghcr.io/icecube/pisa:4.3a2</span></code>.</p>
+<ul class="simple">
+<li><p>The (Python 3.14.8) virtual environment’s directory of executables is now already added to $PATH.</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">.txt</span></code> file containing all the installed packages in requirements format is provided among the release assets at the bottom (usage comments therein).</p></li>
+</ul>
+</div>
+<!-- Release notes generated using configuration in .github/release.yml at master -->
+<section id="what-s-changed">
+<h3>What’s Changed<a class="headerlink" href="#what-s-changed" title="Link to this heading">¶</a></h3>
+<section id="new-features">
+<h4>New Features<a class="headerlink" href="#new-features" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>MEC sys stage by &#64;ts4051 in <a class="reference external" href="https://github.com/icecube/pisa/pull/963">https://github.com/icecube/pisa/pull/963</a></p></li>
+<li><p>Ensure pisa version is correctly detected when building documentation (not just for tagged commits) by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/962">https://github.com/icecube/pisa/pull/962</a></p></li>
+<li><p>Enable storage of maximally compact JSON-encoded data (such as fit results) by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/973">https://github.com/icecube/pisa/pull/973</a></p></li>
+<li><p>Docker container improvements: venv executables available by default and no more artifact attestations by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/977">https://github.com/icecube/pisa/pull/977</a></p></li>
+</ul>
+</section>
+<section id="bug-fixes">
+<h4>Bug Fixes<a class="headerlink" href="#bug-fixes" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Make map plotting compatible with matplotlib 3.11, add rudimentary unit test, raise matplotlib lower bound to 3.5 by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/956">https://github.com/icecube/pisa/pull/956</a></p></li>
+<li><p>Stop emitting misleading warning when constructing results of a fit with <code class="docutils literal notranslate"><span class="pre">daemon_flux</span></code> parameters by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/957">https://github.com/icecube/pisa/pull/957</a></p></li>
+<li><p>Prevent vbwkde module’s test functions from being executed by unit testing script by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/965">https://github.com/icecube/pisa/pull/965</a></p></li>
+<li><p>Add new Map properties vmin and vmax and use these to define default colorbar range when 3d map is plotted by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/966">https://github.com/icecube/pisa/pull/966</a></p></li>
+<li><p>No more matplotlib usetex configuration at <code class="docutils literal notranslate"><span class="pre">scripts.test_flux_weights</span></code> import time by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/970">https://github.com/icecube/pisa/pull/970</a></p></li>
+<li><p>Remove service <code class="docutils literal notranslate"><span class="pre">data.licloader_weighter</span></code> because it is unfinished and unused by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/972">https://github.com/icecube/pisa/pull/972</a></p></li>
+<li><p>Minor fixes for tutorial on fitting public data release by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/974">https://github.com/icecube/pisa/pull/974</a></p></li>
+</ul>
+</section>
+<section id="other-changes">
+<h4>Other Changes<a class="headerlink" href="#other-changes" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Also use (floating) major release tags in docker workflow for consistency by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/961">https://github.com/icecube/pisa/pull/961</a></p></li>
+</ul>
+</section>
+<section id="dependencies">
+<h4>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Bump actions/checkout from 6 to 7 in /.github/workflows in the all-actions group by &#64;dependabot[bot] in <a class="reference external" href="https://github.com/icecube/pisa/pull/958">https://github.com/icecube/pisa/pull/958</a></p></li>
+<li><p>Bump actions/setup-python from 6 to 7 in /.github/workflows in the all-actions group by &#64;dependabot[bot] in <a class="reference external" href="https://github.com/icecube/pisa/pull/967">https://github.com/icecube/pisa/pull/967</a></p></li>
+<li><p>Drop support for Python 3.10 due to end of life by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/975">https://github.com/icecube/pisa/pull/975</a></p></li>
+<li><p>Temporarily cap daemonflux to v0.8.2 for next pre-release by &#64;thehrh in <a class="reference external" href="https://github.com/icecube/pisa/pull/978">https://github.com/icecube/pisa/pull/978</a></p></li>
+</ul>
+<p><strong>Full Changelog</strong>: <a class="reference external" href="https://github.com/icecube/pisa/compare/4.3a1...4.3a2">https://github.com/icecube/pisa/compare/4.3a1…4.3a2</a></p>
+</section>
+</section>
+</section>
 <section id="release-4-3a1">
 <h2>4.3a1<a class="headerlink" href="#release-4-3a1" title="Link to this heading">¶</a></h2>
 <p><em>Released on 2026-06-12 - <a class="reference external" href="https://github.com/icecube/pisa/releases/tag/4.3a1">GitHub</a></em></p>
@@ -579,6 +633,16 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Changelog</a><ul>
+<li><a class="reference internal" href="#release-4-3a2">4.3a2</a><ul>
+<li><a class="reference internal" href="#what-s-changed">What’s Changed</a><ul>
+<li><a class="reference internal" href="#new-features">New Features</a></li>
+<li><a class="reference internal" href="#bug-fixes">Bug Fixes</a></li>
+<li><a class="reference internal" href="#other-changes">Other Changes</a></li>
+<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#release-4-3a1">4.3a1</a><ul>
 <li><a class="reference internal" href="#what-s-changed">What’s Changed</a><ul>
 <li><a class="reference internal" href="#new-features">New Features</a></li>
@@ -612,7 +676,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=99ce16e4"></script>
+</div><script src="_static/documentation_options.js?v=4a2a27d9"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>
