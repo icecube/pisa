@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790677802810,
+  "lastUpdate": 1791554096024,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -1528,6 +1528,51 @@ window.BENCHMARK_DATA = {
             "name": "IceCube_3y_muons (parallel, nthreads=4)",
             "value": 0.0005484113887864716,
             "range": "0.005635738372802734",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thehrh@users.noreply.github.com",
+            "name": "T Ehrhardt",
+            "username": "thehrh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5aee2988d837be7aac5d1145bb502fec5a2cef96",
+          "message": "temporarily cap daemonflux at v0.8.2 for next pre-release (#978)",
+          "timestamp": "2026-10-09T15:51:19+02:00",
+          "tree_id": "a26aeb74edea3f85b3b3cc9f00f46615752f8a72",
+          "url": "https://github.com/icecube/pisa/commit/5aee2988d837be7aac5d1145bb502fec5a2cef96"
+        },
+        "date": 1791554094218,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (parallel, nthreads=4)",
+            "value": 1.0302508607202647,
+            "range": "0.25789666175842285",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (parallel, nthreads=4)",
+            "value": 0.503371034349714,
+            "range": "0.20527267456054688",
+            "unit": "s",
+            "extra": "target=parallel, nthreads=4"
+          },
+          {
+            "name": "IceCube_3y_muons (parallel, nthreads=4)",
+            "value": 0.0006067850151840521,
+            "range": "0.007970571517944336",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
           }
