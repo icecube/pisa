@@ -109,7 +109,7 @@ INSTALL_REQUIRES = [
     'scikit-learn',
     'pyarrow',
     'tqdm',
-    'daemonflux>=0.8.0',
+    'daemonflux>=0.8.0,<=0.8.2', # TODO: v0.9.0 breaks example pipeline (#976)
     'packaging',
     'fast_interp @ git+https://github.com/dbstein/fast_interp.git'
 ]
