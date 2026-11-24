@@ -20,7 +20,6 @@ import tempfile
 
 import numpy as np
 import pint
-from six import string_types
 
 from pisa import ureg
 from pisa.core.prior import Prior
@@ -267,7 +266,7 @@ class Param:
     def value(self, val):
         # Strings, bools, and `None` are simply used as-is; otherwise, enforce
         # input have units (or default to units of `dimensionless`)
-        if not (val is None or isinstance(val, (string_types, bool))):
+        if not (val is None or isinstance(val, (str, bool))):
             # A number with no units actually has units of "dimensionless"
             val = interpret_quantity(val, expect_sequence=False)
 
@@ -415,7 +414,7 @@ class Param:
 
     @nominal_value.setter
     def nominal_value(self, value):
-        if not (value is None or isinstance(value, (bool, string_types))):
+        if not (value is None or isinstance(value, (bool, str))):
             value = interpret_quantity(value, expect_sequence=False)
         self.validate_value(value)
         self._nominal_value = value
@@ -890,7 +889,7 @@ class ParamSet(MutableSequence, Set):
         colalign=["right"] + ["center"] * (len(headers) -1 )
         table = []
         for p in self:
-            if (p.value is None or isinstance(p.value, (string_types, bool))):
+            if (p.value is None or isinstance(p.value, (str, bool))):
                 table.append([p.name, p.value, p.nominal_value, p.range, p.prior, p.units, p.is_fixed])
             else:
                 if p.range is not None:

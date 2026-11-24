@@ -24,7 +24,6 @@ import tempfile
 from decorator import decorate
 import numpy as np
 from scipy.stats import poisson, norm
-from six import string_types
 import uncertainties
 from uncertainties import ufloat
 from uncertainties import unumpy as unp
@@ -715,7 +714,7 @@ class Map(object):
         if colorbar_label_kw is None: colorbar_label_kw = {}
 
         if fmt is not None:
-            if isinstance(fmt, string_types):
+            if isinstance(fmt, str):
                 fmt = [fmt]
             fmt = set(f.strip().lower().lstrip('.') for f in fmt)
             if outdir is None:
@@ -1042,7 +1041,7 @@ class Map(object):
 
         if axis is None:
             axis = self.binning.names
-        if isinstance(axis, (string_types, int)):
+        if isinstance(axis, (str, int)):
             axis = [axis]
         # Note that the tuple is necessary here (I think...)
         sum_indices = tuple([self.binning.index(dim) for dim in axis])
@@ -1533,7 +1532,7 @@ class Map(object):
 
         singleton = False
         if bin is not None:
-            if isinstance(bin, (int, string_types)):
+            if isinstance(bin, (int, str)):
                 bin_indices = [spliton_dim.index(bin)]
             elif isinstance(bin, slice):
                 bin_indices = list(range(len(spliton_dim)))[bin]
@@ -1749,7 +1748,7 @@ class Map(object):
     @name.setter
     def name(self, value):
         """map name"""
-        assert isinstance(value, string_types)
+        assert isinstance(value, str)
         return super().__setattr__('_name', value)
 
     @property
@@ -1761,7 +1760,7 @@ class Map(object):
 
     @tex.setter
     def tex(self, value):
-        assert value is None or isinstance(value, string_types)
+        assert value is None or isinstance(value, str)
         if value is not None:
             value = strip_outer_dollars(value)
         return super().__setattr__('_tex', value)
@@ -2303,7 +2302,7 @@ class MapSet(object):
                 assert x >= -l and x < l
             elif isinstance(x, Map):
                 x = self.names.index(x.name)
-            elif isinstance(x, string_types):
+            elif isinstance(x, str):
                 x = self.names.index(x)
             else:
                 raise TypeError('Unhandled type "%s" for `x`' % type(x))
@@ -2416,7 +2415,7 @@ class MapSet(object):
 
         """
         is_scalar = False
-        if isinstance(regexes, string_types) or hasattr(regexes, 'pattern'):
+        if isinstance(regexes, str) or hasattr(regexes, 'pattern'):
             is_scalar = True
             regexes = [regexes]
 
@@ -2516,7 +2515,7 @@ class MapSet(object):
 
         """
         is_scalar = False
-        if isinstance(expressions, string_types):
+        if isinstance(expressions, str):
             is_scalar = True
             expressions = [expressions]
 
@@ -2676,7 +2675,7 @@ class MapSet(object):
         idx = None
         if isinstance(value, Map):
             pass
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             try:
                 idx = self.names.index(value)
             except ValueError:
@@ -2736,7 +2735,7 @@ class MapSet(object):
             for arg in args:
                 if (np.isscalar(arg) or
                         type(arg) is uncertainties.core.Variable or
-                        isinstance(arg, (string_types, np.ndarray))):
+                        isinstance(arg, (str, np.ndarray))):
                     this_map_args.append(arg)
                 elif isinstance(arg, MapSet):
                     if self.collate_by_name:
@@ -2811,7 +2810,7 @@ class MapSet(object):
             in an ordered dict with format {<map name>: <values>, ...}
 
         """
-        if isinstance(item, string_types):
+        if isinstance(item, str):
             return self.find_map(item)
 
         if isinstance(item, (int, slice)):
@@ -2975,7 +2974,7 @@ class MapSet(object):
                       collate_by_name=self.collate_by_name)
 
     def metric_per_map(self, expected_values, metric):
-        if isinstance(metric, string_types):
+        if isinstance(metric, str):
             metric = metric.lower()
             if 'binned_' in metric:
                 metric = metric.replace('binned_', '')
