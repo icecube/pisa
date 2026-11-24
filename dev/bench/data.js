@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795517213710,
+  "lastUpdate": 1795517308085,
   "repoUrl": "https://github.com/icecube/pisa",
   "entries": {
     "Benchmark": [
@@ -1665,6 +1665,51 @@ window.BENCHMARK_DATA = {
             "range": "0.004832267761230469",
             "unit": "s",
             "extra": "target=parallel, nthreads=4"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yaezgarz@ualberta.ca",
+            "name": "Juan Pablo Yañez Garza",
+            "username": "jpyanez"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5d39a4474a6bc0bd794011d982364f3b783dc70f",
+          "message": "Remove undeclared dependency on six (#980)\n\nFive modules imported `six.string_types`, but `six` is not in setup.py,\nso a clean install fails with ModuleNotFoundError. PISA is Python 3 only,\nwhere `string_types` is `(str,)`, so use `str` directly.\n\nAlso fix `from_json(..., cls=...)`: `isinstance(string_types)` was called\nwith one argument and raised TypeError when the content was a non-numeric\nlist.\n\nCo-authored-by: J. P. Yáñez <jpyanez@users.noreply.github.com>\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-24T11:44:01+01:00",
+          "tree_id": "27e56449e79d5362fa10b3d0954b80d405c533a7",
+          "url": "https://github.com/icecube/pisa/commit/5d39a4474a6bc0bd794011d982364f3b783dc70f"
+        },
+        "date": 1795517306165,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "IceCube_3y_neutrinos_daemon (cpu, nthreads=1)",
+            "value": 1.4745354457777373,
+            "range": "0.20035481452941895",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_neutrinos (cpu, nthreads=1)",
+            "value": 1.0098802848738067,
+            "range": "0.1816089153289795",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
+          },
+          {
+            "name": "IceCube_3y_muons (cpu, nthreads=1)",
+            "value": 0.0005532624770183953,
+            "range": "0.004827022552490234",
+            "unit": "s",
+            "extra": "target=cpu, nthreads=1"
           }
         ]
       }
