@@ -6,8 +6,8 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="License" href="stubs/license_stub.html"><link rel="prev" title="pisa.utils.llh_defs package" href="pisa.utils.llh_defs.html">
         <link rel="prefetch" href="_static/pisa4_logo_transparent.png" as="image">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Changelog - PISA 4.3a2+0.g5aee2988.dirty documentation</title>
+    <!-- Generated with Sphinx 9.2.0 and Furo 2025.12.19 -->
+        <title>Changelog - PISA 4.3a2+1.g5d39a447.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">PISA 4.3a2+0.g5aee2988.dirty documentation</div></a>
+      <a href="index.html"><div class="brand">PISA 4.3a2+1.g5d39a447.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a2+0.g5aee2988.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a2+1.g5d39a447.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -302,9 +302,10 @@
 <p>A <strong>Docker image with PISA 4.3a2 pre-installed</strong> is available via <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">pull</span> <span class="pre">ghcr.io/icecube/pisa:4.3a2</span></code>.</p>
 <ul class="simple">
 <li><p>The (Python 3.14.8) virtual environment’s directory of executables is now already added to $PATH.</p></li>
-<li><p>A <code class="docutils literal notranslate"><span class="pre">.txt</span></code> file containing all the installed packages in requirements format is provided among the release assets at the bottom (usage comments therein).</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">.txt</span></code> file containing all the installed packages in requirements format is provided among the release assets at the bottom. To manually reproduce said environment—assuming you are on Python 3.14.8 and have <a class="reference external" href="https://docs.astral.sh/uv/">uv</a>:</p></li>
 </ul>
 </div>
+<pre class="code bash literal-block"><code>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>https://github.com/icecube/pisa/releases/download/4.3a2/requirements_pisa_4.3a2_py_3.14.8.txt</code></pre>
 <!-- Release notes generated using configuration in .github/release.yml at master -->
 <section id="what-s-changed">
 <h3>What’s Changed<a class="headerlink" href="#what-s-changed" title="Link to this heading">¶</a></h3>
@@ -676,7 +677,7 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=4a2a27d9"></script>
+</div><script src="_static/documentation_options.js?v=edbb574e"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

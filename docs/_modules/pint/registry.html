@@ -5,8 +5,8 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html">
         <link rel="prefetch" href="../../_static/pisa4_logo_transparent.png" as="image">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>pint.registry - PISA 4.3a2+0.g5aee2988.dirty documentation</title>
+    <!-- Generated with Sphinx 9.2.0 and Furo 2025.12.19 -->
+        <title>pint.registry - PISA 4.3a2+1.g5d39a447.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -163,7 +163,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">PISA 4.3a2+0.g5aee2988.dirty documentation</div></a>
+      <a href="../../index.html"><div class="brand">PISA 4.3a2+1.g5d39a447.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -187,7 +187,7 @@
     <img class="sidebar-logo" src="../../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a2+0.g5aee2988.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a2+1.g5d39a447.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -299,11 +299,13 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">TYPE_CHECKING</span><span class="p">,</span>
     <span class="n">Any</span><span class="p">,</span>
     <span class="n">Generic</span><span class="p">,</span>
+    <span class="n">Literal</span><span class="p">,</span>
     <span class="n">Self</span><span class="p">,</span>
     <span class="n">TypeAlias</span><span class="p">,</span>
     <span class="n">overload</span><span class="p">,</span>
@@ -313,6 +315,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">facets</span><span class="p">,</span> <span class="n">registry_helpers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.compat</span><span class="w"> </span><span class="kn">import</span> <span class="n">deprecated</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span><span class="p">,</span> <span class="n">pi_theorem</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -322,7 +325,7 @@
     <span class="kn">import</span><span class="w"> </span><span class="nn">optype</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">opt</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">optype.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
 
-    <span class="kn">from</span><span class="w"> </span><span class="nn">._typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">Scalar</span><span class="p">,</span> <span class="n">UnitLike</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">._typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Magnitude</span><span class="p">,</span> <span class="n">Scalar</span><span class="p">,</span> <span class="n">UnitLike</span><span class="p">,</span> <span class="n">UnitsContainer</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">._typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Quantity</span> <span class="k">as</span> <span class="n">_Quantity</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">._typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Unit</span> <span class="k">as</span> <span class="n">_Unit</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">.facets.plain.quantity</span><span class="w"> </span><span class="kn">import</span> <span class="n">PlainQuantity</span> <span class="k">as</span> <span class="n">_PlainQuantity</span>
@@ -354,6 +357,13 @@
     <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
         <span class="c1"># NOTE: This list of method signatures must be kept in sync with PlainQuantity's overloads</span>
         <span class="c1">#   (you can find the class in pint/facets/plain/quantity.py)</span>
+
+        <span class="nd">@property</span>
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">u</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Unit</span><span class="p">:</span> <span class="o">...</span>
+        <span class="nd">@property</span>
+        <span class="nd">@override</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">units</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Unit</span><span class="p">:</span> <span class="o">...</span>
 
         <span class="nd">@overload</span>
         <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span>
@@ -705,22 +715,66 @@
     <span class="n">facets</span><span class="o">.</span><span class="n">PlainRegistry</span><span class="o">.</span><span class="n">Unit</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-        <span class="c1"># Unit * Unit -&gt; Unit</span>
+        <span class="c1"># Unit * (Unit | UnitsContainer) -&gt; Unit</span>
         <span class="nd">@overload</span>
-        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span> <span class="o">...</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Self</span> <span class="o">|</span> <span class="n">UnitsContainer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span> <span class="o">...</span>
         <span class="c1"># Unit * timedelta -&gt; Quantity[float]</span>
         <span class="nd">@overload</span>
         <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># Unit * &lt;ArrayLike&gt; -&gt; Quantity[&lt;Array&gt;]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">AnyArray</span><span class="p">[</span><span class="n">T</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">ArrayND</span><span class="p">[</span><span class="n">T</span><span class="p">]]:</span> <span class="o">...</span>
         <span class="c1"># Unit * &lt;Magnitude&gt; -&gt; Quantity[&lt;Magnitude&gt;]</span>
         <span class="nd">@overload</span>
         <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span> <span class="o">...</span>
-        <span class="c1"># Unit * str -&gt; Quantity</span>
+        <span class="c1"># Unit * &lt;Quantity&gt; -&gt; &lt;Quantity&gt;</span>
         <span class="nd">@overload</span>
-        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">[</span><span class="n">Q</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">](</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Q</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Q</span><span class="p">:</span> <span class="o">...</span>
 
         <span class="fm">__rmul__</span> <span class="o">=</span> <span class="fm">__mul__</span>
+
+        <span class="c1"># Unit / (Unit or UnitsContainer) -&gt; Unit</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Self</span> <span class="o">|</span> <span class="n">UnitsContainer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span> <span class="o">...</span>
+        <span class="c1"># Unit / timedelta -&gt; Quantity[float]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># Unit / &lt;ArrayLike&gt; -&gt; Quantity[&lt;Array&gt;]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">AnyArray</span><span class="p">[</span><span class="n">T</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">ArrayND</span><span class="p">[</span><span class="n">T</span><span class="p">]]:</span> <span class="o">...</span>
+        <span class="c1"># Unit / (&lt;Magnitude&gt; or Quantity[&lt;Magnitude&gt;])</span>
+        <span class="c1">#   -&gt; Quantity[type of 1 / &lt;Magnitude&gt;]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__truediv__</span><span class="p">[</span><span class="n">U</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">other</span><span class="p">:</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">CanRTruediv</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">U</span><span class="p">]]</span>
+            <span class="o">|</span> <span class="n">opt</span><span class="o">.</span><span class="n">CanRTruediv</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">U</span><span class="p">],</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">U</span><span class="p">]:</span> <span class="o">...</span>
+
+        <span class="c1"># UnitsContainer / Unit -&gt; Unit</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rtruediv__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">UnitsContainer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span> <span class="o">...</span>
+        <span class="c1"># timedelta / Unit -&gt; Quantity[float]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rtruediv__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># &lt;Magnitude&gt; / Unit -&gt; Quantity[&lt;Magnitude&gt;]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rtruediv__</span><span class="p">[</span><span class="n">M</span><span class="p">:</span> <span class="n">Magnitude</span><span class="p">](</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">M</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">M</span><span class="p">]:</span> <span class="o">...</span>
+        <span class="c1"># &lt;ArrayLike&gt; / Unit -&gt; Quantity[&lt;Array&gt;]</span>
+        <span class="nd">@overload</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__rtruediv__</span><span class="p">[</span><span class="n">T</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">number</span><span class="p">](</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">AnyArray</span><span class="p">[</span><span class="n">T</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Quantity</span><span class="p">[</span><span class="n">opt</span><span class="o">.</span><span class="n">numpy</span><span class="o">.</span><span class="n">ArrayND</span><span class="p">[</span><span class="n">T</span><span class="p">]]:</span> <span class="o">...</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">GenericUnitRegistry</span><span class="p">[</span><span class="n">QuantityT</span><span class="p">:</span> <span class="n">_Quantity</span><span class="p">,</span> <span class="n">UnitT</span><span class="p">:</span> <span class="n">_Unit</span><span class="p">](</span>
@@ -788,7 +842,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">filename</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
+        <span class="n">filename</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
         <span class="n">force_ndarray</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">force_ndarray_like</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">default_as_delta</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -934,8 +988,12 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__dir__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_registry</span><span class="p">)</span>
 
+    <span class="nd">@deprecated</span><span class="p">(</span>
+        <span class="s2">"Calling the getitem method from an ApplicationRegistry will be removed in future versions of pint.</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="s2">"use `parse_expression` method or use the registry as a callable."</span>
+    <span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registry</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registry</span><span class="o">.</span><span class="n">parse_expression</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_registry</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -984,7 +1042,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=4a2a27d9"></script>
+</div><script src="../../_static/documentation_options.js?v=edbb574e"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

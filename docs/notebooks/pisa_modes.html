@@ -6,8 +6,8 @@
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Pipeline configuration" href="../stubs/howto_pipeline_config_redirect.html"><link rel="prev" title="Carrying out a custom fitting routine" href="../stubs/howto_perform_fit_redirect.html">
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>PISA stage modes - PISA 4.3a2+0.g5aee2988.dirty documentation</title>
+    <!-- Generated with Sphinx 9.2.0 and Furo 2025.12.19 -->
+        <title>PISA stage modes - PISA 4.3a2+1.g5d39a447.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 4.3a2+0.g5aee2988.dirty documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 4.3a2+1.g5d39a447.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a2+0.g5aee2988.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a2+1.g5d39a447.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -293,13 +293,13 @@
         <article role="main" id="furo-main-content">
           <section id="pisa-stage-modes">
 <h1>PISA stage modes<a class="headerlink" href="#pisa-stage-modes" title="Link to this heading">¶</a></h1>
-<p>Every PISA <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/stage.py" rel="noreferer noopener" target="_blank">stage</a> of a <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/pipeline.py" rel="noreferer noopener" target="_blank">pipeline</a> has a <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code> and an <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>. Both instance attributes specify the “representation” in which generic <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/container.py" rel="noreferer noopener" target="_blank">data</a> (e.g., neutrino MC events) is processed through the pipeline. Often calculations can be faster when performed on grids, but we need to be careful in order to ensure that we are not introducing large errors.</p>
-<p>More specifically, <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code> by default defines the representation during the <code class="docutils literal notranslate"><span class="pre">setup()</span></code>and <code class="docutils literal notranslate"><span class="pre">compute()</span></code> steps, and <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code> that during the <code class="docutils literal notranslate"><span class="pre">apply</span></code> step, see the <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/stages/README.md" rel="noreferer noopener" target="_blank">stages readme</a>. The latter two steps are executed successively whenever a given stage instance is <code class="docutils literal notranslate"><span class="pre">run()</span></code>, during the pipeline output calculation. Like this, complex event-by-event calculations (e.g., oscillation probabilities) can for example be executed during the <code class="docutils literal notranslate"><span class="pre">compute()</span></code> step, which also has a basic caching mechanism to avoid redundant calculations. The <code class="docutils literal notranslate"><span class="pre">apply()</span></code> step typically performs simple transformations (using results of a preceding <code class="docutils literal notranslate"><span class="pre">compute()</span></code> step or not) of the data in the representation determined by <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>. Take a look at different stage implementations (“services”) and example pipeline configuration files to get a better feel for the concept.</p>
+<p>Every PISA <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/stage.py" rel="noreferrer noopener" target="_blank">stage</a> of a <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/pipeline.py" rel="noreferrer noopener" target="_blank">pipeline</a> has a <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code> and an <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>. Both instance attributes specify the “representation” in which generic <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/container.py" rel="noreferrer noopener" target="_blank">data</a> (e.g., neutrino MC events) is processed through the pipeline. Often calculations can be faster when performed on grids, but we need to be careful in order to ensure that we are not introducing large errors.</p>
+<p>More specifically, <code class="docutils literal notranslate"><span class="pre">calc_mode</span></code> by default defines the representation during the <code class="docutils literal notranslate"><span class="pre">setup()</span></code>and <code class="docutils literal notranslate"><span class="pre">compute()</span></code> steps, and <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code> that during the <code class="docutils literal notranslate"><span class="pre">apply</span></code> step, see the <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/stages/README.md" rel="noreferrer noopener" target="_blank">stages readme</a>. The latter two steps are executed successively whenever a given stage instance is <code class="docutils literal notranslate"><span class="pre">run()</span></code>, during the pipeline output calculation. Like this, complex event-by-event calculations (e.g., oscillation probabilities) can for example be executed during the <code class="docutils literal notranslate"><span class="pre">compute()</span></code> step, which also has a basic caching mechanism to avoid redundant calculations. The <code class="docutils literal notranslate"><span class="pre">apply()</span></code> step typically performs simple transformations (using results of a preceding <code class="docutils literal notranslate"><span class="pre">compute()</span></code> step or not) of the data in the representation determined by <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>. Take a look at different stage implementations (“services”) and example pipeline configuration files to get a better feel for the concept.</p>
 <p>Note that you can change the modes on runtime, but after doing so need to <code class="docutils literal notranslate"><span class="pre">setup()</span></code> the stage or pipeline again (exercise: can you find a service which only defines its <code class="docutils literal notranslate"><span class="pre">setup()</span></code> step, but neither <code class="docutils literal notranslate"><span class="pre">compute()</span></code> nor <code class="docutils literal notranslate"><span class="pre">apply()</span></code>?).</p>
 <p>If the output representation of a stage is different than what, for example, the next stage needs to have as input, the output is automatically translated by PISA (translation between data representations). So you can mix and match, but be aware that translations will introduce computational cost and hence may slow things down.</p>
 <section id="service-implementation-reference">
 <h2>Service implementation reference<a class="headerlink" href="#service-implementation-reference" title="Link to this heading">¶</a></h2>
-<p>This <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa_tests/test_services.py" rel="noreferer noopener" target="_blank">auto-generated</a> table documents which methods each service implements, which representations it supports, as well as any deviant behavior or properties to be aware of.
+<p>This <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa_tests/test_services.py" rel="noreferrer noopener" target="_blank">auto-generated</a> table documents which methods each service implements, which representations it supports, as well as any deviant behavior or properties to be aware of.
 It currently only contains services that can be <strong>instantiated without importing optional PISA dependencies</strong>.</p>
 <p><strong>Legend:</strong></p>
 <ul class="simple">
@@ -383,7 +383,7 @@ It currently only contains services that can be <strong>instantiated without imp
 <td class="text-center"><p>✗</p></td>
 <td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
 <td class="text-center"><p>None</p></td>
-<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferrer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
 </tr>
 <tr class="row-even"><td><p><strong>data.csv_icc_hist</strong></p></td>
 <td class="text-center"><p>✓</p></td>
@@ -479,7 +479,7 @@ It currently only contains services that can be <strong>instantiated without imp
 <td class="text-center"><p>✗</p></td>
 <td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
 <td class="text-center"><p>None</p></td>
-<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferrer noopener" target="_blank">#821</a>)</strong></p></td>
 </tr>
 <tr class="row-even"><td><p><strong>flux.daemon_flux</strong></p></td>
 <td class="text-center"><p>✓</p></td>
@@ -487,7 +487,7 @@ It currently only contains services that can be <strong>instantiated without imp
 <td class="text-center"><p>✗</p></td>
 <td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
 <td class="text-center"><p>None</p></td>
-<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferrer noopener" target="_blank">#821</a>)</strong></p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>flux.hillasg</strong></p></td>
 <td class="text-center"><p>✓</p></td>
@@ -495,7 +495,7 @@ It currently only contains services that can be <strong>instantiated without imp
 <td class="text-center"><p>✗</p></td>
 <td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
 <td class="text-center"><p>None</p></td>
-<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferrer noopener" target="_blank">#821</a>)</strong></p></td>
 </tr>
 <tr class="row-even"><td><p><strong>flux.honda_ip</strong></p></td>
 <td class="text-center"><p>✓</p></td>
@@ -503,7 +503,7 @@ It currently only contains services that can be <strong>instantiated without imp
 <td class="text-center"><p>✗</p></td>
 <td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
 <td class="text-center"><p>None</p></td>
-<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferrer noopener" target="_blank">#821</a>)</strong></p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>flux.mceq_barr</strong></p></td>
 <td class="text-center"><p>✓</p></td>
@@ -511,7 +511,7 @@ It currently only contains services that can be <strong>instantiated without imp
 <td class="text-center"><p>✗</p></td>
 <td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
 <td class="text-center"><p>None</p></td>
-<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferrer noopener" target="_blank">#821</a>)</strong></p></td>
 </tr>
 <tr class="row-even"><td><p><strong>flux.mceq_barr_red</strong></p></td>
 <td class="text-center"><p>✓</p></td>
@@ -519,7 +519,7 @@ It currently only contains services that can be <strong>instantiated without imp
 <td class="text-center"><p>✗</p></td>
 <td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
 <td class="text-center"><p>None</p></td>
-<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong></p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferrer noopener" target="_blank">#821</a>)</strong></p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>likelihood.generalized_llh_params</strong></p></td>
 <td class="text-center"><p>✓</p></td>
@@ -567,7 +567,7 @@ It currently only contains services that can be <strong>instantiated without imp
 <td class="text-center"><p>✗</p></td>
 <td class="text-center"><p>“events”</p></td>
 <td class="text-center"><p>None</p></td>
-<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferrer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>reco.simple_param</strong></p></td>
 <td class="text-center"><p>✓</p></td>
@@ -575,7 +575,7 @@ It currently only contains services that can be <strong>instantiated without imp
 <td class="text-center"><p>✗</p></td>
 <td class="text-center"><p>“events”, “log_events”, MultiDimBinning</p></td>
 <td class="text-center"><p>None</p></td>
-<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferrer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
 </tr>
 <tr class="row-even"><td><p><strong>utils.add_indices</strong></p></td>
 <td class="text-center"><p>✓</p></td>
@@ -583,7 +583,7 @@ It currently only contains services that can be <strong>instantiated without imp
 <td class="text-center"><p>✗</p></td>
 <td class="text-center"><p>“events”</p></td>
 <td class="text-center"><p>MultiDimBinning</p></td>
-<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
+<td><p>⚠️ <strong>Implicit caching (<a class="reference external" href="https://github.com/icecube/pisa/issues/821" rel="noreferrer noopener" target="_blank">#821</a>)</strong>, setup only</p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>utils.adhoc_sys</strong></p></td>
 <td class="text-center"><p>✓</p></td>
@@ -1003,7 +1003,7 @@ Wall time: 21.5 s
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=4a2a27d9"></script>
+</div><script src="../_static/documentation_options.js?v=edbb574e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

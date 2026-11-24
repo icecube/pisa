@@ -6,8 +6,8 @@
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Tutorials" href="../tutorials.html"><link rel="prev" title="Welcome to PISA’s documentation!" href="../index.html">
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Installation Guide - PISA 4.3a2+0.g5aee2988.dirty documentation</title>
+    <!-- Generated with Sphinx 9.2.0 and Furo 2025.12.19 -->
+        <title>Installation Guide - PISA 4.3a2+1.g5d39a447.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 4.3a2+0.g5aee2988.dirty documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 4.3a2+1.g5d39a447.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a2+0.g5aee2988.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a2+1.g5d39a447.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -299,7 +299,7 @@
 <p>This guide will enable you to <em>use</em> PISA within about five minutes. If you are more interested in contributing to PISA’s development, please refer to the <a class="reference internal" href="#advanced-installation-guide"><span class="xref myst">advanced installation guide</span></a> instead.</p>
 <ol class="arabic">
 <li><p>Install the latest Miniforge Python distribution for either Mac or Linux (as your user, <em>not</em> as root)<br>
-<a class="reference external" href="https://conda-forge.org/download/" rel="noreferer noopener" target="_blank">https://conda-forge.org/download/</a><br></p>
+<a class="reference external" href="https://conda-forge.org/download/" rel="noreferrer noopener" target="_blank">https://conda-forge.org/download/</a><br></p>
 <ul class="simple">
 <li><p>In case you declined to update your shell profile to automatically initialize conda, activate the base environment as prompted at the end.</p></li>
 </ul>
@@ -310,7 +310,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>&lt;ENV<span class=
 </pre></div>
 </div>
 </li>
-<li><p>If your system doesn’t already have it, install <a class="reference external" href="https://git-scm.com" rel="noreferer noopener" target="_blank">git</a> into this environment. (We use <code class="docutils literal notranslate"><span class="pre">mamba</span></code> as a drop-in replacement for the <code class="docutils literal notranslate"><span class="pre">conda</span></code> package manager.)</p>
+<li><p>If your system doesn’t already have it, install <a class="reference external" href="https://git-scm.com" rel="noreferrer noopener" target="_blank">git</a> into this environment. (We use <code class="docutils literal notranslate"><span class="pre">mamba</span></code> as a drop-in replacement for the <code class="docutils literal notranslate"><span class="pre">conda</span></code> package manager.)</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mamba<span class="w"> </span>install<span class="w"> </span>git
 </pre></div>
 </div>
@@ -349,9 +349,9 @@ mkdir<span class="w"> </span>-p<span class="w"> </span><span class="nv">$PISA</s
   https://education.github.com/pack
 </details>
 <p>Fork PISA on GitHub so you have your own copy of the repository to work on, from which you can create pull requests:<br>
-<a class="reference external" href="https://github.com/icecube/pisa/fork" rel="noreferer noopener" target="_blank">https://github.com/icecube/pisa/fork</a></p>
+<a class="reference external" href="https://github.com/icecube/pisa/fork" rel="noreferrer noopener" target="_blank">https://github.com/icecube/pisa/fork</a></p>
 <p>If you like, set up passwordless ssh access to GitHub:<br>
-<a class="reference external" href="https://help.github.com/articles/connecting-to-github-with-ssh" rel="noreferer noopener" target="_blank">https://help.github.com/articles/connecting-to-github-with-ssh</a></p>
+<a class="reference external" href="https://help.github.com/articles/connecting-to-github-with-ssh" rel="noreferrer noopener" target="_blank">https://help.github.com/articles/connecting-to-github-with-ssh</a></p>
 <p>In your terminal, define a directory for PISA source code to live in, e.g.,<br></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PISA</span><span class="o">=</span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>PISA&gt;/pisa
 </pre></div>
@@ -368,14 +368,14 @@ Also add this line to your `~/.bashrc` file so you can refer to the `$PISA` vari
 <p>Below we describe two different ways of setting up the PISA Python environment:<br></p>
 <blockquote>
 <div><p>[!NOTE]
-Miniforge or the venv virtual environment folder into which all Python packages will be installed can be placed wherever you please. (Note that there are <a class="reference external" href="https://pybit.es/articles/a-better-place-to-put-your-python-virtual-environments/" rel="noreferer noopener" target="_blank">disadvantages</a> to putting either in your local PISA repository’s top-level directory <code class="docutils literal notranslate"><span class="pre">$PISA</span></code>.) However, on one of IceCube’s Cobalt nodes, again consider <code class="docutils literal notranslate"><span class="pre">/data/user/&lt;USERNAME&gt;</span></code> instead of e.g. <code class="docutils literal notranslate"><span class="pre">$HOME</span></code>.</p>
+Miniforge or the venv virtual environment folder into which all Python packages will be installed can be placed wherever you please. (Note that there are <a class="reference external" href="https://pybit.es/articles/a-better-place-to-put-your-python-virtual-environments/" rel="noreferrer noopener" target="_blank">disadvantages</a> to putting either in your local PISA repository’s top-level directory <code class="docutils literal notranslate"><span class="pre">$PISA</span></code>.) However, on one of IceCube’s Cobalt nodes, again consider <code class="docutils literal notranslate"><span class="pre">/data/user/&lt;USERNAME&gt;</span></code> instead of e.g. <code class="docutils literal notranslate"><span class="pre">$HOME</span></code>.</p>
 </div></blockquote>
-<p>The <a class="reference internal" href="#default-miniforge-distribution"><span class="xref myst">first (default)</span></a> obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the <a class="reference external" href="https://conda-forge.org/docs/user/introduction/" rel="noreferer noopener" target="_blank">Miniforge</a> distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br></p>
-<p>The <a class="reference internal" href="#alternative-cvmfs-and-venv"><span class="xref myst">second (alternative)</span></a> assumes you have access to IceCube’s CernVM-FS (CVMFS) repository and would like to use one of the Python installations it provides as the “base” of a <a class="reference external" href="https://docs.python.org/3/library/venv.html" rel="noreferer noopener" target="_blank">venv</a>. Our instructions have been tested for the <a class="reference external" href="https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-4" rel="noreferer noopener" target="_blank"><code class="docutils literal notranslate"><span class="pre">py3-v4.4.2</span></code> distribution</a>.</p>
+<p>The <a class="reference internal" href="#default-miniforge-distribution"><span class="xref myst">first (default)</span></a> obtains Python and Python packages, as well as any non-Python binary libraries upon which many Python libraries rely, from the <a class="reference external" href="https://conda-forge.org/docs/user/introduction/" rel="noreferrer noopener" target="_blank">Miniforge</a> distribution. This makes it ideal for setup on e.g. clusters, but also works well for your personal computer.<br></p>
+<p>The <a class="reference internal" href="#alternative-cvmfs-and-venv"><span class="xref myst">second (alternative)</span></a> assumes you have access to IceCube’s CernVM-FS (CVMFS) repository and would like to use one of the Python installations it provides as the “base” of a <a class="reference external" href="https://docs.python.org/3/library/venv.html" rel="noreferrer noopener" target="_blank">venv</a>. Our instructions have been tested for the <a class="reference external" href="https://docs.icecube.aq/icetray/main/info/cvmfs.html#py3-v4-4" rel="noreferrer noopener" target="_blank"><code class="docutils literal notranslate"><span class="pre">py3-v4.4.2</span></code> distribution</a>.</p>
 </section>
 <section id="default-miniforge-distribution">
 <h3>Default: Miniforge distribution<a class="headerlink" href="#default-miniforge-distribution" title="Link to this heading">¶</a></h3>
-<p>Install the latest Miniforge Python distribution for either Mac or Linux (as your user, <em>not</em> as root) from <a class="reference external" href="https://conda-forge.org/download/" rel="noreferer noopener" target="_blank">https://conda-forge.org/download/</a>.</p>
+<p>Install the latest Miniforge Python distribution for either Mac or Linux (as your user, <em>not</em> as root) from <a class="reference external" href="https://conda-forge.org/download/" rel="noreferrer noopener" target="_blank">https://conda-forge.org/download/</a>.</p>
 <details>
   <summary>command suggestions</summary>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>MINIFORGE&gt;/miniforge3
@@ -386,7 +386,7 @@ rm<span class="w"> </span><span class="s2">"Miniforge3-</span><span class="k">$(
 </div>
 <p><strong>Notes:</strong></p>
 <ul class="simple">
-<li><p>To perform SHA-256 checksum verification of the Miniforge installer, download the installer (<code class="docutils literal notranslate"><span class="pre">.sh</span></code>) for your platform whose name contains the release version and the corresponding <code class="docutils literal notranslate"><span class="pre">.sha256</span></code> checksum file from <a class="reference external" href="https://github.com/conda-forge/miniforge/releases/latest" rel="noreferer noopener" target="_blank">https://github.com/conda-forge/miniforge/releases/latest</a>, then execute <code class="docutils literal notranslate"><span class="pre">sha256sum</span> <span class="pre">-c</span> <span class="pre">&quot;Miniforge3-&lt;RELEASE</span> <span class="pre">VERSION&gt;-$(uname)-$(uname</span> <span class="pre">-m).sh.sha256&quot;</span></code>.</p></li>
+<li><p>To perform SHA-256 checksum verification of the Miniforge installer, download the installer (<code class="docutils literal notranslate"><span class="pre">.sh</span></code>) for your platform whose name contains the release version and the corresponding <code class="docutils literal notranslate"><span class="pre">.sha256</span></code> checksum file from <a class="reference external" href="https://github.com/conda-forge/miniforge/releases/latest" rel="noreferrer noopener" target="_blank">https://github.com/conda-forge/miniforge/releases/latest</a>, then execute <code class="docutils literal notranslate"><span class="pre">sha256sum</span> <span class="pre">-c</span> <span class="pre">&quot;Miniforge3-&lt;RELEASE</span> <span class="pre">VERSION&gt;-$(uname)-$(uname</span> <span class="pre">-m).sh.sha256&quot;</span></code>.</p></li>
 <li><p>You can decline having your shell profile updated to automatically initialize conda. In this case</p></li>
 </ul>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="nb">eval</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>&lt;PATH<span class="w"> </span>TO<span class="w"> </span>MINIFORGE&gt;/miniforge3/bin/conda<span class="w"> </span>shell.bash<span class="w"> </span>hook<span class="k">)</span><span class="s2">"</span>
@@ -423,7 +423,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>&lt;ENV<span class=
 </section>
 <section id="common-final-steps-clone-install-and-test-pisa">
 <h3>Common final steps: clone, install and test PISA<a class="headerlink" href="#common-final-steps-clone-install-and-test-pisa" title="Link to this heading">¶</a></h3>
-<p>Install <a class="reference external" href="https://git-scm.com" rel="noreferer noopener" target="_blank">git</a> if you <a class="reference internal" href="#required-dependencies"><span class="xref myst">don’t have it</span></a> already.</p>
+<p>Install <a class="reference external" href="https://git-scm.com" rel="noreferrer noopener" target="_blank">git</a> if you <a class="reference internal" href="#required-dependencies"><span class="xref myst">don’t have it</span></a> already.</p>
 <p>Next, clone the PISA repository to your local computer. On the command line,</p>
 <details>
   <summary>with ssh authentication</summary>
@@ -436,7 +436,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>&lt;ENV<span class=
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/&lt;YOUR<span class="w"> </span>GITHUB<span class="w"> </span>USER<span class="w"> </span>ID&gt;/pisa.git<span class="w"> </span><span class="nv">$PISA</span>
 </pre></div>
 </div>
-<p>See <a class="reference external" href="https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls" rel="noreferer noopener" target="_blank">https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls</a> if you have issues authenticating in this case.</p>
+<p>See <a class="reference external" href="https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls" rel="noreferrer noopener" target="_blank">https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls</a> if you have issues authenticating in this case.</p>
 </details>
 <p>You can now proceed to install PISA, either</p>
 <p>with default packages only and without development tools</p>
@@ -491,17 +491,17 @@ In this case, the old files have to be removed manually (along with any associat
 <p>With the exception of <code class="docutils literal notranslate"><span class="pre">Python</span></code> itself (and possibly <code class="docutils literal notranslate"><span class="pre">git</span></code>), the installation methods outlined above should not demand the <em>manual</em> prior installation of any Python or non-Python requirements for PISA.
 Support for all of these comes pre-packaged or as <code class="docutils literal notranslate"><span class="pre">conda</span></code>/<code class="docutils literal notranslate"><span class="pre">mamba</span></code>-installable packages in the Miniforge Python distribution.</p>
 <ul class="simple">
-<li><p><a class="reference external" href="http://www.python.org" rel="noreferer noopener" target="_blank">python</a> — version &gt;= 3.8 and &lt; 3.15 required (tested to work with &gt;= 3.11)</p>
+<li><p><a class="reference external" href="http://www.python.org" rel="noreferrer noopener" target="_blank">python</a> — version &gt;= 3.8 and &lt; 3.15 required (tested to work with &gt;= 3.11)</p>
 <ul>
 <li><p>Miniforge &amp; CVMFS: built in</p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://pip.pypa.io" rel="noreferer noopener" target="_blank">pip</a> version &gt;= 1.8 required</p>
+<li><p><a class="reference external" href="https://pip.pypa.io" rel="noreferrer noopener" target="_blank">pip</a> version &gt;= 1.8 required</p>
 <ul>
 <li><p>Miniforge &amp; CVMFS: built in</p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://git-scm.com" rel="noreferer noopener" target="_blank">git</a></p>
+<li><p><a class="reference external" href="https://git-scm.com" rel="noreferrer noopener" target="_blank">git</a></p>
 <ul>
 <li><p>Miniforge: <code class="docutils literal notranslate"><span class="pre">mamba</span> <span class="pre">install</span> <span class="pre">git</span></code></p></li>
 <li><p>or system wide, e.g. in Ubuntu<br>
@@ -510,64 +510,64 @@ Support for all of these comes pre-packaged or as <code class="docutils literal 
 </ul>
 </li>
 </ul>
-<p>Required Python modules whose installation is taken care of by pip are specified in <a class="reference external" href="https://github.com/icecube/pisa/blob/master/setup.py" rel="noreferer noopener" target="_blank">setup.py</a>.</p>
+<p>Required Python modules whose installation is taken care of by pip are specified in <a class="reference external" href="https://github.com/icecube/pisa/blob/master/setup.py" rel="noreferrer noopener" target="_blank">setup.py</a>.</p>
 </section>
 <section id="optional-dependencies">
 <h3>Optional Dependencies<a class="headerlink" href="#optional-dependencies" title="Link to this heading">¶</a></h3>
 <p>Some of the following optional dependencies must be installed manually prior to installing PISA, and some will be installed automatically by pip, and this seems to vary from system to system. Therefore you can first try to run the installation, and just install whatever pip says it needed, or just use apt, pip, or conda/mamba to install the below before running the PISA installation.</p>
 <ul class="simple">
-<li><p><a class="reference external" href="https://github.com/dfm/emcee" rel="noreferer noopener" target="_blank">emcee</a> Required for MCMC sampling functionality in the <code class="docutils literal notranslate"><span class="pre">llh_client</span></code>&amp; <code class="docutils literal notranslate"><span class="pre">llh_server</span></code> utils modules and the <code class="docutils literal notranslate"><span class="pre">analysis</span></code> module.</p></li>
-<li><p><a class="reference external" href="https://pradyunsg.me/furo/" rel="noreferer noopener" target="_blank">Furo Sphinx Theme</a> Sphinx extension HTML theme. (Required to compile PISA’s documentation.)</p>
+<li><p><a class="reference external" href="https://github.com/dfm/emcee" rel="noreferrer noopener" target="_blank">emcee</a> Required for MCMC sampling functionality in the <code class="docutils literal notranslate"><span class="pre">llh_client</span></code>&amp; <code class="docutils literal notranslate"><span class="pre">llh_server</span></code> utils modules and the <code class="docutils literal notranslate"><span class="pre">analysis</span></code> module.</p></li>
+<li><p><a class="reference external" href="https://pradyunsg.me/furo/" rel="noreferrer noopener" target="_blank">Furo Sphinx Theme</a> Sphinx extension HTML theme. (Required to compile PISA’s documentation.)</p>
 <ul>
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://github.com/atrettin/GLoBES_wrapper" rel="noreferer noopener" target="_blank">GLoBES wrapper</a> Required for <code class="docutils literal notranslate"><span class="pre">osc.globes</span></code> service.</p></li>
-<li><p><a class="reference external" href="https://github.com/Quansight-labs/intersphinx_registry" rel="noreferer noopener" target="_blank">intersphinx-registry</a> Registry of Python ecosystem project docs to link to using the Intersphinx Sphinx extension. (Required to compile PISA’s documentation.)</p>
+<li><p><a class="reference external" href="https://github.com/atrettin/GLoBES_wrapper" rel="noreferrer noopener" target="_blank">GLoBES wrapper</a> Required for <code class="docutils literal notranslate"><span class="pre">osc.globes</span></code> service.</p></li>
+<li><p><a class="reference external" href="https://github.com/Quansight-labs/intersphinx_registry" rel="noreferrer noopener" target="_blank">intersphinx-registry</a> Registry of Python ecosystem project docs to link to using the Intersphinx Sphinx extension. (Required to compile PISA’s documentation.)</p>
 <ul>
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://github.com/tsutsu3/linkify-it-py" rel="noreferer noopener" target="_blank">linkify-it-py</a> MyST-Parser extension for converting bare URLs into hyperlinks. (Required to compile PISA’s documentation.)</p>
+<li><p><a class="reference external" href="https://github.com/tsutsu3/linkify-it-py" rel="noreferrer noopener" target="_blank">linkify-it-py</a> MyST-Parser extension for converting bare URLs into hyperlinks. (Required to compile PISA’s documentation.)</p>
 <ul>
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://github.com/mceq-project/MCEq" rel="noreferer noopener" target="_blank">MCEq</a> Required for <code class="docutils literal notranslate"><span class="pre">create_barr_sys_tables_mceq.py</span></code> script.</p></li>
-<li><p><a class="reference external" href="https://myst-nb.readthedocs.io/" rel="noreferer noopener" target="_blank">MyST-NB</a> Sphinx extension for compiling markdown and jupyter notebooks. (Required to compile PISA’s documentation.)</p>
+<li><p><a class="reference external" href="https://github.com/mceq-project/MCEq" rel="noreferrer noopener" target="_blank">MCEq</a> Required for <code class="docutils literal notranslate"><span class="pre">create_barr_sys_tables_mceq.py</span></code> script.</p></li>
+<li><p><a class="reference external" href="https://myst-nb.readthedocs.io/" rel="noreferrer noopener" target="_blank">MyST-NB</a> Sphinx extension for compiling markdown and jupyter notebooks. (Required to compile PISA’s documentation.)</p>
 <ul>
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://github.com/arguelles/nuSQuIDS" rel="noreferer noopener" target="_blank">nuSQuiDS</a> Required for <code class="docutils literal notranslate"><span class="pre">osc.nusquids</span></code> service.</p></li>
-<li><p><a class="reference external" href="https://openmp.org" rel="noreferer noopener" target="_blank">OpenMP</a> Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.</p>
+<li><p><a class="reference external" href="https://github.com/arguelles/nuSQuIDS" rel="noreferrer noopener" target="_blank">nuSQuiDS</a> Required for <code class="docutils literal notranslate"><span class="pre">osc.nusquids</span></code> service.</p></li>
+<li><p><a class="reference external" href="https://openmp.org" rel="noreferrer noopener" target="_blank">OpenMP</a> Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.</p>
 <ul>
 <li><p>Available from your compiler: gcc supports OpenMP 4.0 and Clang &gt;= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.</p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://github.com/icecube/photospline" rel="noreferer noopener" target="_blank">Photospline</a> Required for <code class="docutils literal notranslate"><span class="pre">flux.airs</span></code> service.</p></li>
-<li><p><a class="reference external" href="https://pylint.org" rel="noreferer noopener" target="_blank">Pylint</a> Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.</p>
+<li><p><a class="reference external" href="https://github.com/icecube/photospline" rel="noreferrer noopener" target="_blank">Photospline</a> Required for <code class="docutils literal notranslate"><span class="pre">flux.airs</span></code> service.</p></li>
+<li><p><a class="reference external" href="https://pylint.org" rel="noreferrer noopener" target="_blank">Pylint</a> Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.</p>
 <ul>
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://docs.pytest.org/" rel="noreferer noopener" target="_blank">Pytest</a> Python testing framework. Used by a couple unit tests.</p>
+<li><p><a class="reference external" href="https://docs.pytest.org/" rel="noreferrer noopener" target="_blank">Pytest</a> Python testing framework. Used by a couple unit tests.</p>
 <ul>
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://root.cern.ch" rel="noreferer noopener" target="_blank">ROOT &gt;= 6.12.04 with PyROOT</a> Required for <code class="docutils literal notranslate"><span class="pre">absorption.earth_absorption</span></code> service, and to read ROOT cross section files in the <code class="docutils literal notranslate"><span class="pre">crossSections</span></code> utils module. Due to a bug in ROOT’s Python support (documented here <a class="reference external" href="https://github.com/IceCubeOpenSource/pisa/issues/430" rel="noreferer noopener" target="_blank">https://github.com/IceCubeOpenSource/pisa/issues/430</a>), you need at least version 6.12.04 of ROOT.</p></li>
-<li><p><a class="reference external" href="https://www.sphinx-doc.org" rel="noreferer noopener" target="_blank">Sphinx &gt;= 1.3</a> Documentation generator. (Required to compile PISA’s documentation.)</p>
+<li><p><a class="reference external" href="https://root.cern.ch" rel="noreferrer noopener" target="_blank">ROOT &gt;= 6.12.04 with PyROOT</a> Required for <code class="docutils literal notranslate"><span class="pre">absorption.earth_absorption</span></code> service, and to read ROOT cross section files in the <code class="docutils literal notranslate"><span class="pre">crossSections</span></code> utils module. Due to a bug in ROOT’s Python support (documented here <a class="reference external" href="https://github.com/IceCubeOpenSource/pisa/issues/430" rel="noreferrer noopener" target="_blank">https://github.com/IceCubeOpenSource/pisa/issues/430</a>), you need at least version 6.12.04 of ROOT.</p></li>
+<li><p><a class="reference external" href="https://www.sphinx-doc.org" rel="noreferrer noopener" target="_blank">Sphinx &gt;= 1.3</a> Documentation generator. (Required to compile PISA’s documentation.)</p>
 <ul>
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://sphinx-github-changelog.readthedocs.io" rel="noreferer noopener" target="_blank">Sphinx Github Changelog</a> Sphinx extension for building a changelog from GitHub releases. (Required to compile PISA’s documentation.)</p>
+<li><p><a class="reference external" href="https://sphinx-github-changelog.readthedocs.io" rel="noreferrer noopener" target="_blank">Sphinx Github Changelog</a> Sphinx extension for building a changelog from GitHub releases. (Required to compile PISA’s documentation.)</p>
 <ul>
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ul>
 </li>
-<li><p><a class="reference external" href="https://github.com/python-versioneer/python-versioneer" rel="noreferer noopener" target="_blank">versioneer</a> Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places <code class="docutils literal notranslate"><span class="pre">versioneer.py</span></code> in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.</p>
+<li><p><a class="reference external" href="https://github.com/python-versioneer/python-versioneer" rel="noreferrer noopener" target="_blank">versioneer</a> Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places <code class="docutils literal notranslate"><span class="pre">versioneer.py</span></code> in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.</p>
 <ul>
 <li><p>Installed alongside PISA if you specify option <code class="docutils literal notranslate"><span class="pre">['develop']</span></code> to <code class="docutils literal notranslate"><span class="pre">pip</span></code></p></li>
 </ul>
@@ -681,7 +681,7 @@ If you don’t have a suitable personal access token yet, generate one with a pu
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=4a2a27d9"></script>
+</div><script src="../_static/documentation_options.js?v=edbb574e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

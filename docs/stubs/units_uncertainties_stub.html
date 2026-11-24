@@ -6,8 +6,8 @@
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Contributing" href="../contributing.html"><link rel="prev" title="Pipeline configuration" href="howto_pipeline_config_redirect.html">
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Units and Uncertainties - PISA 4.3a2+0.g5aee2988.dirty documentation</title>
+    <!-- Generated with Sphinx 9.2.0 and Furo 2025.12.19 -->
+        <title>Units and Uncertainties - PISA 4.3a2+1.g5d39a447.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 4.3a2+0.g5aee2988.dirty documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 4.3a2+1.g5d39a447.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a2+0.g5aee2988.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a2+1.g5d39a447.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -295,16 +295,16 @@
 <h1>Units and Uncertainties<a class="headerlink" href="#units-and-uncertainties" title="Link to this heading">¶</a></h1>
 <section id="units">
 <h2>Units<a class="headerlink" href="#units" title="Link to this heading">¶</a></h2>
-<p>Units were introduced for parameters and binnings in PISA using the <a class="reference external" href="https://pint.readthedocs.io/" rel="noreferer noopener" target="_blank">Pint package</a>. The package is fully compatible with the NumPy and uncertainties packages.</p>
+<p>Units were introduced for parameters and binnings in PISA using the <a class="reference external" href="https://pint.readthedocs.io/" rel="noreferrer noopener" target="_blank">Pint package</a>. The package is fully compatible with the NumPy and uncertainties packages.</p>
 <p>Note the terminology used:</p>
 <ul class="simple">
-<li><p><a class="reference external" href="https://pint.readthedocs.io/en/stable/api/base.html#pint.Unit" rel="noreferer noopener" target="_blank"><em><strong>Unit</strong></em></a> has no attached value(s). Type: <code class="docutils literal notranslate"><span class="pre">pint.Unit</span></code></p></li>
-<li><p><a class="reference external" href="https://pint.readthedocs.io/en/stable/api/base.html#pint.Quantity" rel="noreferer noopener" target="_blank"><em><strong>Quantity</strong></em></a> is a number (or array) <em>with units attached</em> to them. Type: <code class="docutils literal notranslate"><span class="pre">pint.Quantity</span></code></p></li>
-<li><p><a class="reference external" href="https://pint.readthedocs.io/en/stable/api/base.html#pint.Quantity.magnitude" rel="noreferer noopener" target="_blank"><em><strong>Magnitude</strong></em></a> is the value of a quantity sans units. Type: <code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, etc.</p></li>
+<li><p><a class="reference external" href="https://pint.readthedocs.io/en/stable/api/base.html#pint.Unit" rel="noreferrer noopener" target="_blank"><em><strong>Unit</strong></em></a> has no attached value(s). Type: <code class="docutils literal notranslate"><span class="pre">pint.Unit</span></code></p></li>
+<li><p><a class="reference external" href="https://pint.readthedocs.io/en/stable/api/base.html#pint.Quantity" rel="noreferrer noopener" target="_blank"><em><strong>Quantity</strong></em></a> is a number (or array) <em>with units attached</em> to them. Type: <code class="docutils literal notranslate"><span class="pre">pint.Quantity</span></code></p></li>
+<li><p><a class="reference external" href="https://pint.readthedocs.io/en/stable/api/base.html#pint.Quantity.magnitude" rel="noreferrer noopener" target="_blank"><em><strong>Magnitude</strong></em></a> is the value of a quantity sans units. Type: <code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code>, etc.</p></li>
 </ul>
 <section id="pint-s-quirks">
 <h3>Pint’s quirks<a class="headerlink" href="#pint-s-quirks" title="Link to this heading">¶</a></h3>
-<p>As Pint has no “global units”, to ensure we always use the same shared <a class="reference external" href="https://pint.readthedocs.io/en/stable/getting/pint-in-your-projects.html#having-a-shared-registry" rel="noreferer noopener" target="_blank">unit registry</a>,
+<p>As Pint has no “global units”, to ensure we always use the same shared <a class="reference external" href="https://pint.readthedocs.io/en/stable/getting/pint-in-your-projects.html#having-a-shared-registry" rel="noreferrer noopener" target="_blank">unit registry</a>,
 the standard way of importing pint in PISA is the line</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pisa</span><span class="w"> </span><span class="kn">import</span> <span class="n">ureg</span><span class="p">,</span> <span class="n">Q_</span>
 </pre></div>
@@ -339,7 +339,7 @@ the standard way of importing pint in PISA is the line</p>
 </section>
 <section id="uncertainties">
 <h2>Uncertainties<a class="headerlink" href="#uncertainties" title="Link to this heading">¶</a></h2>
-<p>Support for the handling of errors is available from the <a class="reference external" href="https://uncertainties.readthedocs.io/" rel="noreferer noopener" target="_blank">uncertainties package</a>. This interoperates well with units, too.
+<p>Support for the handling of errors is available from the <a class="reference external" href="https://uncertainties.readthedocs.io/" rel="noreferrer noopener" target="_blank">uncertainties package</a>. This interoperates well with units, too.
 Note that there <em>is</em> a performance penalty for using uncertainties, so hooks are provided to enable or disable this feature at the user’s discretion.</p>
 <section id="basic-attributes-of-numbers-with-uncertainties">
 <h3>Basic attributes of numbers with uncertainties<a class="headerlink" href="#basic-attributes-of-numbers-with-uncertainties" title="Link to this heading">¶</a></h3>
@@ -445,7 +445,7 @@ Note that there <em>is</em> a performance penalty for using uncertainties, so ho
 </li>
 </ul>
 </li>
-<li><p>The <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/map.py" rel="noreferer noopener" target="_blank"><code class="docutils literal notranslate"><span class="pre">pisa.core.Map</span></code></a> object integrates uncertainties, which are turned off by default but can be enabled with either
+<li><p>The <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/map.py" rel="noreferrer noopener" target="_blank"><code class="docutils literal notranslate"><span class="pre">pisa.core.Map</span></code></a> object integrates uncertainties, which are turned off by default but can be enabled with either
 the <code class="docutils literal notranslate"><span class="pre">set_poisson_errors()</span></code> or <code class="docutils literal notranslate"><span class="pre">set_errors(...)</span></code> methods. Once enabled, all subsequent operations on the <code class="docutils literal notranslate"><span class="pre">Map</span></code> will propagate errors (to first order).</p></li>
 </ul>
 </section>
@@ -535,7 +535,7 @@ the <code class="docutils literal notranslate"><span class="pre">set_poisson_err
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=4a2a27d9"></script>
+</div><script src="../_static/documentation_options.js?v=edbb574e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

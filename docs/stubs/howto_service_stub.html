@@ -6,8 +6,8 @@
 <link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Data pipeline system (storage &amp; transformation)" href="data_storage_trafo_redirect.html"><link rel="prev" title="How to contribute to PISA" href="contributing_stub.html">
         <link rel="prefetch" href="../_static/pisa4_logo_transparent.png" as="image">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>Creating a service - PISA 4.3a2+0.g5aee2988.dirty documentation</title>
+    <!-- Generated with Sphinx 9.2.0 and Furo 2025.12.19 -->
+        <title>Creating a service - PISA 4.3a2+1.g5d39a447.dirty documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -164,7 +164,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">PISA 4.3a2+0.g5aee2988.dirty documentation</div></a>
+      <a href="../index.html"><div class="brand">PISA 4.3a2+1.g5d39a447.dirty documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
     <img class="sidebar-logo" src="../_static/pisa4_logo_transparent.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">PISA 4.3a2+0.g5aee2988.dirty documentation</span>
+  <span class="sidebar-brand-text">PISA 4.3a2+1.g5d39a447.dirty documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -359,7 +359,7 @@ This convention is used in the pipeline config parser for automatically importin
 Document the parameters (aka keyword arguments) specified by the <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method in a section titled <code class="docutils literal notranslate"><span class="pre">Parameters</span></code>.
 Include a <code class="docutils literal notranslate"><span class="pre">Notes</span></code> section to discuss things like details of implementation that the user should be aware of that are too lengthy to put in the brief descriptions in the <code class="docutils literal notranslate"><span class="pre">Parameters</span></code> section.
 Each section has dashes underneath the section name (same length as the name), and is separated by the above section by one or two empty lines.
-Refer to the <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/general_conventions.md" rel="noreferer noopener" target="_blank">general conventions</a> for references where you can find out more about writing docstrings.</p>
+Refer to the <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/general_conventions.md" rel="noreferrer noopener" target="_blank">general conventions</a> for references where you can find out more about writing docstrings.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="sd">"""Docstring (mandatory!)</span>
 
 <span class="sd">    What is the purpose of this stage? Short 1-2 sentence description</span>
@@ -448,7 +448,7 @@ In fact, we expect you to instantiate the service with some reasonable assumptio
 <li><p>Define a temporary variable containing <code class="docutils literal notranslate"><span class="pre">expected_params</span></code>, the parameter names your service requires to be passed via the <code class="docutils literal notranslate"><span class="pre">params</span></code> argument.</p></li>
 <li><p>Define a temporary variable <code class="docutils literal notranslate"><span class="pre">expected_container_keys</span></code>, the container keys expected to be present in each container in the <code class="docutils literal notranslate"><span class="pre">data</span></code> object assigned to this service.</p></li>
 <li><p>If desired, define a temporary variable <code class="docutils literal notranslate"><span class="pre">supported_reps</span></code>, containing the data representations (<code class="docutils literal notranslate"><span class="pre">calc_mode</span></code> and <code class="docutils literal notranslate"><span class="pre">apply_mode</span></code>) you want to allow. If you don’t, PISA will populate <code class="docutils literal notranslate"><span class="pre">supported_reps</span></code> with sensible defaults.</p></li>
-<li><p>Call the <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method of the superclass (<code class="docutils literal notranslate"><span class="pre">Stage</span></code>). Don’t forget to pass the above arguments. For details of all the arguments it accepts, see the <code class="docutils literal notranslate"><span class="pre">Stage</span></code>’s init method definition (and corresponding class docstring) in <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/stage.py" rel="noreferer noopener" target="_blank">stage.py</a>.</p></li>
+<li><p>Call the <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method of the superclass (<code class="docutils literal notranslate"><span class="pre">Stage</span></code>). Don’t forget to pass the above arguments. For details of all the arguments it accepts, see the <code class="docutils literal notranslate"><span class="pre">Stage</span></code>’s init method definition (and corresponding class docstring) in <a class="reference external" href="https://github.com/icecube/pisa/blob/master/pisa/core/stage.py" rel="noreferrer noopener" target="_blank">stage.py</a>.</p></li>
 <li><p>Do any custom things that your class requires for setting itself up.</p></li>
 </ol>
 <section id="defining-service-parameters-instantiation-argument-or-param-object">
@@ -615,7 +615,7 @@ In case the service instantiation requires reading from some input file: if the 
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=4a2a27d9"></script>
+</div><script src="../_static/documentation_options.js?v=edbb574e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
