@@ -16,7 +16,6 @@ import tempfile
 import numpy as np
 from packaging import version
 import simplejson as json
-from six import string_types
 
 from pisa import ureg
 from pisa.utils.log import logging, set_verbosity
@@ -190,7 +189,7 @@ def from_json(filename, cls=None):
 
     if isinstance(content, Mapping):
         return cls(**content)
-    if not isinstance(string_types) and isinstance(content, Sequence):
+    if not isinstance(content, str) and isinstance(content, Sequence):
         return cls(*content)
     return cls(content)
 
@@ -308,7 +307,7 @@ class NumpyEncoder(json.JSONEncoder):
         if hasattr(obj, 'serializable_state'):
             return obj.serializable_state
 
-        if isinstance(obj, string_types):
+        if isinstance(obj, str):
             return obj
 
         if isinstance(obj, ureg.Quantity):
@@ -339,7 +338,7 @@ class NumpyEncoder(json.JSONEncoder):
         if isinstance(obj, Real):
             return float(obj)
 
-        if isinstance(obj, string_types):
+        if isinstance(obj, str):
             return obj
 
         # If we get here, we have a type that cannot be serialized. This call
@@ -480,7 +479,7 @@ class NumpyDecoder(json.JSONDecoder):
                 and all(
                     isinstance(subval, Sequence)
                     and len(subval) == 2
-                    and isinstance(subval[0], string_types)
+                    and isinstance(subval[0], str)
                     and isinstance(subval[1], Number)
                     for subval in values[1]
                 )
@@ -498,7 +497,7 @@ class NumpyDecoder(json.JSONDecoder):
                 isinstance(values[0], Sequence)
                 and all(
                     len(subval) == 2
-                    and isinstance(subval[0], string_types)
+                    and isinstance(subval[0], str)
                     and isinstance(subval[1], Number)
                     for subval in values
                 )
@@ -513,7 +512,7 @@ class NumpyDecoder(json.JSONDecoder):
             # --> Simply return, don't perform further conversion
             if (
                 len(values) == 2
-                and isinstance(values[0], string_types)
+                and isinstance(values[0], str)
                 and isinstance(values[1], Number)
             ):
                 return values, end

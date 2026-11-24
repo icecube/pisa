@@ -9,7 +9,6 @@ import os
 
 import numpy as np
 import h5py
-from six import string_types
 
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.hash import hash_obj
@@ -246,12 +245,12 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
             # TODO: make written hdf5 files compatible with pytables
             # see docs at https://www.pytables.org/usersguide/datatypes.html
 
-            if isinstance(node, string_types):
+            if isinstance(node, str):
                 node = np.string_(node)
             elif isinstance(node, bool):
                 node = np.bool_(node)
             elif isinstance(node, np.ndarray):
-                if issubclass(node.dtype.type, string_types):
+                if issubclass(node.dtype.type, str):
                     node = node.astype(np.string_)
                 elif node.dtype.type is bool:
                     node = node.astype(np.bool_)
@@ -386,7 +385,7 @@ def test_hdf():
             "float64": lambda x: x.dtype == np.float64,
             "pi": lambda x: x.dtype == np.float64,
 
-            "string": lambda x: isinstance(x, string_types),
+            "string": lambda x: isinstance(x, str),
 
             "int": lambda x: isinstance(x, int),
             "int8": lambda x: x.dtype == np.int8,

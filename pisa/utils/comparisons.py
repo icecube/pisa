@@ -26,7 +26,6 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from collections import OrderedDict
 from numbers import Number
 import re
-from six import string_types
 
 import numpy as np
 import pint
@@ -176,7 +175,7 @@ def isunitless(x):
     if isinstance(x, Mapping):
         raise TypeError("Cannot test a Mapping (`x` is of type {})".format(type(x)))
 
-    if not isinstance(x, string_types) and isinstance(x, Iterable):
+    if not isinstance(x, str) and isinstance(x, Iterable):
         return isunitless(next(iter(x)))
 
     return True
