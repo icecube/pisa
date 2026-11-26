@@ -96,6 +96,9 @@ class DistributionMaker(object):
         self._profile = profile
 
         self._pipelines = []
+        # (pipeline index, param name) -> (rescaled value, value object) set
+        # by _set_rescaled_free_params, see there
+        self._rescaled_cache = {}
         if isinstance(pipelines, (str, PISAConfigParser, OrderedDict,
                                   Pipeline)):
             pipelines = [pipelines]
@@ -465,11 +468,28 @@ class DistributionMaker(object):
 
         """
         names = self.params.free.names
-        for pipeline in self:
+        for ipipe, pipeline in enumerate(self):
+            # `pipeline.params` collects the params of all stages anew on each
+            # access, so get it once: inside the loop the cost grows with the
+            # cube of the number of params (0.4 s per call for ~140 params)
+            pipeline_params = pipeline.params
+            free_names = set(pipeline_params.free.names)
+            all_names = set(pipeline_params.names)
             for name, rvalue in zip(names, rvalues):
-                if name in pipeline.params.free.names:
-                    pipeline.params[name]._rescaled_value = rvalue # pylint: disable=protected-access
-                elif name in pipeline.params.names:
+                if name in free_names:
+                    param = pipeline_params[name]
+                    # Skip a param this method set to the same rescaled value
+                    # last time, if nothing replaced its value since (the
+                    # value object is the one stored then). Minimizers mostly
+                    # change one param per call, and setting a value costs
+                    # ~0.4 ms (unit conversions).
+                    cached = self._rescaled_cache.get((ipipe, name))
+                    if (cached is not None and cached[0] == rvalue
+                            and cached[1] is param._value): # pylint: disable=protected-access
+                        continue
+                    param._rescaled_value = rvalue # pylint: disable=protected-access
+                    self._rescaled_cache[(ipipe, name)] = (rvalue, param._value) # pylint: disable=protected-access
+                elif name in all_names:
                     raise AttributeError(
                         'Trying to set value for "%s", a parameter that is'
                         ' fixed in at least one pipeline' %name
@@ -569,6 +589,48 @@ def test_DistributionMaker():
     dm = DistributionMaker(pipelines=p_cfg, profile=False)
     assert not dm.pipelines[0].profile
 
+
+
+def test_set_rescaled_free_params():
+    """Free params set by `_set_rescaled_free_params` end up in every
+    pipeline, also when values were changed by other means in between (the
+    method skips params it already set to the same value)."""
+    # Two pipelines sharing their params
+    dm = DistributionMaker(
+        ['settings/pipeline/example.cfg', 'settings/pipeline/example.cfg']
+    )
+    names = dm.params.free.names
+    assert len(names) > 1
+    random_state = get_random_state(random_state=0)
+
+    def check(rvalues):
+        for pipeline in dm:
+            assert np.allclose(pipeline.params.free._rescaled_values, rvalues, # pylint: disable=protected-access
+                               rtol=0, atol=1e-12)
+        assert np.allclose(dm.params.free._rescaled_values, rvalues, rtol=0, atol=1e-12) # pylint: disable=protected-access
+
+    rvalues = random_state.uniform(0.1, 0.9, len(names))
+    dm._set_rescaled_free_params(rvalues) # pylint: disable=protected-access
+    check(rvalues)
+
+    # One param changed, as in a minimizer's gradient step
+    step = rvalues.copy()
+    step[0] += 0.01
+    dm._set_rescaled_free_params(step) # pylint: disable=protected-access
+    check(step)
+
+    # Values changed outside the method, then the same values set again
+    dm._set_rescaled_free_params(rvalues) # pylint: disable=protected-access
+    dm.reset_free()
+    assert not np.allclose(dm.params.free._rescaled_values, rvalues) # pylint: disable=protected-access
+    dm._set_rescaled_free_params(rvalues) # pylint: disable=protected-access
+    check(rvalues)
+
+    # A param set directly to another value
+    dm.pipelines[1].params[names[0]].value = dm.pipelines[1].params[names[0]].nominal_value
+    dm._set_rescaled_free_params(rvalues) # pylint: disable=protected-access
+    check(rvalues)
+    logging.info('<< PASS : test_set_rescaled_free_params >>')
 
 def parse_args():
     """Get command line arguments"""
