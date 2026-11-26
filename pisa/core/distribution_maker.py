@@ -96,6 +96,9 @@ class DistributionMaker(object):
         self._profile = profile
 
         self._pipelines = []
+        # (pipeline index, param name) -> (rescaled value, value object) set
+        # by _set_rescaled_free_params, see there
+        self._rescaled_cache = {}
         if isinstance(pipelines, (str, PISAConfigParser, OrderedDict,
                                   Pipeline)):
             pipelines = [pipelines]
@@ -465,11 +468,28 @@ class DistributionMaker(object):
 
         """
         names = self.params.free.names
-        for pipeline in self:
+        for ipipe, pipeline in enumerate(self):
+            # `pipeline.params` collects the params of all stages anew on each
+            # access, so get it once: inside the loop the cost grows with the
+            # cube of the number of params (0.4 s per call for ~140 params)
+            pipeline_params = pipeline.params
+            free_names = set(pipeline_params.free.names)
+            all_names = set(pipeline_params.names)
             for name, rvalue in zip(names, rvalues):
-                if name in pipeline.params.free.names:
-                    pipeline.params[name]._rescaled_value = rvalue # pylint: disable=protected-access
-                elif name in pipeline.params.names:
+                if name in free_names:
+                    param = pipeline_params[name]
+                    # Skip a param this method set to the same rescaled value
+                    # last time, if nothing replaced its value since (the
+                    # value object is the one stored then). Minimizers mostly
+                    # change one param per call, and setting a value costs
+                    # ~0.4 ms (unit conversions).
+                    cached = self._rescaled_cache.get((ipipe, name))
+                    if (cached is not None and cached[0] == rvalue
+                            and cached[1] is param._value): # pylint: disable=protected-access
+                        continue
+                    param._rescaled_value = rvalue # pylint: disable=protected-access
+                    self._rescaled_cache[(ipipe, name)] = (rvalue, param._value) # pylint: disable=protected-access
+                elif name in all_names:
                     raise AttributeError(
                         'Trying to set value for "%s", a parameter that is'
                         ' fixed in at least one pipeline' %name
