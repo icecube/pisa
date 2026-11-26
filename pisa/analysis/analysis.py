@@ -2116,6 +2116,12 @@ class Analysis():
             m.precision = 5 * FTYPE_PREC
         if "tol" in method_kwargs.keys():
             m.tol = method_kwargs["tol"]
+        # Minuit strategy (default 1). Strategy 0 skips the full HESSE that
+        # MIGRAD runs at the end with strategy 1, which dominates the number of
+        # calls for fits with many free parameters; the covariance is then
+        # not accurate (run HESSE separately if needed).
+        if "strategy" in method_kwargs.keys():
+            m.strategy = method_kwargs["strategy"]
         simplex = False
         if "run_simplex" in method_kwargs.keys():
             simplex = method_kwargs["run_simplex"]
