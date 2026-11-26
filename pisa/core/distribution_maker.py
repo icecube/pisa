@@ -590,6 +590,48 @@ def test_DistributionMaker():
     assert not dm.pipelines[0].profile
 
 
+
+def test_set_rescaled_free_params():
+    """Free params set by `_set_rescaled_free_params` end up in every
+    pipeline, also when values were changed by other means in between (the
+    method skips params it already set to the same value)."""
+    # Two pipelines sharing their params
+    dm = DistributionMaker(
+        ['settings/pipeline/example.cfg', 'settings/pipeline/example.cfg']
+    )
+    names = dm.params.free.names
+    assert len(names) > 1
+    random_state = get_random_state(random_state=0)
+
+    def check(rvalues):
+        for pipeline in dm:
+            assert np.allclose(pipeline.params.free._rescaled_values, rvalues, # pylint: disable=protected-access
+                               rtol=0, atol=1e-12)
+        assert np.allclose(dm.params.free._rescaled_values, rvalues, rtol=0, atol=1e-12) # pylint: disable=protected-access
+
+    rvalues = random_state.uniform(0.1, 0.9, len(names))
+    dm._set_rescaled_free_params(rvalues) # pylint: disable=protected-access
+    check(rvalues)
+
+    # One param changed, as in a minimizer's gradient step
+    step = rvalues.copy()
+    step[0] += 0.01
+    dm._set_rescaled_free_params(step) # pylint: disable=protected-access
+    check(step)
+
+    # Values changed outside the method, then the same values set again
+    dm._set_rescaled_free_params(rvalues) # pylint: disable=protected-access
+    dm.reset_free()
+    assert not np.allclose(dm.params.free._rescaled_values, rvalues) # pylint: disable=protected-access
+    dm._set_rescaled_free_params(rvalues) # pylint: disable=protected-access
+    check(rvalues)
+
+    # A param set directly to another value
+    dm.pipelines[1].params[names[0]].value = dm.pipelines[1].params[names[0]].nominal_value
+    dm._set_rescaled_free_params(rvalues) # pylint: disable=protected-access
+    check(rvalues)
+    logging.info('<< PASS : test_set_rescaled_free_params >>')
+
 def parse_args():
     """Get command line arguments"""
     parser = ArgumentParser(
